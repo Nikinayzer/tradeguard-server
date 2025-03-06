@@ -26,13 +26,14 @@ public class SecurityConfig {
                         .requestMatchers("/ping").permitAll()
                         .requestMatchers("/pingsecure").hasRole("ADMIN")
                         .requestMatchers("/auth/**").permitAll()
+                        .requestMatchers("/market","/market/**").permitAll()
+                        .requestMatchers("/error").permitAll()
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 //                .oauth2ResourceServer(oauth2 -> oauth2
 //                        .jwt(Customizer.withDefaults())  // Use OAuth2 JWT authentication
 //                );
-
         return http.build();
     }
 

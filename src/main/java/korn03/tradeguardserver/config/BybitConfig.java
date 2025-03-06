@@ -30,6 +30,13 @@ public class BybitConfig {
                 DEBUG_MODE
         );
     }
+    @Bean
+    public BybitApiMarketRestClient bybitApiMarketRestClient() {
+        return BybitApiClientFactory.newInstance(
+                BybitApiConfig.MAINNET_DOMAIN,
+                DEBUG_MODE
+        ).newMarketDataRestClient();
+    }
 
     @Bean
     public BybitApiAsyncTradeRestClient bybitAsyncTradeRestClient() {
@@ -44,13 +51,5 @@ public class BybitConfig {
     @Bean
     public BybitApiAsyncAccountRestClient bybitAsyncAccountRestClient() {
         return createBybitClient().newAsyncAccountRestClient();
-    }
-
-    @Bean
-    public BybitApiMarketRestClient bybitApiMarketRestClient() {
-        return BybitApiClientFactory.newInstance(
-                BybitApiConfig.MAINNET_DOMAIN,
-                DEBUG_MODE
-        ).newMarketDataRestClient();
     }
 }
