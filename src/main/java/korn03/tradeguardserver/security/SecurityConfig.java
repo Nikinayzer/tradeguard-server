@@ -1,24 +1,17 @@
 package korn03.tradeguardserver.security;
 
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
-import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.oauth2.jwt.JwtDecoder;
-import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-
-import java.security.interfaces.RSAPublicKey;
 
 @Configuration
 @EnableWebSecurity
@@ -30,12 +23,9 @@ public class SecurityConfig {
         http
                 .csrf(AbstractHttpConfigurer::disable)  // Disable CSRF for APIs
                 .authorizeHttpRequests(auth -> auth
-//                        .requestMatchers("/api/public/**").permitAll()  // Allow public endpoints
-//                        .requestMatchers("/api/user/**").hasRole("USER") // Requires ROLE_USER
-//                        .requestMatchers("/api/admin/**").hasRole("ADMIN") // Requires ROLE_ADMIN
-                                .requestMatchers("/ping").permitAll()
-                                .requestMatchers("/pingsecure").hasRole("ADMIN")
-                                .requestMatchers("/auth/**").permitAll()
+                        .requestMatchers("/ping").permitAll()
+                        .requestMatchers("/pingsecure").hasRole("ADMIN")
+                        .requestMatchers("/auth/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
@@ -45,10 +35,12 @@ public class SecurityConfig {
 
         return http.build();
     }
+
     @Bean
     public BCryptPasswordEncoder bCryptPasswordEncoder() {
         return new BCryptPasswordEncoder();
     }
+
     @Bean
     public AuthenticationManager authenticationManager(CustomUserDetailsService userDetailsService, BCryptPasswordEncoder encoder) {
         DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
@@ -56,9 +48,5 @@ public class SecurityConfig {
         authProvider.setPasswordEncoder(encoder);
         return new ProviderManager(authProvider);
     }
-//    @Bean
-//    public JwtDecoder jwtDecoder() {
-//        return NimbusJwtDecoder.withPublicKey(publicKey).build();
-//    }
 
 }

@@ -15,13 +15,11 @@ import java.util.stream.Collectors;
 @Service
 public class JwtService {
 
+    private final UserDetailsService userDetailsService;
     @Value("${jwt.secret}")
     private String secretKey;
-
     @Value("${jwt.expiration}")
     private long expirationMs;
-
-    private final UserDetailsService userDetailsService;
 
     public JwtService(UserDetailsService userDetailsService) {
         this.userDetailsService = userDetailsService;

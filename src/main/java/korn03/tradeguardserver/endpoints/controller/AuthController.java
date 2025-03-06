@@ -4,14 +4,11 @@ import korn03.tradeguardserver.db.entity.User;
 import korn03.tradeguardserver.endpoints.dto.auth.AuthRequestDTO;
 import korn03.tradeguardserver.endpoints.dto.auth.AuthResponseDTO;
 import korn03.tradeguardserver.security.JwtService;
-import korn03.tradeguardserver.service.UserService;
 import org.springframework.http.ResponseEntity;
-
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
@@ -21,12 +18,10 @@ public class AuthController {
 
     private final AuthenticationManager authenticationManager;
     private final JwtService jwtService;
-    private final UserService userService;
 
-    public AuthController(AuthenticationManager authenticationManager, JwtService jwtService, UserService userService) {
+    public AuthController(AuthenticationManager authenticationManager, JwtService jwtService) {
         this.authenticationManager = authenticationManager;
         this.jwtService = jwtService;
-        this.userService = userService;
     }
 
     @PostMapping("/auth")
