@@ -1,6 +1,6 @@
 package korn03.tradeguardserver.endpoints.controller;
 
-import korn03.tradeguardserver.db.entity.User;
+import korn03.tradeguardserver.model.entity.User;
 import korn03.tradeguardserver.endpoints.dto.auth.AuthRequestDTO;
 import korn03.tradeguardserver.endpoints.dto.auth.AuthResponseDTO;
 import korn03.tradeguardserver.security.JwtService;

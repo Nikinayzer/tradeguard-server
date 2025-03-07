@@ -1,8 +1,8 @@
 package korn03.tradeguardserver.service;
 
 
-import korn03.tradeguardserver.db.entity.BybitAccount;
-import korn03.tradeguardserver.db.repository.BybitAccountRepository;
+import korn03.tradeguardserver.model.entity.BybitAccount;
+import korn03.tradeguardserver.model.repository.BybitAccountRepository;
 import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.Optional;

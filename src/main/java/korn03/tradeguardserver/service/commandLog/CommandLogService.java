@@ -1,7 +1,7 @@
 package korn03.tradeguardserver.service.commandLog;
 
-import korn03.tradeguardserver.db.entity.CommandLog;
-import korn03.tradeguardserver.db.repository.CommandLogRepository;
+import korn03.tradeguardserver.model.entity.CommandLog;
+import korn03.tradeguardserver.model.repository.CommandLogRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Async;

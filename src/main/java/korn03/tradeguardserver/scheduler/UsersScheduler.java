@@ -1,8 +1,8 @@
 package korn03.tradeguardserver.scheduler;
 
 import jakarta.annotation.PostConstruct;
-import korn03.tradeguardserver.db.entity.Role;
-import korn03.tradeguardserver.db.entity.User;
+import korn03.tradeguardserver.model.entity.Role;
+import korn03.tradeguardserver.model.entity.User;
 import korn03.tradeguardserver.service.UserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

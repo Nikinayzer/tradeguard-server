@@ -1,7 +1,7 @@
-package korn03.tradeguardserver.db.repository;
+package korn03.tradeguardserver.model.repository;
 
 import jakarta.persistence.LockModeType;
-import korn03.tradeguardserver.db.entity.User;
+import korn03.tradeguardserver.model.entity.User;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;

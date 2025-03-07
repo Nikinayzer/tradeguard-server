@@ -1,6 +1,6 @@
 package korn03.tradeguardserver.kafka;
 
-import korn03.tradeguardserver.db.entity.CommandLog;
+import korn03.tradeguardserver.model.entity.CommandLog;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 

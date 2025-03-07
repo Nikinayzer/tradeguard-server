@@ -1,4 +1,4 @@
-package korn03.tradeguardserver.db.entity;
+package korn03.tradeguardserver.model.entity;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;

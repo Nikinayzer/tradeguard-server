@@ -1,8 +1,8 @@
 package korn03.tradeguardserver.service.news;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import korn03.tradeguardserver.db.entity.NewsMention;
-import korn03.tradeguardserver.db.repository.NewsMentionRepository;
+import korn03.tradeguardserver.model.entity.NewsMention;
+import korn03.tradeguardserver.model.repository.NewsMentionRepository;
 import lombok.Getter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

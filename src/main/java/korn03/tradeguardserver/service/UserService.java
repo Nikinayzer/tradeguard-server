@@ -1,8 +1,8 @@
 package korn03.tradeguardserver.service;
 
-import korn03.tradeguardserver.db.entity.Role;
-import korn03.tradeguardserver.db.entity.User;
-import korn03.tradeguardserver.db.repository.UserRepository;
+import korn03.tradeguardserver.model.entity.Role;
+import korn03.tradeguardserver.model.entity.User;
+import korn03.tradeguardserver.model.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
