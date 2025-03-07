@@ -20,9 +20,9 @@ import java.util.List;
 import java.util.Map;
 
 @Service
-public class BybitApiMarketDataService {
+public class BybitMarketDataService {
 
-    private static final Logger logger = LoggerFactory.getLogger(BybitApiMarketDataService.class);
+    private static final Logger logger = LoggerFactory.getLogger(BybitMarketDataService.class);
 
     private static final String MARKET_KEY_PREFIX = "market_data:";
     private static final Duration CACHE_EXPIRATION = Duration.ofSeconds(60);
@@ -31,7 +31,7 @@ public class BybitApiMarketDataService {
     private final ObjectMapper objectMapper;
     private final CacheService cacheService;
 
-    public BybitApiMarketDataService(BybitApiMarketRestClient marketDataClient, RedisTemplate<String, Object> redisTemplate, CacheService cacheService) {
+    public BybitMarketDataService(BybitApiMarketRestClient marketDataClient, RedisTemplate<String, Object> redisTemplate, CacheService cacheService) {
         this.marketDataClient = marketDataClient;
         this.redisTemplate = redisTemplate;
         this.cacheService = cacheService;

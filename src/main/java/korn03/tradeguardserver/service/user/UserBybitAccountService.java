@@ -1,7 +1,6 @@
 package korn03.tradeguardserver.service.user;
 
 import korn03.tradeguardserver.model.entity.BybitAccount;
-import korn03.tradeguardserver.model.entity.User;
 import korn03.tradeguardserver.model.repository.BybitAccountRepository;
 import korn03.tradeguardserver.service.core.EncryptionService;
 import org.springframework.stereotype.Service;
@@ -10,12 +9,12 @@ import java.util.List;
 import java.util.Optional;
 
 @Service
-public class BybitAccountService {
+public class UserBybitAccountService {
 
     private final BybitAccountRepository accountRepository;
     private final EncryptionService encryptionService;
 
-    public BybitAccountService(BybitAccountRepository accountRepository, EncryptionService encryptionService) {
+    public UserBybitAccountService(BybitAccountRepository accountRepository, EncryptionService encryptionService) {
         this.accountRepository = accountRepository;
         this.encryptionService = encryptionService;
     }
