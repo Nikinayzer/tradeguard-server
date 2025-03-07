@@ -11,8 +11,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
-import java.math.BigDecimal;
-import java.time.Duration;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -49,20 +47,6 @@ public class UserController {
     public ResponseEntity<UserDTO> getUserById(@PathVariable Long id) {
         User user = userService.loadUserById(id.intValue());
         return ResponseEntity.ok(convertToDTO(user));
-    }
-
-    @PostMapping
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<UserDTO> createUser(@RequestBody UserCreateRequestDTO request) {
-        User user = new User();
-        user.setUsername(request.getUsername());
-        user.setPassword(request.getPassword());
-        user.setEmail(request.getEmail());
-        user.setFirstName(request.getFirstName());
-        user.setLastName(request.getLastName());
-        
-        User createdUser = userService.createUser(user);
-        return ResponseEntity.ok(convertToDTO(createdUser));
     }
 
     @PutMapping("/me")
