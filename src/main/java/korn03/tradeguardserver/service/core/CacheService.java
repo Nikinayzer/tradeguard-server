@@ -1,4 +1,4 @@
-package korn03.tradeguardserver.service;
+package korn03.tradeguardserver.service.core;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;

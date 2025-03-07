@@ -1,4 +1,4 @@
-package korn03.tradeguardserver.service;
+package korn03.tradeguardserver.service.core;
 
 import javax.crypto.Cipher;
 import javax.crypto.spec.SecretKeySpec;

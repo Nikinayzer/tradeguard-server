@@ -1,7 +1,7 @@
 package korn03.tradeguardserver.endpoints.controller.market;
 
 import korn03.tradeguardserver.endpoints.dto.MarketDataDTO;
-import korn03.tradeguardserver.service.bybit.BybitMarketDataService;
+import korn03.tradeguardserver.service.bybit.BybitApiMarketDataService;
 import org.knowm.xchange.currency.CurrencyPair;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -13,9 +13,9 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/market")
 public class MarketDataController {
 
-    private final BybitMarketDataService marketDataService;
+    private final BybitApiMarketDataService marketDataService;
 
-    public MarketDataController(BybitMarketDataService marketDataService) {
+    public MarketDataController(BybitApiMarketDataService marketDataService) {
         this.marketDataService = marketDataService;
     }
 

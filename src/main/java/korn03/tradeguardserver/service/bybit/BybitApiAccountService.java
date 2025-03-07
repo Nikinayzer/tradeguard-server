@@ -10,11 +10,11 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 @Service
-public class BybitAccountService {
+public class BybitApiAccountService {
 
     private final BybitApiClientManager apiClientManager;
 
-    public BybitAccountService(BybitApiClientManager apiClientManager) {
+    public BybitApiAccountService(BybitApiClientManager apiClientManager) {
         this.apiClientManager = apiClientManager;
     }
 

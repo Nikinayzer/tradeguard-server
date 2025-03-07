@@ -7,7 +7,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.annotation.PostConstruct;
 import korn03.tradeguardserver.endpoints.dto.InstrumentInfoDTO;
 import korn03.tradeguardserver.endpoints.dto.MarketDataDTO;
-import korn03.tradeguardserver.service.CacheService;
+import korn03.tradeguardserver.service.core.CacheService;
 import org.knowm.xchange.currency.CurrencyPair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,9 +20,9 @@ import java.util.List;
 import java.util.Map;
 
 @Service
-public class BybitMarketDataService {
+public class BybitApiMarketDataService {
 
-    private static final Logger logger = LoggerFactory.getLogger(BybitMarketDataService.class);
+    private static final Logger logger = LoggerFactory.getLogger(BybitApiMarketDataService.class);
 
     private static final String MARKET_KEY_PREFIX = "market_data:";
     private static final Duration CACHE_EXPIRATION = Duration.ofSeconds(60);
@@ -31,7 +31,7 @@ public class BybitMarketDataService {
     private final ObjectMapper objectMapper;
     private final CacheService cacheService;
 
-    public BybitMarketDataService(BybitApiMarketRestClient marketDataClient, RedisTemplate<String, Object> redisTemplate, CacheService cacheService) {
+    public BybitApiMarketDataService(BybitApiMarketRestClient marketDataClient, RedisTemplate<String, Object> redisTemplate, CacheService cacheService) {
         this.marketDataClient = marketDataClient;
         this.redisTemplate = redisTemplate;
         this.cacheService = cacheService;

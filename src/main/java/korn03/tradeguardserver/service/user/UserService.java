@@ -1,4 +1,4 @@
-package korn03.tradeguardserver.service;
+package korn03.tradeguardserver.service.user;
 
 import korn03.tradeguardserver.model.entity.Role;
 import korn03.tradeguardserver.model.entity.User;

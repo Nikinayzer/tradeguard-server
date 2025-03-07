@@ -12,11 +12,11 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 @Service
-public class BybitTradeService {
+public class BybitApiTradeService {
 
     private final BybitApiAsyncTradeRestClient tradeClient;
 
-    public BybitTradeService(BybitApiAsyncTradeRestClient tradeClient) {
+    public BybitApiTradeService(BybitApiAsyncTradeRestClient tradeClient) {
         this.tradeClient = tradeClient;
     }
 

@@ -3,7 +3,7 @@ package korn03.tradeguardserver.scheduler;
 import jakarta.annotation.PostConstruct;
 import korn03.tradeguardserver.model.entity.Role;
 import korn03.tradeguardserver.model.entity.User;
-import korn03.tradeguardserver.service.UserService;
+import korn03.tradeguardserver.service.user.UserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;

@@ -1,6 +1,6 @@
 package korn03.tradeguardserver.security;
 
-import korn03.tradeguardserver.service.UserService;
+import korn03.tradeguardserver.service.user.UserService;
 import org.springframework.security.core.userdetails.*;
 import org.springframework.stereotype.Service;
 

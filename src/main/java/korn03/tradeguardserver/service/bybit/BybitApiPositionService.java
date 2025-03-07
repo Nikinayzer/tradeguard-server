@@ -10,11 +10,11 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 @Service
-public class BybitPositionService {
+public class BybitApiPositionService {
 
     private final BybitApiAsyncPositionRestClient positionClient;
 
-    public BybitPositionService(BybitApiAsyncPositionRestClient positionClient) {
+    public BybitApiPositionService(BybitApiAsyncPositionRestClient positionClient) {
         this.positionClient = positionClient;
     }
 
