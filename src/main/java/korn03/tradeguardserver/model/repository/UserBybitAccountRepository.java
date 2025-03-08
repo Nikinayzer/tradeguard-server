@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface BybitAccountRepository extends JpaRepository<UserBybitAccount, Long> {
+public interface UserBybitAccountRepository extends JpaRepository<UserBybitAccount, Long> {
     List<UserBybitAccount> findByUserId(Long userId);
     Optional<UserBybitAccount> findByUserIdAndAccountName(Long userId, String accountName);
 }

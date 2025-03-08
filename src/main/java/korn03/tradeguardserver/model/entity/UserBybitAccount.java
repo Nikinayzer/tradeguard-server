@@ -18,9 +18,17 @@ public class UserBybitAccount {
     @Column(name = "account_name", nullable = false)
     private String accountName;
 
-    @Column(nullable = false)
-    private String encryptedApiKey;
+    // Read-only pair
+    @Column(name = "readonly_api_key", nullable = false)
+    private String encryptedReadOnlyApiKey;
 
-    @Column(nullable = false)
-    private String encryptedApiSecret;
+    @Column(name = "readonly_api_secret", nullable = false)
+    private String encryptedReadOnlyApiSecret;
+
+    // Read-write pair
+    @Column(name = "readwrite_api_key", nullable = false)
+    private String encryptedReadWriteApiKey;
+
+    @Column(name = "readwrite_api_secret", nullable = false)
+    private String encryptedReadWriteApiSecret;
 }
