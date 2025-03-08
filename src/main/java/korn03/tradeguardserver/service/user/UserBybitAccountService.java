@@ -64,8 +64,13 @@ public class UserBybitAccountService {
         return encryptionService.decrypt(account.getEncryptedReadWriteApiSecret());
     }
 
-    //this should mask all symbols except last 4
     public String getMaskedToken(String token) {
-        return token.substring(0, token.length() - 4).replaceAll("\\.", "*") + token.substring(token.length() - 4);
+        if (token == null || token.length() < 6) {
+            return "****"; // Fallback for shorties
+        }
+
+        int maskLength = token.length() - 6;
+        return "*".repeat(maskLength) + token.substring(maskLength);
     }
+
 }

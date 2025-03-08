@@ -14,6 +14,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 @RestController
@@ -185,10 +186,19 @@ public class UserController {
     }
 
     private BybitAccountDTO convertToBybitAccountDTO(UserBybitAccount account) {
-        String maskedReadOnlyApiKey = userBybitAccountService.getMaskedToken(account.getEncryptedReadOnlyApiKey());
-        String maskedReadOnlyApiSecret = userBybitAccountService.getMaskedToken(account.getEncryptedReadOnlyApiSecret());
-        String maskedReadWriteApiKey = userBybitAccountService.getMaskedToken(account.getEncryptedReadWriteApiKey());
-        String maskedReadWriteApiSecret = userBybitAccountService.getMaskedToken(account.getEncryptedReadWriteApiSecret());
-        return BybitAccountDTO.builder().id(account.getId()).userId(account.getUserId()).name(account.getAccountName()).readOnlyApiKey(maskedReadOnlyApiKey).readOnlyApiSecret(maskedReadOnlyApiSecret).readWriteApiKey(maskedReadWriteApiKey).readWriteApiSecret(maskedReadWriteApiSecret).build();
+        return BybitAccountDTO.builder()
+                .id(account.getId())
+                .userId(account.getUserId())
+                .name(account.getAccountName())
+                .readOnlyApiKey(maskApiKey(() -> userBybitAccountService.getDecryptedReadOnlyApiKey(account)))
+                .readOnlyApiSecret(maskApiKey(() -> userBybitAccountService.getDecryptedReadOnlyApiSecret(account)))
+                .readWriteApiKey(maskApiKey(() -> userBybitAccountService.getDecryptedReadWriteApiKey(account)))
+                .readWriteApiSecret(maskApiKey(() -> userBybitAccountService.getDecryptedReadWriteApiSecret(account)))
+                .build();
+    }
+
+    private String maskApiKey(Supplier<String> keySupplier) {
+        String key = keySupplier.get();
+        return userBybitAccountService.getMaskedToken(key);
     }
 } 
