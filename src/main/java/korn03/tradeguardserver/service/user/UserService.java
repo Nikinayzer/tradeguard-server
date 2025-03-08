@@ -50,6 +50,10 @@ public class UserService {
         user.setUpdatedAt(Instant.now());
         return userRepository.save(user);
     }
+    public User updateUser(User user) {
+        user.setUpdatedAt(Instant.now());
+        return userRepository.save(user);
+    }
 
 
     public User addUserRole(String username, Role role) {

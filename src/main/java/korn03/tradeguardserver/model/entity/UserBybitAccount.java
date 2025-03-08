@@ -6,7 +6,7 @@ import lombok.Data;
 @Data
 @Entity
 @Table(name = "bybit_accounts", uniqueConstraints = @UniqueConstraint(columnNames = {"user_id", "account_name"}))
-public class BybitAccount {
+public class UserBybitAccount {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

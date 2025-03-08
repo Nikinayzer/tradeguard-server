@@ -11,6 +11,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -49,7 +50,7 @@ public class UserController {
         return ResponseEntity.ok(convertToDTO(user));
     }
 
-    @PutMapping("/me")
+    @PostMapping("/me")
     public ResponseEntity<UserDTO> updateCurrentUser(@RequestBody UserUpdateRequestDTO request) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         User user = (User) authentication.getPrincipal();
@@ -57,14 +58,13 @@ public class UserController {
         if (request.getEmail() != null) user.setEmail(request.getEmail());
         if (request.getFirstName() != null) user.setFirstName(request.getFirstName());
         if (request.getLastName() != null) user.setLastName(request.getLastName());
-        if (request.getNewPassword() != null && request.getOldPassword() != null) {
-            userService.changeUserPassword(user.getId(), request.getOldPassword(), request.getNewPassword());
-        }
-        
+
+        userService.updateUser(user);
+
         return ResponseEntity.ok(convertToDTO(user));
     }
 
-    @PutMapping("/{id}")
+    @PostMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<UserDTO> updateUser(@PathVariable Long id, @RequestBody UserUpdateRequestDTO request) {
         User user = userService.loadUserById(id.intValue());
@@ -72,10 +72,7 @@ public class UserController {
         if (request.getEmail() != null) user.setEmail(request.getEmail());
         if (request.getFirstName() != null) user.setFirstName(request.getFirstName());
         if (request.getLastName() != null) user.setLastName(request.getLastName());
-        if (request.getNewPassword() != null && request.getOldPassword() != null) {
-            userService.changeUserPassword(id, request.getOldPassword(), request.getNewPassword());
-        }
-        
+
         return ResponseEntity.ok(convertToDTO(user));
     }
 

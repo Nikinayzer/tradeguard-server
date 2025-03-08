@@ -4,7 +4,7 @@ import com.bybit.api.client.restApi.BybitApiAsyncAccountRestClient;
 import com.bybit.api.client.restApi.BybitApiAsyncPositionRestClient;
 import com.bybit.api.client.restApi.BybitApiAsyncTradeRestClient;
 import com.bybit.api.client.service.BybitApiClientFactory;
-import korn03.tradeguardserver.model.entity.BybitAccount;
+import korn03.tradeguardserver.model.entity.UserBybitAccount;
 import korn03.tradeguardserver.service.user.UserBybitAccountService;
 import korn03.tradeguardserver.service.core.EncryptionService;
 import org.springframework.stereotype.Component;
@@ -24,7 +24,7 @@ public class BybitApiClientManager {
      * Retrieves user-specific API credentials and initializes a Bybit client.
      */
     private BybitApiClientFactory getClientFactory(Long userId, String accountName) {
-        BybitAccount account = userBybitAccountService.getBybitAccount(userId, accountName).orElseThrow(() -> new RuntimeException("Bybit account not found"));
+        UserBybitAccount account = userBybitAccountService.getBybitAccount(userId, accountName).orElseThrow(() -> new RuntimeException("Bybit account not found"));
 
         String apiKey = encryptionService.decrypt(account.getEncryptedApiKey());
         String apiSecret = encryptionService.decrypt(account.getEncryptedApiSecret());
