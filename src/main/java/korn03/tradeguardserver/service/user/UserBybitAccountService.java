@@ -36,16 +36,16 @@ public class UserBybitAccountService {
         account.setEncryptedReadWriteApiSecret(encryptionService.encrypt(readWriteApiSecret));
         return accountRepository.save(account);
     }
-//    public User getUserByBybitAccountId(Long accountId) {
-//        return accountRepository.findById(accountId).map(UserBybitAccount::getUserId).map(User::new).orElse(null);
-//    }
 
     public List<UserBybitAccount> getUserBybitAccounts(Long userId) {
         return accountRepository.findByUserId(userId);
     }
 
-    public Optional<UserBybitAccount> getBybitAccount(Long userId, String accountName) {
-        return accountRepository.findByUserIdAndAccountName(userId, accountName);
+    public Optional<UserBybitAccount> getBybitAccount(Long userId, Long id) {
+        return accountRepository.findByUserIdAndId(userId, id);
+    }
+    public void deleteBybitAccount(Long userId, Long id) {
+        accountRepository.deleteByUserIdAndId(userId, id);
     }
 
     public String getDecryptedReadOnlyApiKey(UserBybitAccount account) {
@@ -62,5 +62,10 @@ public class UserBybitAccountService {
 
     public String getDecryptedReadWriteApiSecret(UserBybitAccount account) {
         return encryptionService.decrypt(account.getEncryptedReadWriteApiSecret());
+    }
+
+    //this should mask all symbols except last 4
+    public String getMaskedToken(String token) {
+        return token.substring(0, token.length() - 4).replaceAll("\\.", "*") + token.substring(token.length() - 4);
     }
 }

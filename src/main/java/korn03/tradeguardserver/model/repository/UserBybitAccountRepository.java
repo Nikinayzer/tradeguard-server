@@ -10,5 +10,6 @@ import java.util.Optional;
 @Repository
 public interface UserBybitAccountRepository extends JpaRepository<UserBybitAccount, Long> {
     List<UserBybitAccount> findByUserId(Long userId);
-    Optional<UserBybitAccount> findByUserIdAndAccountName(Long userId, String accountName);
+    Optional<UserBybitAccount> findByUserIdAndId(Long userId, Long id);
+    void deleteByUserIdAndId(Long userId, Long id);
 }
