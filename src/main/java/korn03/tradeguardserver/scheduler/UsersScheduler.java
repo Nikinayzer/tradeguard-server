@@ -30,7 +30,6 @@ public class UsersScheduler {
     @Value("${tradeguard.default.admin.password}")
     private String adminPassword;
 
-    // Bybit API keys for default accounts
     @Value("${tradeguard.default.bybit.readonly.key:}")
     private String defaultReadOnlyApiKey;
     @Value("${tradeguard.default.bybit.readonly.secret:}")
@@ -49,9 +48,7 @@ public class UsersScheduler {
      * Initializing default users and their Bybit accounts
      */
     @PostConstruct
-    //@EventListener(ApplicationReadyEvent.class)
     public void initDefaultUser() {
-        // Create default user
         if (!userService.userExists(userUsername)) {
             User user = new User();
             user.setUsername(userUsername);
@@ -63,7 +60,6 @@ public class UsersScheduler {
             logger.info("Default user created: {}", userUsername);
         }
 
-        // Create admin user
         if (!userService.userExists(adminUsername)) {
             User admin = new User();
             admin.setUsername(adminUsername);

@@ -38,9 +38,7 @@ public class UserService {
     }
 
     public User createUser(User user) {
-        if (user.getAuthorities() == null || user.getAuthorities().isEmpty()) user.setRoles(Set.of(Role.USER));
-        if (user.getRegisteredAt() == null) user.setRegisteredAt(Instant.now());
-        user.setUpdatedAt(Instant.now());
+        user.setRoles(Set.of(Role.USER));
         user.setPassword(passwordEncoder.encode(user.getPassword()));
         user.setAccountNonExpired(true);
         user.setAccountNonLocked(true);

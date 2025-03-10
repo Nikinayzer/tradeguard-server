@@ -45,7 +45,6 @@ public class AuthController {
 
         User createdUser = userService.createUser(user);
 
-        // Generate token for the new user
         String token = jwtService.generateToken(createdUser);
         return ResponseEntity.ok(new AuthResponseDTO(token));
     }
