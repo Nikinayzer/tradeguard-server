@@ -1,6 +1,6 @@
 package korn03.tradeguardserver.endpoints.dto.user;
 
-import korn03.tradeguardserver.model.entity.Role;
+import korn03.tradeguardserver.model.entity.user.Role;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

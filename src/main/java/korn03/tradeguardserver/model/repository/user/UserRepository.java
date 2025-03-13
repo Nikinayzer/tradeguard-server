@@ -1,14 +1,16 @@
-package korn03.tradeguardserver.model.repository;
+package korn03.tradeguardserver.model.repository.user;
 
 import jakarta.persistence.LockModeType;
-import korn03.tradeguardserver.model.entity.User;
+import korn03.tradeguardserver.model.entity.user.User;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
+import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
 
+@Repository
 public interface UserRepository extends JpaRepository<User, Long> {
 
     @NotNull

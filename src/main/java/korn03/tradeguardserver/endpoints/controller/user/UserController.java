@@ -1,9 +1,11 @@
 package korn03.tradeguardserver.endpoints.controller.user;
 
 import korn03.tradeguardserver.endpoints.dto.user.*;
-import korn03.tradeguardserver.model.entity.Role;
-import korn03.tradeguardserver.model.entity.User;
-import korn03.tradeguardserver.model.entity.UserBybitAccount;
+import korn03.tradeguardserver.endpoints.dto.user.UserAccountLimits.UpdateUserAccountLimitsRequestDTO;
+import korn03.tradeguardserver.endpoints.dto.user.UserAccountLimits.UserAccountLimitsDTO;
+import korn03.tradeguardserver.mapper.UserAccountLimitsMapper;
+import korn03.tradeguardserver.model.entity.user.User;
+import korn03.tradeguardserver.model.entity.user.UserBybitAccount;
 import korn03.tradeguardserver.service.user.UserAccountLimitsService;
 import korn03.tradeguardserver.service.user.UserBybitAccountService;
 import korn03.tradeguardserver.service.user.UserService;
@@ -24,11 +26,13 @@ public class UserController {
     private final UserService userService;
     private final UserAccountLimitsService userAccountLimitsService;
     private final UserBybitAccountService userBybitAccountService;
+    private final UserAccountLimitsMapper userAccountLimitsMapper;
 
-    public UserController(UserService userService, UserAccountLimitsService userAccountLimitsService, UserBybitAccountService userBybitAccountService) {
+    public UserController(UserService userService, UserAccountLimitsService userAccountLimitsService, UserBybitAccountService userBybitAccountService, UserAccountLimitsMapper userAccountLimitsMapper) {
         this.userService = userService;
         this.userAccountLimitsService = userAccountLimitsService;
         this.userBybitAccountService = userBybitAccountService;
+        this.userAccountLimitsMapper = userAccountLimitsMapper;
     }
 
     @GetMapping
@@ -85,53 +89,6 @@ public class UserController {
         return ResponseEntity.ok().build();
     }
 
-    @PostMapping("/{id}/roles/{role}")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<UserDTO> addUserRole(@PathVariable Long id, @PathVariable Role role) {
-        User user = userService.loadUserById(id.intValue());
-        userService.addUserRole(user.getUsername(), role);
-        return ResponseEntity.ok(convertToDTO(user));
-    }
-
-    @DeleteMapping("/{id}/roles/{role}")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<UserDTO> removeUserRole(@PathVariable Long id, @PathVariable Role role) {
-        User user = userService.loadUserById(id.intValue());
-        userService.removeUserRole(user.getUsername(), role);
-        return ResponseEntity.ok(convertToDTO(user));
-    }
-
-    // User Account Limits endpoints
-    @GetMapping("/me/limits")
-    public ResponseEntity<UserAccountLimitsDTO> getCurrentUserLimits() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        User user = (User) authentication.getPrincipal();
-        return userAccountLimitsService.getUserLimits(user.getId()).map(this::convertToLimitsDTO).map(ResponseEntity::ok).orElse(ResponseEntity.notFound().build());
-    }
-
-    @GetMapping("/{id}/limits")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<UserAccountLimitsDTO> getUserLimits(@PathVariable Long id) {
-        return userAccountLimitsService.getUserLimits(id).map(this::convertToLimitsDTO).map(ResponseEntity::ok).orElse(ResponseEntity.notFound().build());
-    }
-
-    @PutMapping("/me/limits")
-    public ResponseEntity<UserAccountLimitsDTO> updateCurrentUserLimits(@RequestBody UserAccountLimitsRequestDTO request) {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        User user = (User) authentication.getPrincipal();
-
-        var limits = userAccountLimitsService.updateUserLimits(user.getId(), request.getDailyTradingLimit(), request.getMaximumLeverage(), request.getTradingCooldown(), request.getDailyLossLimit());
-        return ResponseEntity.ok(convertToLimitsDTO(limits));
-    }
-
-    @PutMapping("/{id}/limits")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<UserAccountLimitsDTO> updateUserLimits(@PathVariable Long id, @RequestBody UserAccountLimitsRequestDTO request) {
-        var limits = userAccountLimitsService.updateUserLimits(id, request.getDailyTradingLimit(), request.getMaximumLeverage(), request.getTradingCooldown(), request.getDailyLossLimit());
-        return ResponseEntity.ok(convertToLimitsDTO(limits));
-    }
-
-    // Bybit Account endpoints
     @GetMapping("/me/bybit-accounts")
     public ResponseEntity<List<BybitAccountDTO>> getCurrentUserBybitAccounts() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -147,12 +104,20 @@ public class UserController {
         return ResponseEntity.ok(accounts);
     }
 
-    @PostMapping("/me/bybit-accounts")
+    @PostMapping("/me/bybit-accounts/add")
     public ResponseEntity<BybitAccountDTO> createCurrentUserBybitAccount(@RequestBody BybitAccountRequestDTO request) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         User user = (User) authentication.getPrincipal();
         UserBybitAccount account = userBybitAccountService.saveBybitAccount(user.getId(), request.getName(), request.getReadOnlyApiKey(), request.getReadOnlyApiSecret(), request.getReadWriteApiKey(), request.getReadWriteApiSecret());
         return ResponseEntity.ok(convertToBybitAccountDTO(account));
+    }
+
+    @PostMapping("/me/bybit-accounts/delete")
+    public ResponseEntity<BybitAccountDTO> deleteCurrentUserBybitAccount(@RequestBody BybitAccountRequestDTO request) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        User user = (User) authentication.getPrincipal();
+        userBybitAccountService.deleteBybitAccount(user.getId(), request.getId());
+        return ResponseEntity.ok().build();
     }
 
     @PostMapping("/{userId}/bybit-accounts")
@@ -177,28 +142,31 @@ public class UserController {
         return ResponseEntity.ok().build();
     }
 
+    @GetMapping("/me/limits")
+    public ResponseEntity<UserAccountLimitsDTO> getCurrentUserLimits() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        User user = (User) authentication.getPrincipal();
+        return ResponseEntity.ok(userAccountLimitsService.getLimitsByUserId(user.getId()));
+    }
+
+    @PutMapping("/me/limits")
+    public ResponseEntity<UserAccountLimitsDTO> updateCurrentUserLimits(@RequestBody UpdateUserAccountLimitsRequestDTO request) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        User user = (User) authentication.getPrincipal();
+        userAccountLimitsService.updateUserLimits(user.getId(), request);
+        return ResponseEntity.ok(userAccountLimitsService.updateUserLimits(user.getId(), request));
+    }
+
     private UserDTO convertToDTO(User user) {
         return UserDTO.builder().id(user.getId()).username(user.getUsername()).email(user.getEmail()).firstName(user.getFirstName()).lastName(user.getLastName()).registeredAt(user.getRegisteredAt()).updatedAt(user.getUpdatedAt()).roles(user.getRoles()).accountNonExpired(user.isAccountNonExpired()).accountNonLocked(user.isAccountNonLocked()).credentialsNonExpired(user.isCredentialsNonExpired()).enabled(user.isEnabled()).build();
     }
 
-    private UserAccountLimitsDTO convertToLimitsDTO(korn03.tradeguardserver.model.entity.UserAccountLimits limits) {
-        return UserAccountLimitsDTO.builder().id(limits.getId()).userId(limits.getUser().getId()).dailyTradingLimit(limits.getDailyTradingLimit()).maximumLeverage(limits.getMaximumLeverage()).tradingCooldown(limits.getTradingCooldown()).dailyLossLimit(limits.getDailyLossLimit()).build();
-    }
-
     private BybitAccountDTO convertToBybitAccountDTO(UserBybitAccount account) {
-        return BybitAccountDTO.builder()
-                .id(account.getId())
-                .userId(account.getUserId())
-                .name(account.getAccountName())
-                .readOnlyApiKey(maskApiKey(() -> userBybitAccountService.getDecryptedReadOnlyApiKey(account)))
-                .readOnlyApiSecret(maskApiKey(() -> userBybitAccountService.getDecryptedReadOnlyApiSecret(account)))
-                .readWriteApiKey(maskApiKey(() -> userBybitAccountService.getDecryptedReadWriteApiKey(account)))
-                .readWriteApiSecret(maskApiKey(() -> userBybitAccountService.getDecryptedReadWriteApiSecret(account)))
-                .build();
+        return BybitAccountDTO.builder().id(account.getId()).userId(account.getUserId()).name(account.getAccountName()).readOnlyApiKey(maskApiKey(() -> userBybitAccountService.getDecryptedReadOnlyApiKey(account))).readOnlyApiSecret(maskApiKey(() -> userBybitAccountService.getDecryptedReadOnlyApiSecret(account))).readWriteApiKey(maskApiKey(() -> userBybitAccountService.getDecryptedReadWriteApiKey(account))).readWriteApiSecret(maskApiKey(() -> userBybitAccountService.getDecryptedReadWriteApiSecret(account))).build();
     }
 
     private String maskApiKey(Supplier<String> keySupplier) {
         String key = keySupplier.get();
         return userBybitAccountService.getMaskedToken(key);
     }
-} 
+}

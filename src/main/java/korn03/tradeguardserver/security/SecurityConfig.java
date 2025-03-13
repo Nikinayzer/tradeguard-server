@@ -28,6 +28,7 @@ public class SecurityConfig {
                         .requestMatchers("/auth/**").permitAll()
                         .requestMatchers("/market","/market/**").permitAll()
                         .requestMatchers("/error").permitAll()
+                        .requestMatchers("/jobs/**").permitAll() //do something with it lol
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);

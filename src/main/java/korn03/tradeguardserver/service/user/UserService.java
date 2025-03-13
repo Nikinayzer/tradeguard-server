@@ -1,8 +1,8 @@
 package korn03.tradeguardserver.service.user;
 
-import korn03.tradeguardserver.model.entity.Role;
-import korn03.tradeguardserver.model.entity.User;
-import korn03.tradeguardserver.model.repository.UserRepository;
+import korn03.tradeguardserver.model.entity.user.Role;
+import korn03.tradeguardserver.model.entity.user.User;
+import korn03.tradeguardserver.model.repository.user.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -18,11 +18,13 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final UserAccountLimitsService userAccountLimitsService;
 
     @Autowired
-    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, UserAccountLimitsService userAccountLimitsService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.userAccountLimitsService = userAccountLimitsService;
     }
 
     public List<User> getAllUsers() {
@@ -46,11 +48,13 @@ public class UserService {
         user.setEnabled(true);
         user.setRegisteredAt(Instant.now());
         user.setUpdatedAt(Instant.now());
-        return userRepository.save(user);
+        userRepository.save(user);
+        userAccountLimitsService.createDefaultLimits(user);
+        return userRepository.save(user); //todo fix this mess
     }
-    public User updateUser(User user) {
+    public void updateUser(User user) {
         user.setUpdatedAt(Instant.now());
-        return userRepository.save(user);
+        userRepository.save(user);
     }
 
 

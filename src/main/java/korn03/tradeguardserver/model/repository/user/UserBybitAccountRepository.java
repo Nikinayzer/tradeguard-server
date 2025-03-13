@@ -1,6 +1,6 @@
-package korn03.tradeguardserver.model.repository;
+package korn03.tradeguardserver.model.repository.user;
 
-import korn03.tradeguardserver.model.entity.UserBybitAccount;
+import korn03.tradeguardserver.model.entity.user.UserBybitAccount;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

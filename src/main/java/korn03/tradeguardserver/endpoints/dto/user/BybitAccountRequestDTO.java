@@ -4,6 +4,7 @@ import lombok.Data;
 
 @Data
 public class BybitAccountRequestDTO {
+    private Long id;
     private String name;
     private String readOnlyApiKey;
     private String readOnlyApiSecret;

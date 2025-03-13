@@ -3,7 +3,7 @@ package korn03.tradeguardserver.endpoints.controller;
 import korn03.tradeguardserver.endpoints.dto.auth.AuthRequestDTO;
 import korn03.tradeguardserver.endpoints.dto.auth.AuthResponseDTO;
 import korn03.tradeguardserver.endpoints.dto.auth.RegisterRequestDTO;
-import korn03.tradeguardserver.model.entity.User;
+import korn03.tradeguardserver.model.entity.user.User;
 import korn03.tradeguardserver.security.JwtService;
 import korn03.tradeguardserver.service.user.UserService;
 import org.springframework.http.ResponseEntity;
@@ -38,7 +38,7 @@ public class AuthController {
 
         User user = new User();
         user.setUsername(request.getUsername());
-        user.setPassword(request.getPassword());
+        user.setPassword(request.getPassword()); //todo hash
         user.setEmail(request.getEmail());
         user.setFirstName(request.getFirstName());
         user.setLastName(request.getLastName());

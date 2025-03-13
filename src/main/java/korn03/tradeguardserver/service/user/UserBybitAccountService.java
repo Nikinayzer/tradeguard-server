@@ -1,7 +1,7 @@
 package korn03.tradeguardserver.service.user;
 
-import korn03.tradeguardserver.model.entity.UserBybitAccount;
-import korn03.tradeguardserver.model.repository.UserBybitAccountRepository;
+import korn03.tradeguardserver.model.entity.user.UserBybitAccount;
+import korn03.tradeguardserver.model.repository.user.UserBybitAccountRepository;
 import korn03.tradeguardserver.service.core.EncryptionService;
 import org.springframework.stereotype.Service;
 

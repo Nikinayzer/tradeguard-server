@@ -1,12 +1,11 @@
 package korn03.tradeguardserver.scheduler;
 
 import jakarta.annotation.PostConstruct;
-import korn03.tradeguardserver.model.entity.Role;
-import korn03.tradeguardserver.model.entity.User;
+import korn03.tradeguardserver.model.entity.user.Role;
+import korn03.tradeguardserver.model.entity.user.User;
 import korn03.tradeguardserver.service.user.UserBybitAccountService;
 import korn03.tradeguardserver.service.user.UserService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -14,9 +13,9 @@ import java.time.Instant;
 import java.util.Set;
 
 @Component
+@Slf4j
 public class UsersScheduler {
 
-    private final Logger logger = LoggerFactory.getLogger(UsersScheduler.class);
 
     private final UserService userService;
     private final UserBybitAccountService bybitAccountService;
@@ -53,25 +52,28 @@ public class UsersScheduler {
             User user = new User();
             user.setUsername(userUsername);
             user.setPassword(userPassword);
+            user.setFirstName("Joe");
+            user.setLastName("Biden");
+            user.setEmail("joebiden@seznam.cz");
             user.setRoles(Set.of(Role.USER));
             user.setRegisteredAt(Instant.now());
             User createdUser = userService.createUser(user);
-//            createDefaultBybitAccount(createdUser.getId(), "Default");
-            logger.info("Default user created: {}", userUsername);
+            createDefaultBybitAccount(createdUser.getId(), "Default");
         }
 
         if (!userService.userExists(adminUsername)) {
             User admin = new User();
             admin.setUsername(adminUsername);
             admin.setPassword(adminPassword);
+            admin.setFirstName("Barack");
+            admin.setLastName("Obama");
+            admin.setEmail("barackobama@seznam.cz");
             admin.setRoles(Set.of(Role.USER, Role.ADMIN));
             admin.setRegisteredAt(Instant.now());
             User createdAdmin = userService.createUser(admin);
-            createDefaultBybitAccount(createdAdmin.getId(), "test");
-            logger.info("Default admin created: {}", adminUsername);
+            createDefaultBybitAccount(createdAdmin.getId(), "admins bybit");
         }
-
-        logger.info("DEFAULT USERS AND BYBIT ACCOUNTS CREATED");
+        log.debug("DEFAULT USERS AND BYBIT ACCOUNTS CREATED");
     }
 
     /**
@@ -90,12 +92,12 @@ public class UsersScheduler {
                     defaultReadWriteApiKey,
                     defaultReadWriteApiSecret
                 );
-                logger.info("Default Bybit account created for user ID: {}", userId);
+                log.info("Default Bybit account created for user ID: {}", userId);
             } catch (Exception e) {
-                logger.error("Failed to create default Bybit account for user ID: {}", userId, e);
+                log.error("Failed to create default Bybit account for user ID: {}", userId, e);
             }
         } else {
-            logger.warn("Skipping Bybit account creation - API keys not provided in properties");
+            log.warn("Skipping Bybit account creation - API keys not provided in properties");
         }
     }
 }
