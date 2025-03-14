@@ -12,6 +12,7 @@ import org.knowm.xchange.currency.CurrencyPair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -30,8 +31,6 @@ public class BybitMarketDataService {
     private static final Duration CACHE_EXPIRATION = Duration.ofSeconds(60);
     private static final String COUNTER_CURRENCY = "USDT";
     private final BybitApiMarketRestClient marketDataClient;
-    private final RedisTemplate<String, Object> redisTemplate;
-    private final ObjectMapper objectMapper;
     private final CacheService cacheService;
     private final ExecutorService executorService;
 
@@ -49,21 +48,15 @@ public class BybitMarketDataService {
 
     public BybitMarketDataService(BybitApiMarketRestClient marketDataClient, RedisTemplate<String, Object> redisTemplate, CacheService cacheService) {
         this.marketDataClient = marketDataClient;
-        this.redisTemplate = redisTemplate;
         this.cacheService = cacheService;
-        this.objectMapper = new ObjectMapper();
         this.executorService = Executors.newFixedThreadPool(10);
-    }
-
-    @PostConstruct
-    public void runOnStartup() {
-        fetchMarketData(CurrencyPair.BTC_USDT);
     }
 
     /**
      * Fetch market data for all supported cryptocurrencies.
      * @return Map of category to list of market data
      */
+    //todo scheduled
     public Map<String, List<MarketDataDTO>> fetchAllMarketData() {
         Map<String, List<MarketDataDTO>> result = new HashMap<>();
         
@@ -152,7 +145,6 @@ public class BybitMarketDataService {
             logger.info("Fetched market data for {} : {}", pair, marketData);
             return marketData;
         } catch (Exception e) {
-            logger.error("Failed to fetch market data for {}: {}", pair, e.getMessage());
             throw new RuntimeException("Failed to fetch market data for " + pair, e);
         }
     }
