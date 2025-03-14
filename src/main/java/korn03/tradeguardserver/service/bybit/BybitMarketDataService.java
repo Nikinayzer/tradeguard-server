@@ -3,8 +3,6 @@ package korn03.tradeguardserver.service.bybit;
 import com.bybit.api.client.domain.CategoryType;
 import com.bybit.api.client.domain.market.request.MarketDataRequest;
 import com.bybit.api.client.restApi.BybitApiMarketRestClient;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import jakarta.annotation.PostConstruct;
 import korn03.tradeguardserver.endpoints.dto.InstrumentInfoDTO;
 import korn03.tradeguardserver.endpoints.dto.MarketDataDTO;
 import korn03.tradeguardserver.service.core.CacheService;
@@ -12,7 +10,6 @@ import org.knowm.xchange.currency.CurrencyPair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -30,10 +27,6 @@ public class BybitMarketDataService {
     private static final String MARKET_KEY_PREFIX = "market_data:";
     private static final Duration CACHE_EXPIRATION = Duration.ofSeconds(60);
     private static final String COUNTER_CURRENCY = "USDT";
-    private final BybitApiMarketRestClient marketDataClient;
-    private final CacheService cacheService;
-    private final ExecutorService executorService;
-
     private static final Map<String, List<String>> CRYPTO_CATEGORIES = Map.of(
             "Major Cryptocurrencies", List.of("BTC", "ETH", "BNB", "XRP", "SOL"),
             "New Tokens", List.of("ENA", "AIXBT", "FARTCOIN"),
@@ -45,8 +38,11 @@ public class BybitMarketDataService {
             "Layer 2 Solutions", List.of("MATIC", "OP", "ARB", "IMX", "LRC"),
             "Emerging Tokens", List.of("APT", "SUI", "KAS", "RENDER", "GRT")
     );
+    private final BybitApiMarketRestClient marketDataClient;
+    private final CacheService cacheService;
+    private final ExecutorService executorService;
 
-    public BybitMarketDataService(BybitApiMarketRestClient marketDataClient, RedisTemplate<String, Object> redisTemplate, CacheService cacheService) {
+    public BybitMarketDataService(BybitApiMarketRestClient marketDataClient, CacheService cacheService) {
         this.marketDataClient = marketDataClient;
         this.cacheService = cacheService;
         this.executorService = Executors.newFixedThreadPool(10);
@@ -54,24 +50,26 @@ public class BybitMarketDataService {
 
     /**
      * Fetch market data for all supported cryptocurrencies.
+     *
      * @return Map of category to list of market data
      */
     //todo scheduled
     public Map<String, List<MarketDataDTO>> fetchAllMarketData() {
         Map<String, List<MarketDataDTO>> result = new HashMap<>();
-        
+
         for (Map.Entry<String, List<String>> category : CRYPTO_CATEGORIES.entrySet()) {
             List<MarketDataDTO> categoryData = fetchMarketDataForCoins(category.getValue());
             if (!categoryData.isEmpty()) {
                 result.put(category.getKey(), categoryData);
             }
         }
-        
+
         return result;
     }
 
     /**
      * Fetch market data for a list of coins in parallel.
+     *
      * @param coins List of coin symbols
      * @return List of MarketDataDTO
      */
@@ -140,7 +138,7 @@ public class BybitMarketDataService {
             InstrumentInfoDTO instrumentInfo = fetchInstrumentInfo(pair);
             marketData.setInstrumentInfo(instrumentInfo);
 
-            cacheService.storeInCache(cacheKey, marketData,CACHE_EXPIRATION);
+            cacheService.storeInCache(cacheKey, marketData, CACHE_EXPIRATION);
 
             logger.info("Fetched market data for {} : {}", pair, marketData);
             return marketData;
@@ -217,6 +215,7 @@ public class BybitMarketDataService {
 
     /**
      * Fetch market data for specific tokens.
+     *
      * @param tokens List of token symbols
      * @return List of market data for requested tokens
      */
@@ -226,6 +225,7 @@ public class BybitMarketDataService {
 
     /**
      * Fetch market data for a specific category.
+     *
      * @param category Category name
      * @return List of market data for the category, empty list if category not found
      */
@@ -240,6 +240,7 @@ public class BybitMarketDataService {
 
     /**
      * Get all categories with their tokens.
+     *
      * @return Map of category names to their token lists
      */
     public Map<String, List<String>> getAvailableCategories() {
@@ -248,6 +249,7 @@ public class BybitMarketDataService {
 
     /**
      * Get all available token symbols.
+     *
      * @return Set of token symbols
      */
     public Set<String> getAllAvailableTokens() {
