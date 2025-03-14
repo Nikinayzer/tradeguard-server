@@ -16,31 +16,107 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.Duration;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.stream.Collectors;
 
 @Service
 public class BybitMarketDataService {
 
     private static final Logger logger = LoggerFactory.getLogger(BybitMarketDataService.class);
-
     private static final String MARKET_KEY_PREFIX = "market_data:";
     private static final Duration CACHE_EXPIRATION = Duration.ofSeconds(60);
+    private static final String COUNTER_CURRENCY = "USDT";
     private final BybitApiMarketRestClient marketDataClient;
     private final RedisTemplate<String, Object> redisTemplate;
     private final ObjectMapper objectMapper;
     private final CacheService cacheService;
+    private final ExecutorService executorService;
+
+    private static final Map<String, List<String>> CRYPTO_CATEGORIES = Map.of(
+            "Major Cryptocurrencies", List.of("BTC", "ETH", "BNB", "XRP", "SOL"),
+            "New Tokens", List.of("ENA", "AIXBT", "FARTCOIN"),
+            "Favorites", List.of("XLM", "HBAR", "LINK", "TRX", "TON", "WLD"),
+            "Platform Tokens", List.of("ADA", "DOT", "AVAX", "ATOM", "NEAR"),
+            "DeFi Tokens", List.of("UNI", "AAVE", "SUSHI", "COMP", "MKR"),
+            "Privacy Coins", List.of("XMR", "ZEC", "DASH", "GRIN", "BEAM"),
+            "Memecoins", List.of("DOGE", "1000PEPE", "TRUMP", "WIF", "MOODENG"),
+            "Layer 2 Solutions", List.of("MATIC", "OP", "ARB", "IMX", "LRC"),
+            "Emerging Tokens", List.of("APT", "SUI", "KAS", "RENDER", "GRT")
+    );
 
     public BybitMarketDataService(BybitApiMarketRestClient marketDataClient, RedisTemplate<String, Object> redisTemplate, CacheService cacheService) {
         this.marketDataClient = marketDataClient;
         this.redisTemplate = redisTemplate;
         this.cacheService = cacheService;
         this.objectMapper = new ObjectMapper();
+        this.executorService = Executors.newFixedThreadPool(10);
     }
 
     @PostConstruct
     public void runOnStartup() {
         fetchMarketData(CurrencyPair.BTC_USDT);
+    }
+
+    /**
+     * Fetch market data for all supported cryptocurrencies.
+     * @return Map of category to list of market data
+     */
+    public Map<String, List<MarketDataDTO>> fetchAllMarketData() {
+        Map<String, List<MarketDataDTO>> result = new HashMap<>();
+        
+        for (Map.Entry<String, List<String>> category : CRYPTO_CATEGORIES.entrySet()) {
+            List<MarketDataDTO> categoryData = fetchMarketDataForCoins(category.getValue());
+            if (!categoryData.isEmpty()) {
+                result.put(category.getKey(), categoryData);
+            }
+        }
+        
+        return result;
+    }
+
+    /**
+     * Fetch market data for a list of coins in parallel.
+     * @param coins List of coin symbols
+     * @return List of MarketDataDTO
+     */
+    public List<MarketDataDTO> fetchMarketDataForCoins(List<String> coins) {
+        List<MarketDataDTO> result = new ArrayList<>();
+        List<String> coinsToFetch = new ArrayList<>();
+
+        for (String coin : coins) {
+            String cacheKey = MARKET_KEY_PREFIX + coin + COUNTER_CURRENCY;
+            MarketDataDTO cachedData = cacheService.getFromCache(cacheKey, MarketDataDTO.class);
+            if (cachedData != null) {
+                result.add(cachedData);
+            } else {
+                coinsToFetch.add(coin);
+            }
+        }
+
+        if (!coinsToFetch.isEmpty()) {
+            List<CompletableFuture<MarketDataDTO>> futures = coinsToFetch.stream()
+                    .map(coin -> CompletableFuture.supplyAsync(() -> {
+                        try {
+                            return fetchMarketData(new CurrencyPair(coin, COUNTER_CURRENCY));
+                        } catch (Exception e) {
+                            logger.warn("Failed to fetch market data for {}: {}", coin, e.getMessage());
+                            return null;
+                        }
+                    }, executorService))
+                    .toList();
+
+            List<MarketDataDTO> fetchedData = futures.stream()
+                    .map(CompletableFuture::join)
+                    .filter(Objects::nonNull)
+                    .toList();
+
+            result.addAll(fetchedData);
+        }
+
+        return result;
     }
 
     /**
@@ -59,7 +135,6 @@ public class BybitMarketDataService {
         MarketDataRequest request = MarketDataRequest.builder().category(CategoryType.LINEAR).symbol(pair.base.getSymbol() + pair.counter.getSymbol()).build();
 
         try {
-            // Fetch market data
             Object response = marketDataClient.getMarketTickers(request);
             Map<String, Object> marketResponse = (Map<String, Object>) response;
 
@@ -69,7 +144,6 @@ public class BybitMarketDataService {
 
             MarketDataDTO marketData = parseMarketDataResponse(pair, marketResponse);
 
-            // Fetch Instrument Info
             InstrumentInfoDTO instrumentInfo = fetchInstrumentInfo(pair);
             marketData.setInstrumentInfo(instrumentInfo);
 
@@ -147,6 +221,47 @@ public class BybitMarketDataService {
         marketData.setNextFundingTime(Long.parseLong((String) data.get("nextFundingTime")));
 
         return marketData;
+    }
+
+    /**
+     * Fetch market data for specific tokens.
+     * @param tokens List of token symbols
+     * @return List of market data for requested tokens
+     */
+    public List<MarketDataDTO> fetchSpecificTokens(List<String> tokens) {
+        return fetchMarketDataForCoins(tokens);
+    }
+
+    /**
+     * Fetch market data for a specific category.
+     * @param category Category name
+     * @return List of market data for the category, empty list if category not found
+     */
+    public List<MarketDataDTO> fetchCategoryData(String category) {
+        List<String> tokens = CRYPTO_CATEGORIES.get(category);
+        if (tokens == null) {
+            logger.warn("Category not found: {}", category);
+            return Collections.emptyList();
+        }
+        return fetchMarketDataForCoins(tokens);
+    }
+
+    /**
+     * Get all categories with their tokens.
+     * @return Map of category names to their token lists
+     */
+    public Map<String, List<String>> getAvailableCategories() {
+        return CRYPTO_CATEGORIES;
+    }
+
+    /**
+     * Get all available token symbols.
+     * @return Set of token symbols
+     */
+    public Set<String> getAllAvailableTokens() {
+        return CRYPTO_CATEGORIES.values().stream()
+                .flatMap(List::stream)
+                .collect(Collectors.toSet());
     }
 
 }
