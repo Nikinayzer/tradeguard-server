@@ -17,12 +17,12 @@ public class UpdateUserAccountLimitsRequestDTO {
     private String tradingCooldown;
     private String maxPortfolioRisk;
 
-    private String minDcaDiscount;
-    private String minDcaSteps;
+//    private String minDcaDiscount;
+//    private String minDcaSteps;
     private Boolean allowDcaForce;
 
-    private String minLiqTimeframe;
-    private String maxLiqProportion;
+//    private String minLiqTimeframe;
+//    private String maxLiqProportion;
     private Boolean allowLiqForce;
 
     private String dailyLossLimit;

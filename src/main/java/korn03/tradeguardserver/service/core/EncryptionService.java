@@ -19,6 +19,7 @@ public class EncryptionService {
 
     private final SecretKey secretKey;
 
+    //todo ENV IN PRODUCTION
     public EncryptionService(@Value("${encryption.key:5jS6N+5bisVPh75V}") String key) {
         byte[] keyBytes = key.getBytes(StandardCharsets.UTF_8);
         if (keyBytes.length != 16) {

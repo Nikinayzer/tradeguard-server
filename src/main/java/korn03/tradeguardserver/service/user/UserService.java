@@ -31,11 +31,11 @@ public class UserService {
         return userRepository.findAll();
     }
 
-    public User loadUserById(int id) throws UsernameNotFoundException {
+    public User getById(Long id) throws UsernameNotFoundException {
         return userRepository.findUserById(id).orElseThrow(() -> new UsernameNotFoundException("User not found"));
     }
 
-    public User loadUserByUsername(String username) throws UsernameNotFoundException {
+    public User getUserByUsername(String username) throws UsernameNotFoundException {
         return userRepository.findUserByUsername(username).orElseThrow(() -> new UsernameNotFoundException("User not found"));
     }
 

@@ -3,8 +3,8 @@ package korn03.tradeguardserver.client;
 import com.bybit.api.client.restApi.BybitApiAsyncAccountRestClient;
 import com.bybit.api.client.restApi.BybitApiAsyncPositionRestClient;
 import com.bybit.api.client.restApi.BybitApiAsyncTradeRestClient;
-import korn03.tradeguardserver.model.entity.user.UserBybitAccount;
-import korn03.tradeguardserver.service.user.UserBybitAccountService;
+import korn03.tradeguardserver.model.entity.user.connections.UserBybitAccount;
+import korn03.tradeguardserver.service.user.connection.UserBybitAccountService;
 import org.springframework.stereotype.Component;
 
 @Component

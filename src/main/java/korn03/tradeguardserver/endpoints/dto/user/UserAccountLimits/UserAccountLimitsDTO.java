@@ -23,13 +23,13 @@ public class UserAccountLimitsDTO {
     private Integer tradingCooldown;
 
     // DCA-Specific Limits
-    private BigDecimal minDcaDiscount;
-    private Integer minDcaSteps;
+//    private BigDecimal minDcaDiscount;
+//    private Integer minDcaSteps;
     private Boolean allowDcaForce;
 
     // LIQ-Specific Limits
-    private Integer minLiqTimeframe;
-    private BigDecimal maxLiqProportion;
+//    private Integer minLiqTimeframe;
+//    private BigDecimal maxLiqProportion;
     private Boolean allowLiqForce;
 
     // Continuous Monitoring Limits

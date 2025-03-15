@@ -47,17 +47,15 @@ public class UserAccountLimits {
     @Column(name = "trading_cooldown", nullable = false)
     private Integer tradingCooldown; // TIME GAP BETWEEN JOBS
 
-
-
     /*
      * DCA-Specific Pre-Trade Limits
      */
+//
+//    @Column(name = "min_dca_discount", nullable = false)
+//    private BigDecimal minDcaDiscount; // Min discount before executing DCA
 
-    @Column(name = "min_dca_discount", nullable = false)
-    private BigDecimal minDcaDiscount; // Min discount before executing DCA
-
-    @Column(name = "min_dca_steps", nullable = false)
-    private Integer minDcaSteps; // Min number of DCA executions per job
+//    @Column(name = "min_dca_steps", nullable = false)
+//    private Integer minDcaSteps; // Min number of DCA executions per job
 
     @Column(name = "allow_force_dca", nullable = false)
     private Boolean allowDcaForce; // DISABLE OR ENABLE FORCE DCA
@@ -66,11 +64,11 @@ public class UserAccountLimits {
      * LIQ-Specific Pre-Trade Limits
      */
 
-    @Column(name = "min_liq_timeframe", nullable = false)
-    private Integer minLiqTimeframe; // Prevents too-fast liquidations (in mins)
+//    @Column(name = "min_liq_timeframe", nullable = false)
+//    private Integer minLiqTimeframe; // Prevents too-fast liquidations (in mins)
 
-    @Column(name = "max_liq_proportion", nullable = false)
-    private BigDecimal maxLiqProportion; // Limits % of assets liquidated at once ??????
+//    @Column(name = "max_liq_proportion", nullable = false)
+//    private BigDecimal maxLiqProportion; // Limits % of assets liquidated at once ??????
 
     @Column(name = "allow_force_liq", nullable = false)
     private Boolean allowLiqForce; // DISABLE OR ENABLE FORCE LIQIDATION

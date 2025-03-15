@@ -1,7 +1,6 @@
 package korn03.tradeguardserver.security;
 
 import korn03.tradeguardserver.service.user.UserService;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.*;
 import org.springframework.stereotype.Service;
 
@@ -15,7 +14,7 @@ public class CustomUserDetailsService implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        return userService.loadUserByUsername(username);
+        return userService.getUserByUsername(username);
     }
 }
 

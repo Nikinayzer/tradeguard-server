@@ -1,4 +1,4 @@
-package korn03.tradeguardserver.model.entity.user;
+package korn03.tradeguardserver.model.entity.user.connections;
 
 import jakarta.persistence.*;
 import lombok.Data;

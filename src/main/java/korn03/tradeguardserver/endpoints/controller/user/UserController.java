@@ -5,9 +5,9 @@ import korn03.tradeguardserver.endpoints.dto.user.UserAccountLimits.UpdateUserAc
 import korn03.tradeguardserver.endpoints.dto.user.UserAccountLimits.UserAccountLimitsDTO;
 import korn03.tradeguardserver.mapper.UserAccountLimitsMapper;
 import korn03.tradeguardserver.model.entity.user.User;
-import korn03.tradeguardserver.model.entity.user.UserBybitAccount;
+import korn03.tradeguardserver.model.entity.user.connections.UserBybitAccount;
 import korn03.tradeguardserver.service.user.UserAccountLimitsService;
-import korn03.tradeguardserver.service.user.UserBybitAccountService;
+import korn03.tradeguardserver.service.user.connection.UserBybitAccountService;
 import korn03.tradeguardserver.service.user.UserService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -49,12 +49,6 @@ public class UserController {
         return ResponseEntity.ok(convertToDTO(user));
     }
 
-    @GetMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN') or @userService.loadUserById(#id).username == authentication.principal.username")
-    public ResponseEntity<UserDTO> getUserById(@PathVariable Long id) {
-        User user = userService.loadUserById(id.intValue());
-        return ResponseEntity.ok(convertToDTO(user));
-    }
 
     @PostMapping("/me")
     public ResponseEntity<UserDTO> updateCurrentUser(@RequestBody UserUpdateRequestDTO request) {
@@ -73,7 +67,7 @@ public class UserController {
     @PostMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<UserDTO> updateUser(@PathVariable Long id, @RequestBody UserUpdateRequestDTO request) {
-        User user = userService.loadUserById(id.intValue());
+        User user = userService.getById(id);
 
         if (request.getEmail() != null) user.setEmail(request.getEmail());
         if (request.getFirstName() != null) user.setFirstName(request.getFirstName());
@@ -98,7 +92,7 @@ public class UserController {
     }
 
     @GetMapping("/{userId}/bybit-accounts")
-    @PreAuthorize("hasRole('ADMIN') or @userService.loadUserById(#userId).username == authentication.principal.username")
+    @PreAuthorize("hasRole('ADMIN') or @userService.userById(#userId).username == authentication.principal.username")
     public ResponseEntity<List<BybitAccountDTO>> getUserBybitAccounts(@PathVariable Long userId) {
         List<BybitAccountDTO> accounts = userBybitAccountService.getUserBybitAccounts(userId).stream().map(this::convertToBybitAccountDTO).collect(Collectors.toList());
         return ResponseEntity.ok(accounts);
@@ -136,7 +130,7 @@ public class UserController {
     }
 
     @DeleteMapping("/{userId}/bybit-accounts/{id}")
-    @PreAuthorize("hasRole('ADMIN') or @userService.loadUserById(#userId).username == authentication.principal.username")
+    @PreAuthorize("hasRole('ADMIN') or @userService.userById(#userId).username == authentication.principal.username")
     public ResponseEntity<Void> deleteUserBybitAccount(@PathVariable Long userId, @PathVariable Long id) {
         userBybitAccountService.deleteBybitAccount(userId, id);
         return ResponseEntity.ok().build();
