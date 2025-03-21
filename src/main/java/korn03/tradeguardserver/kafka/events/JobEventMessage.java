@@ -3,6 +3,7 @@ package korn03.tradeguardserver.kafka.events;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -28,6 +29,7 @@ public class JobEventMessage {
     private Long userId;
 
     @JsonProperty("event_type")
+    @JsonDeserialize(using = JobEventTypeDeserializer.class)
     private JobEventType jobEventType;
 
     @JsonProperty("steps_done")

@@ -55,12 +55,12 @@ public interface JobMapper {
     @Named("mapStatus")
     default JobStatusType mapStatus(JobEventType eventType) {
         return switch (eventType) {
-            case CREATED -> JobStatusType.CREATED;
-            case PAUSED -> JobStatusType.PAUSED;
-            case CANCELED_ORDERS -> JobStatusType.CANCELED;
-            case STOPPED -> JobStatusType.STOPPED;
-            case FINISHED -> JobStatusType.FINISHED;
-            default -> JobStatusType.IN_PROGRESS;
+            case JobEventType.Created ignored        -> JobStatusType.CREATED;
+            case JobEventType.Paused ignored         -> JobStatusType.PAUSED;
+            case JobEventType.CanceledOrders ignored -> JobStatusType.CANCELED;
+            case JobEventType.Stopped ignored        -> JobStatusType.STOPPED;
+            case JobEventType.Finished ignored       -> JobStatusType.FINISHED;
+            default                                  -> JobStatusType.IN_PROGRESS;
         };
     }
 }
