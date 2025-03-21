@@ -1,5 +1,6 @@
 package korn03.tradeguardserver.kafka.events;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
@@ -32,13 +33,19 @@ public class JobEventMessage {
     @JsonProperty("steps_done")
     private Integer stepsDone;
 
+    @JsonProperty("name")
     private String name;
+
+    @JsonProperty("coins")
     private List<String> coins;
+
+    @JsonProperty("side")
     private String side;
 
     @JsonProperty("discount_pct")
     private Double discountPct;
 
+    @JsonProperty("amount")
     private Double amount;
 
     @JsonProperty("steps_total")
@@ -47,68 +54,6 @@ public class JobEventMessage {
     @JsonProperty("duration_minutes")
     private Double durationMinutes;
 
+    @JsonProperty("timestamp")
     private Instant timestamp;
-
-    public static JobEventMessage createNewJob(
-            Long jobId,
-            Long userId,
-            String name,
-            List<String> coins,
-            String side,
-            Double discountPct,
-            Double amount,
-            Integer stepsTotal,
-            Double durationMinutes
-    ) {
-        return JobEventMessage.builder()
-                .jobId(jobId)
-                .userId(userId)
-                .jobEventType(JobEventType.of("Created"))
-                .stepsDone(0)
-                .name(name)
-                .coins(coins)
-                .side(side)
-                .discountPct(discountPct)
-                .amount(amount)
-                .stepsTotal(stepsTotal)
-                .durationMinutes(durationMinutes)
-                .timestamp(Instant.now())
-                .build();
-    }
-
-    public static JobEventMessage createPausedJob(
-            Long jobId,
-            Integer stepsDone
-    ) {
-        return JobEventMessage.builder()
-                .jobId(jobId)
-                .jobEventType(JobEventType.of("Paused"))
-                .stepsDone(stepsDone)
-                .timestamp(Instant.now())
-                .build();
-    }
-
-    public static JobEventMessage createResumedJob(
-            Long jobId,
-            Integer stepsDone
-    ) {
-        return JobEventMessage.builder()
-                .jobId(jobId)
-                .jobEventType(JobEventType.of("Resumed"))
-                .stepsDone(stepsDone)
-                .timestamp(Instant.now())
-                .build();
-    }
-
-    public static JobEventMessage createCanceledOrdersJob(
-            Long jobId,
-            Integer stepsDone
-    ) {
-        return JobEventMessage.builder()
-                .jobId(jobId)
-                .jobEventType(JobEventType.of("CanceledOrders"))
-                .stepsDone(stepsDone)
-                .timestamp(Instant.now())
-                .build();
-    }
 }

@@ -1,82 +1,44 @@
 package korn03.tradeguardserver.kafka.events;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonEnumDefaultValue;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonValue;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
+import lombok.val;
 
-/**
- * Represents different types of job events in the system.
- */
-@Getter
-@AllArgsConstructor
-public class JobEventType {
-    private final JobEventTypeEnum type;
+import java.util.Arrays;
 
-    /**
-     * Factory method for creating an JobEventType instance.
-     */
-    public static JobEventType of(String eventType) {
-        return new JobEventType(JobEventTypeEnum.fromString(eventType));
-    }
+public enum JobEventType {
+    CREATED,
+    PAUSED,
+    RESUMED,
+    STEP_DONE,
+    CANCELED_ORDERS,
+    STOPPED,
+    FINISHED,
+    @JsonEnumDefaultValue UNKNOWN;
 
-    /**
-     * JSON Deserialization Handling.
-     */
+    //todo maybe configure ObjectMapper bean/ ACCEPT_CASE_INSENSITIVE_ENUMS in Kafka
     @JsonCreator
-    public static JobEventType create(String value) {
-        return of(value);
-    }
-
-    /**
-     * JSON Serialization Handling.
-     */
-    @JsonValue
-    public String toJson() {
-        return type.name();
-    }
-
-    @Override
-    public String toString() {
-        return type.name();
-    }
-
-    /**
-     * Possible event types. Unknown is used as a fallback to not crush the runtime.
-     */
-    public enum JobEventTypeEnum {
-        CREATED,
-        PAUSED,
-        RESUMED,
-        STEP_DONE,
-        CANCELED_ORDERS,
-        STOPPED,
-        FINISHED,
-        UNKNOWN;
-
-        @JsonCreator
-        public static JobEventTypeEnum fromString(String value) {
-            for (JobEventTypeEnum type : values()) {
-                if (toCamelCase(type.name()).equalsIgnoreCase(value)) {
-                    return type;
-                }
-            }
+    public static JobEventType fromString(String value) {
+        if (value == null || value.isBlank()) {
             return UNKNOWN;
         }
+        //todo maybe soomething more robust/global configuration
+        String normalizedValue = value
+                .trim()
+                .replaceAll("([a-z])([A-Z])", "$1_$2")
+                .replaceAll("[-]", "_")
+                .toUpperCase(); // Convert to ENUM format
 
-        /**
-         * Converts an enum name to camel case.
-         * e.g.  STEP_DONE -> stepDone
-         * @param enumName The enum name to convert
-         * @return The enum name in camel case
-         */
-        private static String toCamelCase(String enumName) {
-            String[] parts = enumName.toLowerCase().split("_");
-            StringBuilder camelCaseName = new StringBuilder(parts[0]);
-            for (int i = 1; i < parts.length; i++) {
-                camelCaseName.append(Character.toUpperCase(parts[i].charAt(0))).append(parts[i].substring(1));
-            }
-            return camelCaseName.toString();
-        }
+        return Arrays.stream(values())
+                .filter(type -> type.name().equals(normalizedValue))
+                .findFirst()
+                .orElse(UNKNOWN);
+    }
+
+    @JsonValue
+    public String toJson() {
+        return name();
     }
 }

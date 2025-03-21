@@ -14,6 +14,7 @@ import java.math.BigDecimal;
 //@JsonIgnoreProperties(ignoreUnknown = true)
 public class MarketDataDTO {
     private CurrencyPair instrument;
+//    private String category;
     private BigDecimal currentPrice;
     private BigDecimal change24h;
     private BigDecimal high24h;

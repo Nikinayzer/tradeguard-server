@@ -1,7 +1,6 @@
 package korn03.tradeguardserver.model.entity.job;
 
 import jakarta.persistence.*;
-import korn03.tradeguardserver.kafka.events.JobEventMessage;
 import korn03.tradeguardserver.kafka.events.JobEventType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -27,7 +26,7 @@ public class JobEvent {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "event_type", nullable = false)
-    private JobEventType.JobEventTypeEnum eventType;
+    private JobEventType eventType;
 
     @Column(name = "steps_done", nullable = false)
     private Integer stepsDone;
@@ -37,17 +36,4 @@ public class JobEvent {
 
     @Column(name = "timestamp", nullable = false)
     private Instant timestamp;
-
-    /**
-     * Converts a JobEventMessage into a JobEventEntity for persistence.
-     */
-    public static JobEvent fromJobEvent(JobEventMessage jobEventMessage) {
-        return JobEvent.builder()
-                .jobId(jobEventMessage.getJobId())
-                .eventType(jobEventMessage.getJobEventType().getType())
-                .stepsDone(jobEventMessage.getStepsDone())
-                .durationMinutes(jobEventMessage.getDurationMinutes())
-                .timestamp(jobEventMessage.getTimestamp())
-                .build();
-    }
 }

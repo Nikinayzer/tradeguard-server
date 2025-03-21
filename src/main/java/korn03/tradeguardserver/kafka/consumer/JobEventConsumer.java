@@ -19,52 +19,8 @@ public class JobEventConsumer {
 
     @KafkaListener(topics = "${kafka.topic.jobs}", groupId = "${spring.kafka.consumer.group-id}", containerFactory = "jobEventListenerFactory")
     public void consumeJobEvent(JobEventMessage jobEventMessage) {
-        if (jobEventMessage.getJobEventType() == null) {
-            log.warn("⚠️ Received event with null type: {}", jobEventMessage);
-            return;
-        }
+        log.info("RAW MESSAGE: {}", jobEventMessage);
 
         jobService.processJobEvent(jobEventMessage);
-
-        switch (jobEventMessage.getJobEventType().getType()) {
-            case CREATED -> handleJobCreated(jobEventMessage);
-            case STEP_DONE -> handleStepDone(jobEventMessage);
-            case PAUSED -> handleJobPaused(jobEventMessage);
-            case RESUMED -> handleJobResumed(jobEventMessage);
-            case CANCELED_ORDERS -> handleJobCanceledOrders(jobEventMessage);
-            case STOPPED -> handleJobStopped(jobEventMessage);
-            case FINISHED -> handleJobFinished(jobEventMessage);
-            default -> log.warn("⚠️ Unrecognized event type: {}", jobEventMessage.getJobEventType());
-        }
-    }
-
-
-    //DEBUG METHODS, WILL BE REMOVED (PROBABLY, FOR NOW LOGIC IS IN SERVICE LAYER)
-    private void handleJobCreated(JobEventMessage jobEventMessage) {
-        log.info("🚀 Job Created: jobId={}, name={}, coins={}, side={}, discountPct={}, amount={}, stepsTotal={}", jobEventMessage.getJobId(), jobEventMessage.getName(), jobEventMessage.getCoins(), jobEventMessage.getSide(), jobEventMessage.getDiscountPct(), jobEventMessage.getAmount(), jobEventMessage.getStepsTotal());
-    }
-
-    private void handleStepDone(JobEventMessage jobEventMessage) {
-        log.info("✅ Step Done: jobId={}, step={}", jobEventMessage.getJobId(), jobEventMessage.getStepsDone());
-    }
-
-    private void handleJobPaused(JobEventMessage jobEventMessage) {
-        log.info("⏸ Job Paused: jobId={}, stepsDone={}", jobEventMessage.getJobId(), jobEventMessage.getStepsDone());
-    }
-
-    private void handleJobResumed(JobEventMessage jobEventMessage) {
-        log.info("▶️ Job Resumed: jobId={}, stepsDone={}", jobEventMessage.getJobId(), jobEventMessage.getStepsDone());
-    }
-
-    private void handleJobCanceledOrders(JobEventMessage jobEventMessage) {
-        log.info("❌ Job Canceled Orders: jobId={}, stepsDone={}", jobEventMessage.getJobId(), jobEventMessage.getStepsDone());
-    }
-
-    private void handleJobStopped(JobEventMessage jobEventMessage) {
-        log.info("🛑 Job Stopped: jobId={}, stepsDone={}", jobEventMessage.getJobId(), jobEventMessage.getStepsDone());
-    }
-
-    private void handleJobFinished(JobEventMessage jobEventMessage) {
-        log.info("🏁 Job Finished: jobId={}, stepsDone={}", jobEventMessage.getJobId(), jobEventMessage.getStepsDone());
     }
 }

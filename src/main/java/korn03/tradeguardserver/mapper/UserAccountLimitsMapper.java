@@ -27,11 +27,7 @@ public interface UserAccountLimitsMapper {
     @Mapping(source = "maxDailyTrades", target = "maxDailyTrades", qualifiedByName = "stringToInteger")
     @Mapping(source = "tradingCooldown", target = "tradingCooldown", qualifiedByName = "stringToInteger")
     @Mapping(source = "maxPortfolioRisk", target = "maxPortfolioRisk", qualifiedByName = "stringToBigDecimal")
-//    @Mapping(source = "minDcaDiscount", target = "minDcaDiscount", qualifiedByName = "stringToBigDecimal")
-//    @Mapping(source = "minDcaSteps", target = "minDcaSteps", qualifiedByName = "stringToInteger")
     @Mapping(source = "allowDcaForce", target = "allowDcaForce", qualifiedByName = "stringToBoolean")
-//    @Mapping(source = "minLiqTimeframe", target = "minLiqTimeframe", qualifiedByName = "stringToInteger")
-//    @Mapping(source = "maxLiqProportion", target = "maxLiqProportion", qualifiedByName = "stringToBigDecimal")
     @Mapping(source = "allowLiqForce", target = "allowLiqForce", qualifiedByName = "stringToBoolean")
     @Mapping(source = "dailyLossLimit", target = "dailyLossLimit", qualifiedByName = "stringToBigDecimal")
     @Mapping(source = "maxConsecutiveLosses", target = "maxConsecutiveLosses", qualifiedByName = "stringToInteger")
@@ -40,8 +36,8 @@ public interface UserAccountLimitsMapper {
     @Mapping(source = "liquidityThreshold", target = "liquidityThreshold", qualifiedByName = "stringToBigDecimal")
     UserAccountLimits toEntity(UpdateUserAccountLimitsRequestDTO dto);
 
-    @Mapping(target = "id", ignore = true)  // Ensures ID is not overridden
-    @Mapping(target = "userId", ignore = true) // Prevents changing user ID
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "userId", ignore = true)
     void updateEntityFromDTO(UpdateUserAccountLimitsRequestDTO dto, @MappingTarget UserAccountLimits entity);
 
 

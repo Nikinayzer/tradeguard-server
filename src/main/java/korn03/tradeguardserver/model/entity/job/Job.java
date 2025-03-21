@@ -1,8 +1,10 @@
 package korn03.tradeguardserver.model.entity.job;
 
 import jakarta.persistence.*;
-import korn03.tradeguardserver.kafka.events.JobEventMessage;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.time.Instant;
 import java.util.List;
@@ -22,22 +24,23 @@ public class Job {
     @Column(name = "job_id", nullable = false, unique = true)
     private Long jobId;
 
-    @Column(name = "user_id", nullable = true)
+    @Column(name = "user_id")
     private Long userId;
 
     @Enumerated(EnumType.STRING)
+    @Column(name = "strategy", nullable = false)
+    private JobStrategyType strategy;
+
+    @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
-    private JobStatus status;
+    private JobStatusType status;
 
     @Column(name = "steps_done", nullable = false)
     private Integer stepsDone;
 
-    @Column(name = "name", nullable = false)
-    private String name;
-
     @ElementCollection
-    @CollectionTable(name = "job_coins", joinColumns = @JoinColumn(name = "job_id")) //maybe change to something more convenient
-    @Column(name = "coin")
+    @CollectionTable(name = "job_coins", joinColumns = @JoinColumn(name = "job_id"))
+    @Column(name = "coins")
     private List<String> coins;
 
     @Column(name = "side")
@@ -55,30 +58,12 @@ public class Job {
     @Column(name = "duration_minutes")
     private Double durationMinutes;
 
+    //todo add proportion/force/randomness
+
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
 
-    /**
-     * Converts a JobEventMessage into a Job for persistence.
-     */
-    public static Job fromJobEvent(JobEventMessage jobEventMessage) {
-        return Job.builder()
-                .jobId(jobEventMessage.getJobId())
-                //todo add userId
-                .status(JobStatus.fromEventType(jobEventMessage.getJobEventType().getType()))
-                .stepsDone(jobEventMessage.getStepsDone())
-                .name(jobEventMessage.getName())
-                .coins(jobEventMessage.getCoins())
-                .side(jobEventMessage.getSide())
-                .discountPct(jobEventMessage.getDiscountPct())
-                .amount(jobEventMessage.getAmount())
-                .stepsTotal(jobEventMessage.getStepsTotal())
-                .durationMinutes(jobEventMessage.getDurationMinutes())
-                .createdAt(jobEventMessage.getTimestamp())
-                .updatedAt(jobEventMessage.getTimestamp())
-                .build();
-    }
 }

@@ -27,15 +27,16 @@ public class BybitMarketDataService {
     private static final String MARKET_KEY_PREFIX = "market_data:";
     private static final Duration CACHE_EXPIRATION = Duration.ofSeconds(60);
     private static final String COUNTER_CURRENCY = "USDT";
+    //No GRIN and MATIC (bybit doesn support them or idk)
     private static final Map<String, List<String>> CRYPTO_CATEGORIES = Map.of(
             "Major Cryptocurrencies", List.of("BTC", "ETH", "BNB", "XRP", "SOL"),
             "New Tokens", List.of("ENA", "AIXBT", "FARTCOIN"),
             "Favorites", List.of("XLM", "HBAR", "LINK", "TRX", "TON", "WLD"),
             "Platform Tokens", List.of("ADA", "DOT", "AVAX", "ATOM", "NEAR"),
             "DeFi Tokens", List.of("UNI", "AAVE", "SUSHI", "COMP", "MKR"),
-            "Privacy Coins", List.of("XMR", "ZEC", "DASH", "GRIN", "BEAM"),
+            "Privacy Coins", List.of("XMR", "ZEC", "DASH", "BEAM"),
             "Memecoins", List.of("DOGE", "1000PEPE", "TRUMP", "WIF", "MOODENG"),
-            "Layer 2 Solutions", List.of("MATIC", "OP", "ARB", "IMX", "LRC"),
+            "Layer 2 Solutions", List.of("OP", "ARB", "IMX", "LRC"),
             "Emerging Tokens", List.of("APT", "SUI", "KAS", "RENDER", "GRT")
     );
     private final BybitApiMarketRestClient marketDataClient;
