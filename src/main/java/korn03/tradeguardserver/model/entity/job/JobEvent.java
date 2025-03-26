@@ -24,7 +24,7 @@ public class JobEvent {
     @Column(name = "job_id", nullable = false)
     private Long jobId;
 
-    @Enumerated(EnumType.STRING)
+    @Convert(converter = JobEventTypeJsonConverter.class)
     @Column(name = "event_type", nullable = false)
     private JobEventType eventType;
 

@@ -1,44 +1,56 @@
 package korn03.tradeguardserver.kafka.events;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonEnumDefaultValue;
+// ---------------------------------------------------
+// 2) The possible variants of event_type, 
+//    which correspond to your Rust enum arms
+// ---------------------------------------------------
+
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonValue;
-import lombok.val;
 
-import java.util.Arrays;
+// We can use a sealed interface (Java 17+) or a plain interface:
+public sealed interface JobEventType
+        permits JobEventType.CanceledOrders, JobEventType.Created, JobEventType.ErrorEvent, JobEventType.Finished,
+        JobEventType.OrdersPlaced, JobEventType.Paused, JobEventType.Resumed, JobEventType.StepDone,
+        JobEventType.Stopped {
+    // no members needed, just a marker interface
 
-public enum JobEventType {
-    CREATED,
-    PAUSED,
-    RESUMED,
-    STEP_DONE,
-    CANCELED_ORDERS,
-    STOPPED,
-    FINISHED,
-    @JsonEnumDefaultValue UNKNOWN;
+// For the “string-only” variants, we create trivial records or classes:
 
-    //todo maybe configure ObjectMapper bean/ ACCEPT_CASE_INSENSITIVE_ENUMS in Kafka
-    @JsonCreator
-    public static JobEventType fromString(String value) {
-        if (value == null || value.isBlank()) {
-            return UNKNOWN;
-        }
-        //todo maybe soomething more robust/global configuration
-        String normalizedValue = value
-                .trim()
-                .replaceAll("([a-z])([A-Z])", "$1_$2")
-                .replaceAll("[-]", "_")
-                .toUpperCase(); // Convert to ENUM format
-
-        return Arrays.stream(values())
-                .filter(type -> type.name().equals(normalizedValue))
-                .findFirst()
-                .orElse(UNKNOWN);
+    record Created() implements JobEventType {
     }
 
-    @JsonValue
-    public String toJson() {
-        return name();
+    record CanceledOrders() implements JobEventType {
+    }
+
+    record Paused() implements JobEventType {
+    }
+
+    record Resumed() implements JobEventType {
+    }
+
+    record Stopped() implements JobEventType {
+    }
+
+    record Finished() implements JobEventType {
+    }
+
+    // Next, the StepDone variant has a numeric payload:
+    record StepDone(int stepIndex) implements JobEventType {
+    }
+
+    // The Error variant has a string payload:
+    record ErrorEvent(String message) implements JobEventType {
+    }
+
+    // OrdersPlaced has an array of items.
+    record OpenOrderLog(
+            @JsonProperty("job_id") int jobId,
+            @JsonProperty("account_name") String accountName,
+            @JsonProperty("order_id") String orderId,
+            @JsonProperty("user_id") String userId
+    ) {
+    }
+
+    record OrdersPlaced(java.util.List<OpenOrderLog> orders) implements JobEventType {
     }
 }
