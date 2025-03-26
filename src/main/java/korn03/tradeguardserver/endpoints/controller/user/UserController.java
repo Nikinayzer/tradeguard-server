@@ -136,6 +136,12 @@ public class UserController {
         return ResponseEntity.ok().build();
     }
 
+    @GetMapping("/{userId}/limits")
+    //todo authorize!!!
+    public ResponseEntity<UserAccountLimitsDTO> getUserLimits(@PathVariable Long userId) {
+        return ResponseEntity.ok(userAccountLimitsService.getLimitsByUserId(userId));
+    }
+
     @GetMapping("/me/limits")
     public ResponseEntity<UserAccountLimitsDTO> getCurrentUserLimits() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -143,7 +149,7 @@ public class UserController {
         return ResponseEntity.ok(userAccountLimitsService.getLimitsByUserId(user.getId()));
     }
 
-    @PutMapping("/me/limits")
+    @PostMapping("/me/limits")
     public ResponseEntity<UserAccountLimitsDTO> updateCurrentUserLimits(@RequestBody UpdateUserAccountLimitsRequestDTO request) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         User user = (User) authentication.getPrincipal();
