@@ -32,9 +32,6 @@ public class JobEventMessage {
     @JsonDeserialize(using = JobEventTypeDeserializer.class)
     private JobEventType jobEventType;
 
-    @JsonProperty("steps_done")
-    private Integer stepsDone;
-
     @JsonProperty("name")
     private String name;
 

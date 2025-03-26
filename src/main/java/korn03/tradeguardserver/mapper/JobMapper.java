@@ -14,9 +14,9 @@ import java.util.Arrays;
 public interface JobMapper {
 
     @Mapping(target = "id", ignore = true)
-    @Mapping(target = "userId", expression = "java(1L)") // TODO: Accept later
+    @Mapping(target = "userId", expression = "java(2L)") // TODO: Accept later
     @Mapping(target = "status", source = "jobEventType", qualifiedByName = "mapStatus")
-    @Mapping(target = "stepsDone", source = "stepsDone")
+    @Mapping(target = "stepsDone", expression = "java((jobEventMessage.getJobEventType() instanceof korn03.tradeguardserver.kafka.events.JobEventType.StepDone stepDone) ? stepDone.stepIndex() : 0)")
     @Mapping(target = "strategy", source = "name", qualifiedByName = "mapStrategy")
     @Mapping(target = "coins", source = "coins")
     @Mapping(target = "side", source = "side")
@@ -29,19 +29,21 @@ public interface JobMapper {
     Job toEntity(JobEventMessage jobEventMessage);
 
     @Mapping(target = "id", ignore = true)
+    @Mapping(target = "jobId", source = "jobId")
     @Mapping(target = "eventType", source = "jobEventType")
+    @Mapping(target = "stepsDone", expression = "java(jobEventMessage.getJobEventType() instanceof korn03.tradeguardserver.kafka.events.JobEventType.StepDone stepDone ? stepDone.stepIndex() : 0)")
+    @Mapping(target = "durationMinutes", source = "durationMinutes")
     @Mapping(target = "timestamp", source = "timestamp")
     JobEvent toJobEvent(JobEventMessage jobEventMessage);
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "jobId", ignore = true)
-    @Mapping(target = "stepsDone", source = "stepsDone")
-    @Mapping(target = "status", source = "jobEventType", qualifiedByName = "mapStatus")
+    @Mapping(target = "stepsDone", expression = "java((jobEventMessage.getJobEventType() instanceof korn03.tradeguardserver.kafka.events.JobEventType.StepDone stepDone) ? stepDone.stepIndex() : job.getStepsDone())")    @Mapping(target = "status", source = "jobEventType", qualifiedByName = "mapStatus")
+    @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", source = "timestamp")
     @Mapping(target = "userId", ignore = true)
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     void updateExistingJob(@MappingTarget Job job, JobEventMessage jobEventMessage);
-
 
     @Named("mapStrategy")
     default JobStrategyType mapStrategy(String name) {
