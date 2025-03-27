@@ -16,7 +16,7 @@ public sealed interface JobEventType
 
 // For the “string-only” variants, we create trivial records or classes:
 
-    record Created() implements JobEventType {
+    record Created( CreatedMeta meta) implements JobEventType {
     }
 
     record CanceledOrders() implements JobEventType {
@@ -40,6 +40,18 @@ public sealed interface JobEventType
 
     // The Error variant has a string payload:
     record ErrorEvent(String message) implements JobEventType {
+    }
+
+    record CreatedMeta(
+            @JsonProperty("name") String name,
+            @JsonProperty("user_id") Long userId,
+            @JsonProperty("coins") java.util.List<String> coins,
+            @JsonProperty("side") String side,
+            @JsonProperty("discount_pct") Double discountPct,
+            @JsonProperty("amount") Double amount,
+            @JsonProperty("steps_total") Integer stepsTotal,
+            @JsonProperty("duration_minutes") Double durationMinutes
+    ) {
     }
 
     // OrdersPlaced has an array of items.

@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -25,7 +26,6 @@ public class JobEventTypeDeserializer extends JsonDeserializer<JobEventType> {
         if (node.isTextual()) {
             String text = node.asText();
             return switch (text) {
-                case "Created" -> new Created();
                 case "CanceledOrders" -> new CanceledOrders();
                 case "Paused" -> new Paused();
                 case "Resumed" -> new Resumed();
@@ -43,6 +43,20 @@ public class JobEventTypeDeserializer extends JsonDeserializer<JobEventType> {
             ObjectNode obj = (ObjectNode) node;
 
             // Check for specific fields and deserialize accordingly
+            if(obj.has("Created")){
+                JsonNode created = obj.get("Created");
+                String name = created.get("name").asText();
+                Long userId = Long.parseLong(created.get("user_id").asText());
+                List<String> coins = extractCoins(created.get("coins"));
+                String side = created.get("side").asText();
+                Double discountPct = created.get("discount_pct").asDouble();
+                Double amount = created.get("amount").asDouble();
+                Integer stepsTotal = created.get("steps_total").asInt();
+                Double durationMinutes = created.get("duration_minutes").asDouble();
+
+                CreatedMeta createdEventData = new CreatedMeta(name, userId, coins, side, discountPct, amount, stepsTotal, durationMinutes);
+                return new Created(createdEventData);
+            }
             if (obj.has("StepDone")) {
                 int stepIndex = obj.get("StepDone").asInt();
                 return new StepDone(stepIndex);
@@ -74,5 +88,14 @@ public class JobEventTypeDeserializer extends JsonDeserializer<JobEventType> {
         // Case 3: If neither string nor object, log and throw an error
         logger.error("Expected string or object for event_type, got: {}", node.toString());
         throw new IllegalArgumentException("Expected string or object for event_type, got: " + node.toString());
+    }
+    private List<String> extractCoins(JsonNode coinsNode) {
+        List<String> coins = new ArrayList<>();
+        if (coinsNode.isArray()) {
+            for (JsonNode coin : coinsNode) {
+                coins.add(coin.asText());
+            }
+        }
+        return coins;
     }
 }

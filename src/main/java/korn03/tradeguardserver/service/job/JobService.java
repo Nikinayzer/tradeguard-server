@@ -7,12 +7,15 @@ import korn03.tradeguardserver.model.entity.job.JobEvent;
 import korn03.tradeguardserver.model.entity.job.JobStatusType;
 import korn03.tradeguardserver.model.repository.job.JobEventRepository;
 import korn03.tradeguardserver.model.repository.job.JobRepository;
+import korn03.tradeguardserver.service.core.CacheService;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import java.time.Duration;
 import java.time.Instant;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 
@@ -41,14 +44,25 @@ public class JobService {
             jobMapper.updateExistingJob(job, jobEventMessage);
             jobRepository.save(job);
         } else {
-            Job newJob = jobMapper.toEntity(jobEventMessage);
-            jobRepository.save(newJob);
+            try {
+                Job newJob = jobMapper.toEntity(jobEventMessage);
+                jobRepository.save(newJob);
+            } catch (Exception e) {
+                logger.error("❌ Failed to save job: {}", jobEventMessage, e);
+            }
         }
 
         JobEvent eventEntity = jobMapper.toJobEvent(jobEventMessage);
-        logger.info("Saving job event: {}", eventEntity);
-        jobEventRepository.save(eventEntity);
+        try{
+            logger.info("Saving job event: {}", eventEntity);
+            jobEventRepository.save(eventEntity);
+        } catch (Exception e) {
+            logger.error("❌ Failed to save job event: {}", eventEntity, e);
+        }
+
+
     }
+
 
     public List<Job> getAllJobs() {
         return jobRepository.findAll();

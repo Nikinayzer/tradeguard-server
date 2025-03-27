@@ -16,24 +16,19 @@ import java.time.Instant;
 @NoArgsConstructor
 @AllArgsConstructor
 public class JobEvent {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "job_id", nullable = false)
     private Long jobId;
-
-    @Convert(converter = JobEventTypeJsonConverter.class)
-    @Column(name = "event_type", nullable = false)
-    private JobEventType eventType;
-
-    @Column(name = "steps_done", nullable = false)
-    private Integer stepsDone;
-
-    @Column(name = "duration_minutes", nullable = false)
-    private Double durationMinutes;
-
-    @Column(name = "timestamp", nullable = false)
+    private String eventType;
     private Instant timestamp;
+    private String source;
+
+    @Lob
+    private String eventData; // JSON-ified data (like placed orders, or created metadata)
+
+    // Optionally link it to a Job entity if you want bi-directional
+    // @ManyToOne(fetch = FetchType.LAZY)
+    // private Job job;
 }
