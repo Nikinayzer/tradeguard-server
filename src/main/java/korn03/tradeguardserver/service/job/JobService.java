@@ -8,8 +8,11 @@ import korn03.tradeguardserver.model.entity.job.JobStatusType;
 import korn03.tradeguardserver.model.repository.job.JobEventRepository;
 import korn03.tradeguardserver.model.repository.job.JobRepository;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
@@ -20,6 +23,8 @@ public class JobService {
     private final JobRepository jobRepository;
     private final JobEventRepository jobEventRepository;
     private final JobMapper jobMapper;
+
+    private final Logger logger = LoggerFactory.getLogger(JobService.class);
 
     /**
      * Handles a job event from Kafka.
@@ -41,6 +46,7 @@ public class JobService {
         }
 
         JobEvent eventEntity = jobMapper.toJobEvent(jobEventMessage);
+        logger.info("Saving job event: {}", eventEntity);
         jobEventRepository.save(eventEntity);
     }
 
@@ -53,6 +59,11 @@ public class JobService {
     }
     public List<Job> getActiveJobsByUserId(Long userId){
         return jobRepository.findByUserIdAndStatusNotLike(userId, JobStatusType.FINISHED);
+    }
+    public List<Job> getRecentJobsByUserId(Long userId, Integer timeframe) {
+        int hours = (timeframe != null && timeframe > 0) ? timeframe : 24;
+        Instant cutoff = Instant.now().minusSeconds(hours * 3600L);
+        return jobRepository.findByUserIdAndCreatedAtAfter(userId, cutoff);
     }
 
     public Optional<Job> getJobById(Long jobId) {

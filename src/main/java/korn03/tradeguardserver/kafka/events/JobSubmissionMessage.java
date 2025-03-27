@@ -13,9 +13,10 @@ import java.util.List;
 @AllArgsConstructor
 public class JobSubmissionMessage {
     private String source;
+    private Integer jobId;
     private Long userId;
-    private String type;
-    private Long timestamp;
+    private JobEventType jobEventType;
+
 
     private Integer totalSteps;
     private List<String> coins;
@@ -28,4 +29,6 @@ public class JobSubmissionMessage {
     private List<String> excludeCoins;
     private Double proportionPct;
     private Double totalAmt;
+
+    private Long timestamp;
 } 

@@ -38,7 +38,8 @@ public interface JobMapper {
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "jobId", ignore = true)
-    @Mapping(target = "stepsDone", expression = "java((jobEventMessage.getJobEventType() instanceof korn03.tradeguardserver.kafka.events.JobEventType.StepDone stepDone) ? stepDone.stepIndex() : job.getStepsDone())")    @Mapping(target = "status", source = "jobEventType", qualifiedByName = "mapStatus")
+    @Mapping(target = "status", source = "jobEventType", qualifiedByName = "mapStatus")
+    @Mapping(target = "stepsDone", expression = "java((jobEventMessage.getJobEventType() instanceof korn03.tradeguardserver.kafka.events.JobEventType.StepDone stepDone) ? stepDone.stepIndex() : job.getStepsDone())")
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", source = "timestamp")
     @Mapping(target = "userId", ignore = true)

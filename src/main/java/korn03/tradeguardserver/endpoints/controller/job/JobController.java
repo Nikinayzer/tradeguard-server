@@ -105,6 +105,16 @@ public class JobController {
         return ResponseEntity.ok(jobs);
 
     }
+    /**
+     * Get recent jobs of user within timeframe
+     * Example: GET /jobs/{userId}?timeframe=24
+     * USED BY HEALTH MODULE TO  LOAD CONTEXT OF USER JOBS
+     * /todo integrate DTOs instead of entity (for whole controller)
+     */
+    @GetMapping("/jobs/user/{userId}")
+    public ResponseEntity<?> getRecentJobsByUserId(@PathVariable Long userId, @RequestParam(required = false) Integer timeframe) {
+        return ResponseEntity.ok(jobService.getRecentJobsByUserId(userId, timeframe));
+    }
 
 
     /**
