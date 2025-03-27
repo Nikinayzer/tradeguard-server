@@ -9,6 +9,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -40,7 +41,13 @@ public class UserService {
     }
 
     public User createUser(User user) {
-        user.setRoles(Set.of(Role.USER));
+        if(userRepository.existsByUsername(user.getUsername())) {
+            throw new IllegalArgumentException("User with this username already exists"); //todo change to custom exception
+        }
+        if (user.getEmail() != null && userRepository.existsByEmail(user.getEmail())) {
+            throw new IllegalArgumentException("User with this email already exists"); //todo change to custom exception
+        }
+        user.setRoles(new HashSet<>(Set.of(Role.USER)));
         user.setPassword(passwordEncoder.encode(user.getPassword()));
         user.setAccountNonExpired(true);
         user.setAccountNonLocked(true);
@@ -58,16 +65,16 @@ public class UserService {
     }
 
 
-    public User addUserRole(String username, Role role) {
-        User user = userRepository.findUserByUsername(username).orElseThrow(() -> new UsernameNotFoundException("User not found"));
+    public User addUserRole(Long userId, Role role) {
+        User user = userRepository.findUserById(userId).orElseThrow(() -> new UsernameNotFoundException("User not found"));
         user.addRole(role);
         user.setUpdatedAt(Instant.now());
         userRepository.save(user);
         return user;
     }
 
-    public User removeUserRole(String username, Role role) {
-        User user = userRepository.findUserByUsername(username).orElseThrow(() -> new UsernameNotFoundException("User not found"));
+    public User removeUserRole(Long userId, Role role) {
+        User user = userRepository.findUserById(userId).orElseThrow(() -> new UsernameNotFoundException("User not found"));
         user.removeRole(role);
         user.setUpdatedAt(Instant.now());
         userRepository.save(user);

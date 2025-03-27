@@ -5,9 +5,9 @@ import korn03.tradeguardserver.endpoints.dto.user.UserAccountLimits.UpdateUserAc
 import korn03.tradeguardserver.endpoints.dto.user.UserAccountLimits.UserAccountLimitsDTO;
 import korn03.tradeguardserver.mapper.UserAccountLimitsMapper;
 import korn03.tradeguardserver.model.entity.user.User;
-import korn03.tradeguardserver.model.entity.user.connections.UserBybitAccount;
+import korn03.tradeguardserver.model.entity.user.connections.UserExchangeAccount;
 import korn03.tradeguardserver.service.user.UserAccountLimitsService;
-import korn03.tradeguardserver.service.user.connection.UserBybitAccountService;
+import korn03.tradeguardserver.service.user.connection.UserExchangeAccountService;
 import korn03.tradeguardserver.service.user.UserService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -25,13 +25,13 @@ public class UserController {
 
     private final UserService userService;
     private final UserAccountLimitsService userAccountLimitsService;
-    private final UserBybitAccountService userBybitAccountService;
+    private final UserExchangeAccountService userExchangeAccountService;
     private final UserAccountLimitsMapper userAccountLimitsMapper;
 
-    public UserController(UserService userService, UserAccountLimitsService userAccountLimitsService, UserBybitAccountService userBybitAccountService, UserAccountLimitsMapper userAccountLimitsMapper) {
+    public UserController(UserService userService, UserAccountLimitsService userAccountLimitsService, UserExchangeAccountService userExchangeAccountService, UserAccountLimitsMapper userAccountLimitsMapper) {
         this.userService = userService;
         this.userAccountLimitsService = userAccountLimitsService;
-        this.userBybitAccountService = userBybitAccountService;
+        this.userExchangeAccountService = userExchangeAccountService;
         this.userAccountLimitsMapper = userAccountLimitsMapper;
     }
 
@@ -83,56 +83,58 @@ public class UserController {
         return ResponseEntity.ok().build();
     }
 
-    @GetMapping("/me/bybit-accounts")
-    public ResponseEntity<List<BybitAccountDTO>> getCurrentUserBybitAccounts() {
+    @GetMapping("/me/exchange-accounts")
+    public ResponseEntity<List<ExchangeAccountDTO>> getCurrentUserExchangeAccounts() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         User user = (User) authentication.getPrincipal();
-        List<BybitAccountDTO> accounts = userBybitAccountService.getUserBybitAccounts(user.getId()).stream().map(this::convertToBybitAccountDTO).collect(Collectors.toList());
+        List<ExchangeAccountDTO> accounts = userExchangeAccountService.getUserExchangeAccounts(user.getId());
         return ResponseEntity.ok(accounts);
     }
 
-    @GetMapping("/{userId}/bybit-accounts")
+    @GetMapping("/{userId}/exchange-accounts")
     @PreAuthorize("hasRole('ADMIN') or @userService.userById(#userId).username == authentication.principal.username")
-    public ResponseEntity<List<BybitAccountDTO>> getUserBybitAccounts(@PathVariable Long userId) {
-        List<BybitAccountDTO> accounts = userBybitAccountService.getUserBybitAccounts(userId).stream().map(this::convertToBybitAccountDTO).collect(Collectors.toList());
+    public ResponseEntity<List<ExchangeAccountDTO>> getUserExchangeAccounts(@PathVariable Long userId) {
+        List<ExchangeAccountDTO> accounts = userExchangeAccountService.getUserExchangeAccounts(userId);
         return ResponseEntity.ok(accounts);
     }
 
-    @PostMapping("/me/bybit-accounts/add")
-    public ResponseEntity<BybitAccountDTO> createCurrentUserBybitAccount(@RequestBody BybitAccountRequestDTO request) {
+    @PostMapping("/me/exchange-accounts/add")
+    //todo design either 2 endpoints for each provider or unified
+    public ResponseEntity<ExchangeAccountDTO> createCurrentUserExchangeAccount(@RequestBody ExchangeAccountRequestDTO request) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         User user = (User) authentication.getPrincipal();
-        UserBybitAccount account = userBybitAccountService.saveBybitAccount(user.getId(), request.getName(), request.getReadOnlyApiKey(), request.getReadOnlyApiSecret(), request.getReadWriteApiKey(), request.getReadWriteApiSecret());
-        return ResponseEntity.ok(convertToBybitAccountDTO(account));
+        UserExchangeAccount account = userExchangeAccountService.saveBybitAccount(user.getId(), request.getName(), request.getReadOnlyApiKey(), request.getReadOnlyApiSecret(), request.getReadWriteApiKey(), request.getReadWriteApiSecret());
+        return ResponseEntity.ok(convertToExchangeAccountDTO(account));
     }
 
-    @PostMapping("/me/bybit-accounts/delete")
-    public ResponseEntity<BybitAccountDTO> deleteCurrentUserBybitAccount(@RequestBody BybitAccountRequestDTO request) {
+    @PostMapping("/me/exchange-accounts/delete")
+    //todo design either 2 endpoints for each provider or unified
+    public ResponseEntity<ExchangeAccountDTO> deleteCurrentUserExchangeAccount(@RequestBody ExchangeAccountRequestDTO request) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         User user = (User) authentication.getPrincipal();
-        userBybitAccountService.deleteBybitAccount(user.getId(), request.getId());
+        userExchangeAccountService.deleteExchangeAccount(user.getId(), request.getId());
         return ResponseEntity.ok().build();
     }
 
-    @PostMapping("/{userId}/bybit-accounts")
+    @PostMapping("/{userId}/exchange-accounts")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<BybitAccountDTO> createUserBybitAccount(@PathVariable Long userId, @RequestBody BybitAccountRequestDTO request) {
-        UserBybitAccount account = userBybitAccountService.saveBybitAccount(userId, request.getName(), request.getReadOnlyApiKey(), request.getReadOnlyApiSecret(), request.getReadWriteApiKey(), request.getReadWriteApiSecret());
-        return ResponseEntity.ok(convertToBybitAccountDTO(account));
+    public ResponseEntity<ExchangeAccountDTO> createUserExchangeAccount(@PathVariable Long userId, @RequestBody ExchangeAccountRequestDTO request) {
+        UserExchangeAccount account = userExchangeAccountService.saveBybitAccount(userId, request.getName(), request.getReadOnlyApiKey(), request.getReadOnlyApiSecret(), request.getReadWriteApiKey(), request.getReadWriteApiSecret());
+        return ResponseEntity.ok(convertToExchangeAccountDTO(account));
     }
 
-    @DeleteMapping("/me/bybit-accounts/{id}")
-    public ResponseEntity<Void> deleteCurrentUserBybitAccount(@PathVariable Long id) {
+    @DeleteMapping("/me/exchange-accounts/{id}")
+    public ResponseEntity<Void> deleteCurrentUserExchangeAccount(@PathVariable Long id) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         User user = (User) authentication.getPrincipal();
-        userBybitAccountService.deleteBybitAccount(user.getId(), id);
+        userExchangeAccountService.deleteExchangeAccount(user.getId(), id);
         return ResponseEntity.ok().build();
     }
 
-    @DeleteMapping("/{userId}/bybit-accounts/{id}")
+    @DeleteMapping("/{userId}/exchange-accounts/{id}")
     @PreAuthorize("hasRole('ADMIN') or @userService.userById(#userId).username == authentication.principal.username")
-    public ResponseEntity<Void> deleteUserBybitAccount(@PathVariable Long userId, @PathVariable Long id) {
-        userBybitAccountService.deleteBybitAccount(userId, id);
+    public ResponseEntity<Void> deleteUserExchangeAccount(@PathVariable Long userId, @PathVariable Long id) {
+        userExchangeAccountService.deleteExchangeAccount(userId, id);
         return ResponseEntity.ok().build();
     }
 
@@ -161,12 +163,12 @@ public class UserController {
         return UserDTO.builder().id(user.getId()).username(user.getUsername()).email(user.getEmail()).firstName(user.getFirstName()).lastName(user.getLastName()).registeredAt(user.getRegisteredAt()).updatedAt(user.getUpdatedAt()).roles(user.getRoles()).accountNonExpired(user.isAccountNonExpired()).accountNonLocked(user.isAccountNonLocked()).credentialsNonExpired(user.isCredentialsNonExpired()).enabled(user.isEnabled()).build();
     }
 
-    private BybitAccountDTO convertToBybitAccountDTO(UserBybitAccount account) {
-        return BybitAccountDTO.builder().id(account.getId()).userId(account.getUserId()).name(account.getAccountName()).readOnlyApiKey(maskApiKey(() -> userBybitAccountService.getDecryptedReadOnlyApiKey(account))).readOnlyApiSecret(maskApiKey(() -> userBybitAccountService.getDecryptedReadOnlyApiSecret(account))).readWriteApiKey(maskApiKey(() -> userBybitAccountService.getDecryptedReadWriteApiKey(account))).readWriteApiSecret(maskApiKey(() -> userBybitAccountService.getDecryptedReadWriteApiSecret(account))).build();
+    private ExchangeAccountDTO convertToExchangeAccountDTO(UserExchangeAccount account) {
+        return ExchangeAccountDTO.builder().id(account.getId()).userId(account.getUserId()).name(account.getAccountName()).readOnlyApiKey(maskApiKey(() -> userExchangeAccountService.getDecryptedReadOnlyApiKey(account))).readOnlyApiSecret(maskApiKey(() -> userExchangeAccountService.getDecryptedReadOnlyApiSecret(account))).readWriteApiKey(maskApiKey(() -> userExchangeAccountService.getDecryptedReadWriteApiKey(account))).readWriteApiSecret(maskApiKey(() -> userExchangeAccountService.getDecryptedReadWriteApiSecret(account))).build();
     }
 
     private String maskApiKey(Supplier<String> keySupplier) {
         String key = keySupplier.get();
-        return userBybitAccountService.getMaskedToken(key);
+        return userExchangeAccountService.getMaskedToken(key);
     }
 }

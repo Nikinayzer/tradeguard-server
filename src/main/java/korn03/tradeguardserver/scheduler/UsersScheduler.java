@@ -3,7 +3,7 @@ package korn03.tradeguardserver.scheduler;
 import jakarta.annotation.PostConstruct;
 import korn03.tradeguardserver.model.entity.user.Role;
 import korn03.tradeguardserver.model.entity.user.User;
-import korn03.tradeguardserver.service.user.connection.UserBybitAccountService;
+import korn03.tradeguardserver.service.user.connection.UserExchangeAccountService;
 import korn03.tradeguardserver.service.user.UserService;
 import korn03.tradeguardserver.service.user.connection.UserDiscordAccountService;
 import lombok.extern.slf4j.Slf4j;
@@ -18,7 +18,7 @@ import java.util.Set;
 public class UsersScheduler {
 
     private final UserService userService;
-    private final UserBybitAccountService bybitAccountService;
+    private final UserExchangeAccountService exchangeAccountService;
     private final UserDiscordAccountService discordAccountService;
 
     @Value("${tradeguard.default.user.username}")
@@ -39,14 +39,14 @@ public class UsersScheduler {
     @Value("${tradeguard.default.bybit.readwrite.secret:}")
     private String defaultReadWriteApiSecret;
 
-    public UsersScheduler(UserService userService, UserBybitAccountService bybitAccountService, UserDiscordAccountService discordAccountService) {
+    public UsersScheduler(UserService userService, UserExchangeAccountService exchangeAccountService, UserDiscordAccountService discordAccountService) {
         this.userService = userService;
-        this.bybitAccountService = bybitAccountService;
+        this.exchangeAccountService = exchangeAccountService;
         this.discordAccountService = discordAccountService;
     }
 
     /**
-     * Initializing default users and their Bybit & Discord accounts
+     * Initializing default users and their Exchange & Discord accounts
      */
     @PostConstruct
     public void initDefaultUser() {
@@ -57,10 +57,10 @@ public class UsersScheduler {
             user.setFirstName("Marcel");
             user.setLastName("Valový");
             user.setEmail("marcel.valovy@vse.cz");
-            user.setRoles(Set.of(Role.USER, Role.ADMIN));
+//            user.setRoles(Set.of(Role.USER, Role.ADMIN));
             user.setRegisteredAt(Instant.now());
             User createdUser = userService.createUser(user);
-//            createDefaultBybitAccount(createdUser.getId(), "Marcel Bybit");
+//            createDefaultBybitAccount(createdUser.getId(), "Marcel Exchange");
             createDefaultDiscordAccount(createdUser.getId(), 238283760540450816L, "marcelv3612");
         }
 
@@ -71,24 +71,25 @@ public class UsersScheduler {
             admin.setFirstName("Nick");
             admin.setLastName("Korotov");
             admin.setEmail("korn03@vse.cz");
-            admin.setRoles(Set.of(Role.USER, Role.ADMIN));
+//            admin.setRoles(Set.of(Role.USER, Role.ADMIN));
             admin.setRegisteredAt(Instant.now());
             User createdAdmin = userService.createUser(admin);
-            createDefaultBybitAccount(createdAdmin.getId(), "admins bybit");
+            userService.addUserRole(createdAdmin.getId(), Role.ADMIN); //todo handle by id
+            createDefaultBybitAccount(createdAdmin.getId(), "admins exchange");
             createDefaultDiscordAccount(createdAdmin.getId(), 493077349684740097L, "n1ckor");
         }
         log.debug("DEFAULT USERS, BYBIT ACCOUNTS, AND DISCORD ACCOUNTS CREATED");
     }
 
     /**
-     * Creates a default Bybit account for a user if API keys are provided in properties
+     * Creates a default Exchange account for a user if API keys are provided in properties
      */
     private void createDefaultBybitAccount(Long userId, String accountName) {
         if (!defaultReadOnlyApiKey.isEmpty() && !defaultReadOnlyApiSecret.isEmpty()
                 && !defaultReadWriteApiKey.isEmpty() && !defaultReadWriteApiSecret.isEmpty()) {
 
             try {
-                bybitAccountService.saveBybitAccount(
+                exchangeAccountService.saveBybitAccount(
                         userId,
                         accountName,
                         defaultReadOnlyApiKey,

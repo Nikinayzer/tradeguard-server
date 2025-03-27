@@ -9,7 +9,7 @@ import java.util.List;
 public class UserConnectionsFromDiscordDTO {
     private User user;
     private Discord discord;
-    private List<Bybit> bybit;
+    private List<Exchange> exchange;
 
     @Data
     @Builder
@@ -28,8 +28,9 @@ public class UserConnectionsFromDiscordDTO {
 
     @Data
     @Builder
-    public static class Bybit {
+    public static class Exchange {
         private String id;
+        private String provider;
         private String name;
         private String readOnlyApiKey;
         private String readOnlyApiSecret;

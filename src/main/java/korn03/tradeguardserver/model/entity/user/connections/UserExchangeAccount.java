@@ -5,8 +5,8 @@ import lombok.Data;
 
 @Data
 @Entity
-@Table(name = "bybit_accounts", uniqueConstraints = @UniqueConstraint(columnNames = {"user_id", "account_name"}))
-public class UserBybitAccount {
+@Table(name = "exchange_accounts", uniqueConstraints = @UniqueConstraint(columnNames = {"user_id", "account_name"}))
+public class UserExchangeAccount {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -14,6 +14,9 @@ public class UserBybitAccount {
 
     @Column(name = "user_id", nullable = false)
     private Long userId;
+
+    @Column(name = "provider", nullable = false)
+    private ExchangeProvider provider;
 
     @Column(name = "account_name", nullable = false)
     private String accountName;

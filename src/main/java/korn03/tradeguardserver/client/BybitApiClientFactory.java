@@ -3,68 +3,68 @@ package korn03.tradeguardserver.client;
 import com.bybit.api.client.restApi.BybitApiAsyncAccountRestClient;
 import com.bybit.api.client.restApi.BybitApiAsyncPositionRestClient;
 import com.bybit.api.client.restApi.BybitApiAsyncTradeRestClient;
-import korn03.tradeguardserver.model.entity.user.connections.UserBybitAccount;
-import korn03.tradeguardserver.service.user.connection.UserBybitAccountService;
+import korn03.tradeguardserver.model.entity.user.connections.UserExchangeAccount;
+import korn03.tradeguardserver.service.user.connection.UserExchangeAccountService;
 import org.springframework.stereotype.Component;
 
 @Component
 public class BybitApiClientFactory {
 
-    private final UserBybitAccountService userBybitAccountService;
+    private final UserExchangeAccountService userExchangeAccountService;
 
-    public BybitApiClientFactory(UserBybitAccountService userBybitAccountService) {
-        this.userBybitAccountService = userBybitAccountService;
+    public BybitApiClientFactory(UserExchangeAccountService userExchangeAccountService) {
+        this.userExchangeAccountService = userExchangeAccountService;
     }
 
     /**
-     * Retrieves user-specific read-only API credentials and initializes a Bybit client.
+     * Retrieves user-specific read-only API credentials and initializes a Exchange client.
      */
     private com.bybit.api.client.service.BybitApiClientFactory getReadOnlyClientFactory(Long userId, Long id) {
-        UserBybitAccount account = userBybitAccountService.getBybitAccount(userId, id)
-                .orElseThrow(() -> new RuntimeException("Bybit account not found"));
+        UserExchangeAccount account = userExchangeAccountService.getExchangeAccount(userId, id)
+                .orElseThrow(() -> new RuntimeException("Exchange account not found"));
 
-        String apiKey = userBybitAccountService.getDecryptedReadOnlyApiKey(account);
-        String apiSecret = userBybitAccountService.getDecryptedReadOnlyApiSecret(account);
+        String apiKey = userExchangeAccountService.getDecryptedReadOnlyApiKey(account);
+        String apiSecret = userExchangeAccountService.getDecryptedReadOnlyApiSecret(account);
 
         return com.bybit.api.client.service.BybitApiClientFactory.newInstance(apiKey, apiSecret);
     }
 
     /**
-     * Retrieves user-specific read-write API credentials and initializes a Bybit client.
+     * Retrieves user-specific read-write API credentials and initializes a Exchange client.
      */
     private com.bybit.api.client.service.BybitApiClientFactory getReadWriteClientFactory(Long userId, Long id) {
-        UserBybitAccount account = userBybitAccountService.getBybitAccount(userId, id)
-                .orElseThrow(() -> new RuntimeException("Bybit account not found"));
+        UserExchangeAccount account = userExchangeAccountService.getExchangeAccount(userId, id)
+                .orElseThrow(() -> new RuntimeException("Exchange account not found"));
 
-        String apiKey = userBybitAccountService.getDecryptedReadWriteApiKey(account);
-        String apiSecret = userBybitAccountService.getDecryptedReadWriteApiSecret(account);
+        String apiKey = userExchangeAccountService.getDecryptedReadWriteApiKey(account);
+        String apiSecret = userExchangeAccountService.getDecryptedReadWriteApiSecret(account);
 
         return com.bybit.api.client.service.BybitApiClientFactory.newInstance(apiKey, apiSecret);
     }
 
     /**
-     * Returns a user-specific Bybit Account client (read-only).
+     * Returns a user-specific Exchange Account client (read-only).
      */
     public BybitApiAsyncAccountRestClient getReadOnlyAccountClient(Long userId, Long id) {
         return getReadOnlyClientFactory(userId, id).newAsyncAccountRestClient();
     }
 
     /**
-     * Returns a user-specific Bybit Account client (read-write).
+     * Returns a user-specific Exchange Account client (read-write).
      */
     public BybitApiAsyncAccountRestClient getReadWriteAccountClient(Long userId, Long id) {
         return getReadWriteClientFactory(userId, id).newAsyncAccountRestClient();
     }
 
     /**
-     * Returns a user-specific Bybit Trade client (read-write only).
+     * Returns a user-specific Exchange Trade client (read-write only).
      */
     public BybitApiAsyncTradeRestClient getTradeClient(Long userId, Long id) {
         return getReadWriteClientFactory(userId, id).newAsyncTradeRestClient();
     }
 
     /**
-     * Returns a user-specific Bybit Position client (read-write only).
+     * Returns a user-specific Exchange Position client (read-write only).
      */
     public BybitApiAsyncPositionRestClient getPositionClient(Long userId, Long id) {
         return getReadWriteClientFactory(userId, id).newAsyncPositionRestClient();

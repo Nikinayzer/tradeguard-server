@@ -5,9 +5,10 @@ import lombok.Data;
 
 @Data
 @Builder
-public class BybitAccountDTO {
+public class ExchangeAccountDTO {
     private Long id;
     private Long userId;
+    private String provider;
     private String name;
     // All below masked like *******iWtkMst9
     private String readOnlyApiKey;

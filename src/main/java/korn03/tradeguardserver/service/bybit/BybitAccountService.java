@@ -1,8 +1,8 @@
-//package korn03.tradeguardserver.service.bybit;
+//package korn03.tradeguardserver.service.exchange;
 //
-//import com.bybit.api.client.domain.CategoryType;
-//import com.bybit.api.client.domain.account.request.AccountDataRequest;
-//import com.bybit.api.client.restApi.BybitApiAsyncAccountRestClient;
+//import com.exchange.api.client.domain.CategoryType;
+//import com.exchange.api.client.domain.account.request.AccountDataRequest;
+//import com.exchange.api.client.restApi.BybitApiAsyncAccountRestClient;
 //import korn03.tradeguardserver.client.BybitApiClientFactory;
 //import org.springframework.stereotype.Service;
 //
@@ -26,7 +26,7 @@
 //        BybitApiAsyncAccountRestClient accountClient = apiClientManager.getAccountClient(userId, accountName);
 //
 //        AccountDataRequest request = AccountDataRequest.builder()
-//                .accountType(com.bybit.api.client.domain.account.AccountType.UNIFIED)
+//                .accountType(com.exchange.api.client.domain.account.AccountType.UNIFIED)
 //                .category(CategoryType.LINEAR)
 //                .coin("USDT")
 //                .build();
