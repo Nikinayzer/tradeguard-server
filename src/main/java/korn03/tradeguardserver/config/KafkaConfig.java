@@ -1,7 +1,9 @@
 package korn03.tradeguardserver.config;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import korn03.tradeguardserver.kafka.events.JobEventMessage;
-import korn03.tradeguardserver.kafka.events.JobSubmissionMessage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.admin.AdminClientConfig;
@@ -16,7 +18,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
 import org.springframework.kafka.core.*;
 import org.springframework.kafka.listener.CommonErrorHandler;
-import org.springframework.kafka.listener.DeadLetterPublishingRecoverer;
 import org.springframework.kafka.listener.DefaultErrorHandler;
 import org.springframework.kafka.support.serializer.ErrorHandlingDeserializer;
 import org.springframework.kafka.support.serializer.JsonDeserializer;
@@ -38,7 +39,7 @@ public class KafkaConfig {
     private String bootstrapServers;
 
     @Value("${kafka.topic.jobs}")
-    private String jobsTopic;
+    private String jobEventsTopic;
 
     @Value("${kafka.topic.job-submissions}")
     private String jobSubmissionsTopic;
@@ -54,11 +55,23 @@ public class KafkaConfig {
     }
 
     /**
+     * Custom ObjectMapper for Kafka serialization/deserialization.
+     * @return ObjectMapper
+     */
+    @Bean
+    public ObjectMapper kafkaObjectMapper() {
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.registerModule(new JavaTimeModule());
+        mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS); // ISO 8601
+        return mapper;
+    }
+
+    /**
      * Defines the jobs topic with appropriate configurations.
      */
     @Bean
-    public NewTopic jobsTopic() {
-        return new NewTopic(jobsTopic, 3, (short) 3); // Increased replication factor to 3 for better fault tolerance
+    public NewTopic jobEventsTopic() {
+        return new NewTopic(jobEventsTopic, 3, (short) 3); // Increased replication factor to 3 for better fault tolerance
     }
 
     @Bean
@@ -78,8 +91,14 @@ public class KafkaConfig {
      * Specific Kafka Template for JobSubmissionMessage
      */
     @Bean
-    public KafkaTemplate<String, JobSubmissionMessage> jobSubmissionKafkaTemplate() {
-        return new KafkaTemplate<>(producerFactory());
+    public KafkaTemplate<String, JobEventMessage> jobSubmissionKafkaTemplate(ObjectMapper kafkaObjectMapper) {
+        JsonSerializer<JobEventMessage> serializer = new JsonSerializer<>(kafkaObjectMapper);
+
+        return new KafkaTemplate<>(new DefaultKafkaProducerFactory<>(
+                defaultKafkaProducerProps(),
+                new StringSerializer(),
+                serializer
+        ));
     }
 
     /**
@@ -102,24 +121,29 @@ public class KafkaConfig {
     }
 
     /**
-     * Generic Producer Factory
+     * Generic Producer Factory. Uses default Kafka Producer properties, see {@code defaultKafkaProducerProps()}.
      */
     public <T> ProducerFactory<String, T> producerFactory() {
-        Map<String, Object> configProps = new HashMap<>();
-        configProps.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
-        configProps.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
-        configProps.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class);
+        Map<String, Object> props = defaultKafkaProducerProps();
+        props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
+        props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class);
+        return new DefaultKafkaProducerFactory<>(props);
+    }
 
-        configProps.put(ProducerConfig.ACKS_CONFIG, "all");
-        configProps.put(ProducerConfig.RETRIES_CONFIG, 3);
-        configProps.put(ProducerConfig.ENABLE_IDEMPOTENCE_CONFIG, true);
-
-        // Performance tuning
-        configProps.put(ProducerConfig.BATCH_SIZE_CONFIG, 16384);
-        configProps.put(ProducerConfig.LINGER_MS_CONFIG, 1);
-        configProps.put(ProducerConfig.COMPRESSION_TYPE_CONFIG, "snappy");
-
-        return new DefaultKafkaProducerFactory<>(configProps);
+    /**
+     * Default Kafka Producer properties
+     * @return Map of properties
+     */
+    private Map<String, Object> defaultKafkaProducerProps() {
+        Map<String, Object> props = new HashMap<>();
+        props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
+        props.put(ProducerConfig.ACKS_CONFIG, "all");
+        props.put(ProducerConfig.RETRIES_CONFIG, 3);
+        props.put(ProducerConfig.ENABLE_IDEMPOTENCE_CONFIG, true);
+        props.put(ProducerConfig.BATCH_SIZE_CONFIG, 16384);
+        props.put(ProducerConfig.LINGER_MS_CONFIG, 1);
+        props.put(ProducerConfig.COMPRESSION_TYPE_CONFIG, "snappy");
+        return props;
     }
 
     /**

@@ -13,9 +13,5 @@ import jakarta.validation.constraints.NotNull;
 @EqualsAndHashCode(callSuper = true)
 @SuperBuilder
 @NoArgsConstructor
-@AllArgsConstructor
 public class DcaJobSubmissionDTO extends JobSubmissionDTO {
-    @NotNull(message = "Total amount must be specified")
-    @DecimalMin(value = "0.0", message = "Total amount must be positive")
-    private Double totalAmt;
 } 

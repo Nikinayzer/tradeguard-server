@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -25,11 +26,12 @@ public class JobEventMessage {
     @JsonProperty("job_id")
     private Long jobId;
 
-    @JsonProperty("user_id")
-    private Long userId;
+//    @JsonProperty("user_id")
+//    private Long userId;
 
     @JsonProperty("event_type")
     @JsonDeserialize(using = JobEventTypeDeserializer.class)
+    @JsonSerialize(using = JobEventTypeSerializer.class)
     private JobEventType jobEventType;
 
     @JsonProperty("name")
@@ -52,6 +54,9 @@ public class JobEventMessage {
 
     @JsonProperty("duration_minutes")
     private Double durationMinutes;
+
+    @JsonProperty("source")
+    private String source;
 
     @JsonProperty("timestamp")
     private Instant timestamp;

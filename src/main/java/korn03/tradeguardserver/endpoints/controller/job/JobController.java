@@ -1,15 +1,16 @@
 package korn03.tradeguardserver.endpoints.controller.job;
 
 import korn03.tradeguardserver.endpoints.dto.user.job.DcaJobSubmissionDTO;
-import korn03.tradeguardserver.endpoints.dto.user.job.LiqJobSubmissionDTO;
+import korn03.tradeguardserver.kafka.events.JobEventType;
 import korn03.tradeguardserver.kafka.producer.JobSubmissionProducer;
-import korn03.tradeguardserver.mapper.JobSubmissionMapper;
 import korn03.tradeguardserver.model.entity.job.Job;
 import korn03.tradeguardserver.model.entity.job.JobEvent;
 import korn03.tradeguardserver.model.entity.user.User;
+import korn03.tradeguardserver.service.job.JobCommandService;
 import korn03.tradeguardserver.service.job.JobService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -20,7 +21,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 
 //todo DTO, JWT handling
 @RestController
@@ -29,7 +30,7 @@ import java.util.concurrent.CompletableFuture;
 public class JobController {
     private final JobService jobService;
     private final JobSubmissionProducer jobSubmissionProducer;
-    private final JobSubmissionMapper jobSubmissionMapper;
+    private final JobCommandService jobCommandService;
 
     @PostMapping("/jobs/dca")
     public ResponseEntity<Map<String, String>> submitDcaJob(@RequestBody DcaJobSubmissionDTO request) {
@@ -37,36 +38,78 @@ public class JobController {
         User user = (User) authentication.getPrincipal();
         log.info("Received DCA job submission request from user: {}", user.getUsername());
 
-        CompletableFuture<Void> future = jobSubmissionProducer.sendJobSubmission(jobSubmissionMapper.toDcaMessage(request, user.getId())).thenAccept(result -> log.info("DCA job submitted successfully to partition: {}, offset: {}", result.getRecordMetadata().partition(), result.getRecordMetadata().offset()));
+        try {
+            jobCommandService
+                    .sendCreatedJob("Dca", request, user.getId())
+                    .get(2, TimeUnit.SECONDS); // wait for Kafka confirmation (adjust timeout as needed)
 
-        Map<String, String> response = new HashMap<>();
-        response.put("status", "ACCEPTED");
-        response.put("message", "DCA job submission accepted");
-        response.put("type", "DCA");
+            return ResponseEntity.accepted().body(Map.of(
+                    "status", "ACCEPTED",
+                    "message", "DCA job submission accepted"
+            ));
 
-        return ResponseEntity.accepted().body(response);
+        } catch (Exception e) {
+            log.error("❌ Failed to send job to Kafka", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
+                    "status", "FAILED",
+                    "message", "Could not submit job at this time"
+            ));
+        }
     }
 
-    @PostMapping("/jobs/liq")
-    public ResponseEntity<Map<String, String>> submitLiquidationJob(@RequestBody LiqJobSubmissionDTO request) {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        User user = (User) authentication.getPrincipal();
-        log.info("Received liquidation job submission request from user: {}", user.getUsername());
+//    @PostMapping("/jobs/liq")
+//    public ResponseEntity<Map<String, String>> submitLiquidationJob(@RequestBody LiqJobSubmissionDTO request) {
+//        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+//        User user = (User) authentication.getPrincipal();
+//        log.info("Received liquidation job submission request from user: {}", user.getUsername());
+//
+//        CompletableFuture<Void> future = jobSubmissionProducer.sendJobSubmission(jobSubmissionMapper.toLiqMessage(
+//                request,
+//                user.getId())
+//                )
+//                .thenAccept
+//                        (result -> log.info("Liquidation job submitted successfully to partition: {}, offset: {}", result.getRecordMetadata().partition(), result.getRecordMetadata().offset()));
+//
+//        Map<String, String> response = new HashMap<>();
+//        response.put("status", "ACCEPTED");
+//        response.put("message", "Liquidation job submission accepted");
+//        response.put("type", "LIQUIDATION");
+//
+//        return ResponseEntity.accepted().body(response);
+//    }
+@PostMapping("/jobs/{jobId}/pause")
+public ResponseEntity<?> pauseJob(@PathVariable Long jobId, @RequestParam String source) {
+    jobCommandService.sendSimpleEvent(jobId, new JobEventType.Paused(), source);
+    return ResponseEntity.accepted().body(Map.of("status", "PAUSED"));
+}
 
-        CompletableFuture<Void> future = jobSubmissionProducer.sendJobSubmission(jobSubmissionMapper.toLiqMessage(
-                request,
-                user.getId())
-                )
-                .thenAccept
-                        (result -> log.info("Liquidation job submitted successfully to partition: {}, offset: {}", result.getRecordMetadata().partition(), result.getRecordMetadata().offset()));
-
-        Map<String, String> response = new HashMap<>();
-        response.put("status", "ACCEPTED");
-        response.put("message", "Liquidation job submission accepted");
-        response.put("type", "LIQUIDATION");
-
-        return ResponseEntity.accepted().body(response);
+    @PostMapping("/jobs/{jobId}/resume")
+    public ResponseEntity<?> resumeJob(@PathVariable Long jobId, @RequestParam String source) {
+        jobCommandService.sendSimpleEvent(jobId, new JobEventType.Resumed(), source);
+        return ResponseEntity.accepted().body(Map.of("status", "RESUMED"));
     }
+
+    @PostMapping("/jobs/{jobId}/stop")
+    public ResponseEntity<?> stopJob(@PathVariable Long jobId, @RequestParam String source) {
+        jobCommandService.sendSimpleEvent(jobId, new JobEventType.Stopped(), source);
+        return ResponseEntity.accepted().body(Map.of("status", "STOPPED"));
+    }
+
+    /**
+     * Cancel a job by jobId.
+     *  example: POST /jobs/{jobId}/cancel?source=api
+     * @param jobId
+     * @param source
+     * @return
+     */
+
+    @PostMapping("/{jobId}/cancel")
+    public ResponseEntity<?> cancelJob(@PathVariable Long jobId, @RequestParam String source) {
+        jobCommandService.sendSimpleEvent(jobId, new JobEventType.CanceledOrders(), source);
+        return ResponseEntity.accepted().body(Map.of("status", "CANCELED"));
+    }
+
+
 
     /**
      * Get all jobs.

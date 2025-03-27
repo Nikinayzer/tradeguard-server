@@ -1,22 +1,20 @@
 package korn03.tradeguardserver.kafka.events;
 
 import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.databind.*;
+import com.fasterxml.jackson.databind.DeserializationContext;
+import com.fasterxml.jackson.databind.JsonDeserializer;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
-import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
 import static korn03.tradeguardserver.kafka.events.JobEventType.*;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+@Slf4j
 public class JobEventTypeDeserializer extends JsonDeserializer<JobEventType> {
-
-    private static final Logger logger = LoggerFactory.getLogger(JobEventTypeDeserializer.class);
 
     @Override
     public JobEventType deserialize(JsonParser jp, DeserializationContext ctxt) throws IOException {
@@ -32,7 +30,7 @@ public class JobEventTypeDeserializer extends JsonDeserializer<JobEventType> {
                 case "Stopped" -> new Stopped();
                 case "Finished" -> new Finished();
                 default -> {
-                    logger.error("Unrecognized string variant for event_type: {}", text);
+                    log.error("Unrecognized string variant for event_type: {}", text);
                     throw new IllegalArgumentException("Unrecognized string variant: " + text);
                 }
             };
@@ -43,7 +41,7 @@ public class JobEventTypeDeserializer extends JsonDeserializer<JobEventType> {
             ObjectNode obj = (ObjectNode) node;
 
             // Check for specific fields and deserialize accordingly
-            if(obj.has("Created")){
+            if (obj.has("Created")) {
                 JsonNode created = obj.get("Created");
                 String name = created.get("name").asText();
                 Long userId = Long.parseLong(created.get("user_id").asText());
@@ -69,7 +67,7 @@ public class JobEventTypeDeserializer extends JsonDeserializer<JobEventType> {
                 // Parse the array for "OrdersPlaced"
                 JsonNode arr = obj.get("OrdersPlaced");
                 if (!arr.isArray()) {
-                    logger.error("'OrdersPlaced' should be an array, but was: {}", arr);
+                    log.error("'OrdersPlaced' should be an array, but was: {}", arr);
                     throw new IllegalArgumentException("'OrdersPlaced' must be an array");
                 }
                 List<OpenOrderLog> logs = new ArrayList<>();
@@ -81,14 +79,15 @@ public class JobEventTypeDeserializer extends JsonDeserializer<JobEventType> {
             }
 
             // If none of the above fields are found, it's an unknown object type
-            logger.error("Unknown object variant in event_type: {}", obj.toString());
+            log.error("Unknown object variant in event_type: {}", obj.toString());
             throw new IllegalArgumentException("Unknown object variant in event_type: " + obj.toString());
         }
 
         // Case 3: If neither string nor object, log and throw an error
-        logger.error("Expected string or object for event_type, got: {}", node.toString());
+        log.error("Expected string or object for event_type, got: {}", node.toString());
         throw new IllegalArgumentException("Expected string or object for event_type, got: " + node.toString());
     }
+
     private List<String> extractCoins(JsonNode coinsNode) {
         List<String> coins = new ArrayList<>();
         if (coinsNode.isArray()) {

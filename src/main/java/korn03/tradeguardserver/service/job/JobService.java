@@ -18,6 +18,7 @@ import java.time.Instant;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 
 @Service
 @RequiredArgsConstructor
@@ -51,7 +52,6 @@ public class JobService {
                 logger.error("❌ Failed to save job: {}", jobEventMessage, e);
             }
         }
-
         JobEvent eventEntity = jobMapper.toJobEvent(jobEventMessage);
         try{
             logger.info("Saving job event: {}", eventEntity);
@@ -59,10 +59,7 @@ public class JobService {
         } catch (Exception e) {
             logger.error("❌ Failed to save job event: {}", eventEntity, e);
         }
-
-
     }
-
 
     public List<Job> getAllJobs() {
         return jobRepository.findAll();

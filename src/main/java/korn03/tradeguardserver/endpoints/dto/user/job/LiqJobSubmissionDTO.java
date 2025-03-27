@@ -13,12 +13,5 @@ import java.util.List;
 @EqualsAndHashCode(callSuper = true)
 @SuperBuilder
 @NoArgsConstructor
-@AllArgsConstructor
 public class LiqJobSubmissionDTO extends JobSubmissionDTO {
-    private List<String> excludeCoins;
-
-    @NotNull(message = "Proportion percentage must be specified")
-    @DecimalMin(value = "0.0", message = "Proportion percentage must be non-negative")
-    @DecimalMax(value = "100.0", message = "Proportion percentage cannot exceed 100")
-    private Double proportionPct;
 } 
