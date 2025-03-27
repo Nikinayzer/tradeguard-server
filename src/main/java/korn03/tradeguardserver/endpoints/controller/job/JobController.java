@@ -112,7 +112,7 @@ public class JobController {
      * /todo integrate DTOs instead of entity (for whole controller)
      */
     @GetMapping("/jobs/user/{userId}")
-    public ResponseEntity<?> getRecentJobsByUserId(@PathVariable Long userId, @RequestParam(required = false) Integer timeframe) {
+    public ResponseEntity<List<Job>> getRecentJobsByUserId(@PathVariable Long userId, @RequestParam(required = false) Integer timeframe) {
         return ResponseEntity.ok(jobService.getRecentJobsByUserId(userId, timeframe));
     }
 

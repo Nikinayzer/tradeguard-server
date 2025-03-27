@@ -62,8 +62,8 @@ public class UserAccountLimitsService {
                 .maxPortfolioRisk(BigDecimal.valueOf(5.0)) // 5%
                 .dailyLossLimit(BigDecimal.valueOf(5000))
                 .maxConsecutiveLosses(3)
-                .maxDailyBalanceChange(BigDecimal.valueOf(10))
-                .volatilityLimit(BigDecimal.valueOf(10)) //todo think about this
+                .maxDailyBalanceChange(BigDecimal.valueOf(10.0))
+                .volatilityLimit(BigDecimal.valueOf(10.0)) //todo think about this
                 .liquidityThreshold(BigDecimal.valueOf(1000000))
                 .allowDcaForce(true)
                 .allowLiqForce(true)
