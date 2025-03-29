@@ -75,7 +75,7 @@ public class JobSubmissionProducer {
             return String.valueOf(msg.getJobId());
         }
 
-        return null; // fallback if nothing to key on
+        return null;
     }
 
 } 
