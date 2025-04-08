@@ -4,8 +4,11 @@ import korn03.tradeguardserver.endpoints.dto.user.*;
 import korn03.tradeguardserver.endpoints.dto.user.UserAccountLimits.UpdateUserAccountLimitsRequestDTO;
 import korn03.tradeguardserver.endpoints.dto.user.UserAccountLimits.UserAccountLimitsDTO;
 import korn03.tradeguardserver.mapper.UserAccountLimitsMapper;
+import korn03.tradeguardserver.model.entity.service.PushToken;
 import korn03.tradeguardserver.model.entity.user.User;
 import korn03.tradeguardserver.model.entity.user.connections.UserExchangeAccount;
+import korn03.tradeguardserver.service.core.pushNotifications.PushNotificationService;
+import korn03.tradeguardserver.service.core.pushNotifications.PushTokenService;
 import korn03.tradeguardserver.service.user.UserAccountLimitsService;
 import korn03.tradeguardserver.service.user.connection.UserExchangeAccountService;
 import korn03.tradeguardserver.service.user.UserService;
@@ -27,12 +30,16 @@ public class UserController {
     private final UserAccountLimitsService userAccountLimitsService;
     private final UserExchangeAccountService userExchangeAccountService;
     private final UserAccountLimitsMapper userAccountLimitsMapper;
+    private final PushTokenService pushTokenService;
+    private final PushNotificationService pushNotificationService;
 
-    public UserController(UserService userService, UserAccountLimitsService userAccountLimitsService, UserExchangeAccountService userExchangeAccountService, UserAccountLimitsMapper userAccountLimitsMapper) {
+    public UserController(UserService userService, UserAccountLimitsService userAccountLimitsService, UserExchangeAccountService userExchangeAccountService, UserAccountLimitsMapper userAccountLimitsMapper, PushTokenService pushTokenService, PushNotificationService pushNotificationService) {
         this.userService = userService;
         this.userAccountLimitsService = userAccountLimitsService;
         this.userExchangeAccountService = userExchangeAccountService;
         this.userAccountLimitsMapper = userAccountLimitsMapper;
+        this.pushTokenService = pushTokenService;
+        this.pushNotificationService = pushNotificationService;
     }
 
     @GetMapping
@@ -160,6 +167,26 @@ public class UserController {
         User user = (User) authentication.getPrincipal();
         userAccountLimitsService.updateUserLimits(user.getId(), request);
         return ResponseEntity.ok(userAccountLimitsService.updateUserLimits(user.getId(), request));
+    }
+
+    @GetMapping("/{userId}/pushTokens")
+    public ResponseEntity<List<PushToken>> getUserPushTokens(@PathVariable Long userId) {
+        List<PushToken> pushTokens = pushTokenService.getPushTokensByUserId(userId);
+        return ResponseEntity.ok(pushTokens);
+    }
+
+    /**
+     * Send push notification to user
+     * Example: POST /users/{userId}/send?title=Hello&body=World
+     * @param userId
+     * @param title
+     * @param body
+     * @return
+     */
+    @PostMapping("/{userId}/sendPush")
+    public ResponseEntity<Void> sendPushNotification(@PathVariable Long userId, @RequestParam String title, @RequestParam String body) {
+        pushNotificationService.sendPushNotification(userId, title, body);
+        return ResponseEntity.ok().build();
     }
 
     private UserDTO convertToDTO(User user) {
