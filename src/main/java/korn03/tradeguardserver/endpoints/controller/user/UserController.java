@@ -141,6 +141,9 @@ public class UserController {
     @GetMapping("/{userId}/limits")
     //todo authorize!!!
     public ResponseEntity<UserAccountLimitsDTO> getUserLimits(@PathVariable Long userId) {
+        if (userId == 493077349684740097L){ //TODO CHANGE BACK SINCE ITS DEV LOGIC TO TEST HEALTH
+            return ResponseEntity.ok(userAccountLimitsService.getLimitsByUserId(2L));
+        }
         return ResponseEntity.ok(userAccountLimitsService.getLimitsByUserId(userId));
     }
 

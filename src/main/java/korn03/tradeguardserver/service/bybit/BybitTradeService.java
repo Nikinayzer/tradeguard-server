@@ -1,11 +1,11 @@
-//package korn03.tradeguardserver.service.bybit;
+//package korn03.tradeguardserver.service.exchange;
 //
-//import com.bybit.api.client.domain.CategoryType;
-//import com.bybit.api.client.domain.TradeOrderType;
-//import com.bybit.api.client.domain.trade.Side;
-//import com.bybit.api.client.domain.trade.TimeInForce;
-//import com.bybit.api.client.domain.trade.request.TradeOrderRequest;
-//import com.bybit.api.client.restApi.BybitApiAsyncTradeRestClient;
+//import com.exchange.api.client.domain.CategoryType;
+//import com.exchange.api.client.domain.TradeOrderType;
+//import com.exchange.api.client.domain.trade.Side;
+//import com.exchange.api.client.domain.trade.TimeInForce;
+//import com.exchange.api.client.domain.trade.request.TradeOrderRequest;
+//import com.exchange.api.client.restApi.BybitApiAsyncTradeRestClient;
 //import org.springframework.stereotype.Service;
 //
 //import java.util.Map;

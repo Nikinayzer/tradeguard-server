@@ -1,8 +1,8 @@
-//package korn03.tradeguardserver.service.bybit;
+//package korn03.tradeguardserver.service.exchange;
 //
-//import com.bybit.api.client.domain.CategoryType;
-//import com.bybit.api.client.domain.position.request.PositionDataRequest;
-//import com.bybit.api.client.restApi.BybitApiAsyncPositionRestClient;
+//import com.exchange.api.client.domain.CategoryType;
+//import com.exchange.api.client.domain.position.request.PositionDataRequest;
+//import com.exchange.api.client.restApi.BybitApiAsyncPositionRestClient;
 //import org.springframework.stereotype.Service;
 //
 //import java.util.List;
