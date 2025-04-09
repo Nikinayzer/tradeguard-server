@@ -6,10 +6,12 @@ import korn03.tradeguardserver.endpoints.dto.user.UserAccountLimits.UserAccountL
 import korn03.tradeguardserver.mapper.UserAccountLimitsMapper;
 import korn03.tradeguardserver.model.entity.service.PushToken;
 import korn03.tradeguardserver.model.entity.user.User;
+import korn03.tradeguardserver.model.entity.user.connections.UserDiscordAccount;
 import korn03.tradeguardserver.model.entity.user.connections.UserExchangeAccount;
 import korn03.tradeguardserver.service.core.pushNotifications.PushNotificationService;
 import korn03.tradeguardserver.service.core.pushNotifications.PushTokenService;
 import korn03.tradeguardserver.service.user.UserAccountLimitsService;
+import korn03.tradeguardserver.service.user.connection.UserDiscordAccountService;
 import korn03.tradeguardserver.service.user.connection.UserExchangeAccountService;
 import korn03.tradeguardserver.service.user.UserService;
 import org.springframework.http.ResponseEntity;
@@ -19,6 +21,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -32,14 +35,16 @@ public class UserController {
     private final UserAccountLimitsMapper userAccountLimitsMapper;
     private final PushTokenService pushTokenService;
     private final PushNotificationService pushNotificationService;
+    private final UserDiscordAccountService userDiscordAccountService;
 
-    public UserController(UserService userService, UserAccountLimitsService userAccountLimitsService, UserExchangeAccountService userExchangeAccountService, UserAccountLimitsMapper userAccountLimitsMapper, PushTokenService pushTokenService, PushNotificationService pushNotificationService) {
+    public UserController(UserService userService, UserAccountLimitsService userAccountLimitsService, UserExchangeAccountService userExchangeAccountService, UserAccountLimitsMapper userAccountLimitsMapper, PushTokenService pushTokenService, PushNotificationService pushNotificationService, UserDiscordAccountService userDiscordAccountService) {
         this.userService = userService;
         this.userAccountLimitsService = userAccountLimitsService;
         this.userExchangeAccountService = userExchangeAccountService;
         this.userAccountLimitsMapper = userAccountLimitsMapper;
         this.pushTokenService = pushTokenService;
         this.pushNotificationService = pushNotificationService;
+        this.userDiscordAccountService = userDiscordAccountService;
     }
 
     @GetMapping
@@ -53,7 +58,31 @@ public class UserController {
     public ResponseEntity<UserDTO> getCurrentUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         User user = (User) authentication.getPrincipal();
-        return ResponseEntity.ok(convertToDTO(user));
+        //TODO THIS IS HORRIBLE, REFACTOR
+        Optional<UserDiscordAccount> discord = userDiscordAccountService.getDiscordAccount(user.getId());
+        List<ExchangeAccountDTO>  exchanges = userExchangeAccountService.getUserExchangeAccounts(user.getId());
+        UserDTO userDTO = UserDTO.builder()
+                .id(user.getId())
+                .username(user.getUsername())
+                .email(user.getEmail())
+                .firstName(user.getFirstName())
+                .lastName(user.getLastName())
+                .registeredAt(user.getRegisteredAt())
+                .updatedAt(user.getUpdatedAt())
+                .roles(user.getRoles())
+                .accountNonExpired(user.isAccountNonExpired())
+                .accountNonLocked(user.isAccountNonLocked())
+                .credentialsNonExpired(user.isCredentialsNonExpired())
+                .enabled(user.isEnabled())
+                .discordAccount(UserDTO.DiscordAccountDTO.builder()
+                        .discordId(String.valueOf(discord.map(UserDiscordAccount::getDiscordId).orElse(null)))
+                        .username(discord.map(UserDiscordAccount::getDiscordUsername).orElse(null))
+                        .discriminator(discord.map(UserDiscordAccount::getDiscordDiscriminator).orElse(null))
+                        .avatar(discord.map(UserDiscordAccount::getDiscordAvatar).orElse(null))
+                        .build())
+                .exchangeAccounts(exchanges)
+                .build();
+        return ResponseEntity.ok(userDTO);
     }
 
 

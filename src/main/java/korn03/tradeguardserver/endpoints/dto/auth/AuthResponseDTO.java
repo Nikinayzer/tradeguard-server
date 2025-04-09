@@ -1,14 +1,22 @@
 package korn03.tradeguardserver.endpoints.dto.auth;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 @Data
-@NoArgsConstructor
 @AllArgsConstructor
+@NoArgsConstructor
 @Builder
 public class AuthResponseDTO {
     private String token;
+    private UserDTO user;
+
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    @Builder
+    public static class UserDTO {
+        private String username;
+        private String email;
+        private String firstName;
+    }
 }

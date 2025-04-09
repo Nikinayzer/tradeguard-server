@@ -26,16 +26,17 @@ public class UserDiscordAccountService {
     /**
      * Saves a new Discord account connection for a user.
      */
-    public UserDiscordAccount saveDiscordAccount(Long userId, Long discordId, String discordUsername) {
+    public UserDiscordAccount saveDiscordAccount(Long userId, Long discordId, String discordUsername, String discordDiscriminator) {
         UserDiscordAccount account = new UserDiscordAccount();
         account.setUserId(userId);
         account.setDiscordId(discordId);
         account.setDiscordUsername(discordUsername);
+        account.setDiscordDiscriminator(discordDiscriminator);
         return discordAccountRepository.save(account);
     }
 
     /**
-     * Retrieves all Discord accounts linked to a user.
+     * Retrieves Discord account of a user by user ID.
      */
     public Optional<UserDiscordAccount> getUserDiscordAccounts(Long userId) {
         return discordAccountRepository.findByUserId(userId);
@@ -44,8 +45,8 @@ public class UserDiscordAccountService {
     /**
      * Retrieves a specific Discord account by user ID and account ID.
      */
-    public Optional<UserDiscordAccount> getDiscordAccount(Long userId, Long id) {
-        return discordAccountRepository.findByUserIdAndId(userId, id);
+    public Optional<UserDiscordAccount> getDiscordAccount(Long userId) {
+        return discordAccountRepository.findByUserId(userId);
     }
 
     /**

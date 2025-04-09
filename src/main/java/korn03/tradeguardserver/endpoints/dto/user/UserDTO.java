@@ -7,6 +7,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Set;
 
 @Data
@@ -26,4 +27,16 @@ public class UserDTO {
     private boolean accountNonLocked;
     private boolean credentialsNonExpired;
     private boolean enabled;
+
+    private DiscordAccountDTO discordAccount;
+    @Data
+    @Builder
+    public static class DiscordAccountDTO {
+        private String discordId;
+        private String username;
+        private String discriminator;
+        private String avatar;
+    }
+    private List<ExchangeAccountDTO> exchangeAccounts;
+
 } 

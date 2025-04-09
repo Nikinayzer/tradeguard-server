@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import java.time.Instant;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 
@@ -36,19 +37,25 @@ public class UserService {
         return userRepository.findUserById(id).orElseThrow(() -> new UsernameNotFoundException("User not found"));
     }
 
-    public User getUserByUsername(String username) throws UsernameNotFoundException {
-        return userRepository.findUserByUsername(username).orElseThrow(() -> new UsernameNotFoundException("User not found"));
+    public Optional<User> getByEmail(String email) throws UsernameNotFoundException {
+        return userRepository.findUserByEmail(email);
+    }
+
+    public Optional<User> getUserByUsername(String username) throws UsernameNotFoundException {
+        return userRepository.findUserByUsername(username);
     }
 
     public User createUser(User user) {
-        if(userRepository.existsByUsername(user.getUsername())) {
+        if (userRepository.existsByUsername(user.getUsername())) {
             throw new IllegalArgumentException("User with this username already exists"); //todo change to custom exception
         }
         if (user.getEmail() != null && userRepository.existsByEmail(user.getEmail())) {
             throw new IllegalArgumentException("User with this email already exists"); //todo change to custom exception
         }
         user.setRoles(new HashSet<>(Set.of(Role.USER)));
-        user.setPassword(passwordEncoder.encode(user.getPassword()));
+        if (user.getPassword() != null) {
+            user.setPassword(passwordEncoder.encode(user.getPassword())); //todo handle password validation/random password
+        }
         user.setAccountNonExpired(true);
         user.setAccountNonLocked(true);
         user.setCredentialsNonExpired(true);
@@ -59,11 +66,11 @@ public class UserService {
         userAccountLimitsService.createDefaultLimits(user);
         return userRepository.save(user); //todo fix this mess
     }
+
     public void updateUser(User user) {
         user.setUpdatedAt(Instant.now());
         userRepository.save(user);
     }
-
 
     public User addUserRole(Long userId, Role role) {
         User user = userRepository.findUserById(userId).orElseThrow(() -> new UsernameNotFoundException("User not found"));
@@ -100,8 +107,11 @@ public class UserService {
         userRepository.deleteById(id);
     }
 
-
     public boolean userExists(String username) {
         return userRepository.existsByUsername(username);
+    }
+
+    public boolean userExists(Long id) {
+        return userRepository.existsById(id);
     }
 }

@@ -29,7 +29,7 @@ public class User implements UserDetails {
     @Column(unique = true, nullable = false)
     private String username;
 
-    @Column(unique = true, nullable = true)
+    @Column(unique = true, nullable = false)
     private String email;
 
     @Column(nullable = true)
@@ -38,8 +38,11 @@ public class User implements UserDetails {
     @Column(nullable = true)
     private String lastName;
 
-    @Column(nullable = false)
+    @Column(nullable = true)
     private String password;
+
+    @Column(nullable = false)
+    private Boolean isExternal = false;
 
     @Column(nullable = false)
     private Instant registeredAt;

@@ -4,6 +4,7 @@ import korn03.tradeguardserver.model.entity.service.PushToken;
 import korn03.tradeguardserver.model.repository.service.PushTokenRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -29,8 +30,13 @@ public class PushTokenService {
         pushTokenRepository.save(token);
     }
 
+    @Transactional
     public void unregisterPushToken(String pushToken) {
-        pushTokenRepository.deleteByToken(pushToken);
+        try {
+            pushTokenRepository.deleteByToken(pushToken);
+        } catch (Exception e) {
+           throw new RuntimeException("Failed to unregister push token", e);
+        }
     }
 
     public List<PushToken> getPushTokensByUserId(Long userId) {

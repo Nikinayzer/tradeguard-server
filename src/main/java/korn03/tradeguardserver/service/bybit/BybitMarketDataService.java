@@ -141,7 +141,7 @@ public class BybitMarketDataService {
 
             cacheService.storeInCache(cacheKey, marketData, CACHE_EXPIRATION);
 
-            logger.info("Fetched market data for {} : {}", pair, marketData);
+            //logger.info("Fetched market data for {} : {}", pair, marketData);
             return marketData;
         } catch (Exception e) {
             throw new RuntimeException("Failed to fetch market data for " + pair, e);

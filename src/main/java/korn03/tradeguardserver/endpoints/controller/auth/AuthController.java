@@ -1,4 +1,4 @@
-package korn03.tradeguardserver.endpoints.controller;
+package korn03.tradeguardserver.endpoints.controller.auth;
 
 import korn03.tradeguardserver.endpoints.dto.auth.AuthRequestDTO;
 import korn03.tradeguardserver.endpoints.dto.auth.AuthResponseDTO;
@@ -7,6 +7,8 @@ import korn03.tradeguardserver.model.entity.user.User;
 import korn03.tradeguardserver.security.JwtService;
 import korn03.tradeguardserver.service.core.pushNotifications.PushTokenService;
 import korn03.tradeguardserver.service.user.UserService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -18,6 +20,7 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/auth")
 public class AuthController {
 
+    private static final Logger log = LoggerFactory.getLogger(AuthController.class);
     private final AuthenticationManager authenticationManager;
     private final JwtService jwtService;
     private final UserService userService;
@@ -40,7 +43,7 @@ public class AuthController {
 
         User user = new User();
         user.setUsername(request.getUsername());
-        user.setPassword(request.getPassword()); //todo hash
+        user.setPassword(request.getPassword());
         user.setEmail(request.getEmail());
         user.setFirstName(request.getFirstName());
         user.setLastName(request.getLastName());
@@ -48,7 +51,15 @@ public class AuthController {
         User createdUser = userService.createUser(user);
 
         String token = jwtService.generateToken(createdUser);
-        return ResponseEntity.ok(new AuthResponseDTO(token));
+        AuthResponseDTO response = AuthResponseDTO.builder()
+                .token(token)
+                .user(AuthResponseDTO.UserDTO.builder()
+                        .username(createdUser.getUsername())
+                        .firstName(createdUser.getFirstName())
+                        .email(createdUser.getEmail())
+                        .build())
+                .build();
+        return ResponseEntity.ok(response);
     }
 
     @PostMapping("/login")
@@ -64,8 +75,15 @@ public class AuthController {
         if (pushToken != null) {
             pushTokenService.registerPushToken(user.getId(), pushToken);
         }
-
-        return ResponseEntity.ok(new AuthResponseDTO(token));
+        AuthResponseDTO response = AuthResponseDTO.builder()
+                .token(token)
+                .user(AuthResponseDTO.UserDTO.builder()
+                        .username(user.getUsername())
+                        .firstName(user.getFirstName())
+                        .email(user.getEmail())
+                        .build())
+                .build();
+        return ResponseEntity.ok(response);
     }
 
     @PostMapping("/logout")
@@ -74,7 +92,13 @@ public class AuthController {
     ) {
         SecurityContextHolder.clearContext();
         if (pushToken != null) {
-            pushTokenService.unregisterPushToken(pushToken);
+            try {
+                pushTokenService.unregisterPushToken(pushToken);
+            }
+            catch (Exception e) {
+                log.error("Failed to unregister push token: {}", pushToken, e);
+            }
+
         }
         return ResponseEntity.ok().build();
     }

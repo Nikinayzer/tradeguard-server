@@ -3,6 +3,7 @@ package korn03.tradeguardserver.security;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
+import korn03.tradeguardserver.model.entity.user.User;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -26,8 +27,10 @@ public class JwtService {
     }
 
     public String generateToken(UserDetails userDetails) {
+        Long userId = ((User) userDetails).getId();
         return Jwts.builder()
                 .subject(userDetails.getUsername())
+                .claim("userId", userId)
                 .claim("roles", userDetails.getAuthorities().stream()
                         .map(GrantedAuthority::getAuthority)
                         .collect(Collectors.toList()))
@@ -47,6 +50,15 @@ public class JwtService {
         } catch (Exception e) {
             return false;
         }
+    }
+
+    public Long extractUserId(String token) {
+        return Jwts.parser()
+                .setSigningKey(Keys.hmacShaKeyFor(secretKey.getBytes()))
+                .build()
+                .parseClaimsJws(token)
+                .getBody()
+                .get("userId", Long.class);
     }
 
     public String extractUsername(String token) {

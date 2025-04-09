@@ -70,7 +70,7 @@ public class UsersScheduler {
             admin.setPassword(adminPassword);
             admin.setFirstName("Nick");
             admin.setLastName("Korotov");
-            admin.setEmail("korn03@vse.cz");
+            admin.setEmail("korotov.nick@gmail.com");
 //            admin.setRoles(Set.of(Role.USER, Role.ADMIN));
             admin.setRegisteredAt(Instant.now());
             User createdAdmin = userService.createUser(admin);
@@ -111,7 +111,7 @@ public class UsersScheduler {
      */
     private void createDefaultDiscordAccount(Long userId, Long discordId, String discordUsername) {
         try {
-            discordAccountService.saveDiscordAccount(userId, discordId, discordUsername);
+            discordAccountService.saveDiscordAccount(userId, discordId, discordUsername, "42069");
             log.info("Default Discord account created for user ID: {}, Discord ID: {}", userId, discordId);
         } catch (Exception e) {
             log.error("Failed to create default Discord account for user ID: {}", userId, e);
