@@ -6,6 +6,7 @@ import korn03.tradeguardserver.endpoints.dto.auth.oauth.DiscordTokenResponseDTO;
 import korn03.tradeguardserver.endpoints.dto.auth.oauth.DiscordUserDTO;
 import korn03.tradeguardserver.model.entity.user.User;
 import korn03.tradeguardserver.model.entity.user.connections.UserDiscordAccount;
+import korn03.tradeguardserver.security.AuthUtil;
 import korn03.tradeguardserver.security.JwtService;
 import korn03.tradeguardserver.service.core.pushNotifications.PushTokenService;
 import korn03.tradeguardserver.service.user.UserService;
@@ -20,6 +21,7 @@ import org.springframework.web.client.RestTemplate;
 
 import java.util.Optional;
 
+//todo refactor
 @RestController
 @RequestMapping("/auth")
 @Slf4j
@@ -55,10 +57,9 @@ public class DiscordAuthController {
     public ResponseEntity<?> discordCallback(
             @RequestBody DiscordCallbackRequestDTO callbackRequest,
             @RequestHeader(value = "X-Push-Token", required = false) String pushToken
-            //@RequestParam(value = "code", required = false) String code
     ) {
         String code = callbackRequest.getCode();
-        log.info("Discord callback received with code: {}", code);
+        log.info("Authorizing Discord user with code: {}", code);
         // 1. Exchange the code for a Discord access token.
         DiscordTokenResponseDTO discordToken = exchangeCodeForToken(code, discordRedirectUri, callbackRequest.getCodeVerifier());
         if (discordToken == null) {
@@ -76,7 +77,13 @@ public class DiscordAuthController {
         }
 
         // 3. Check if the account already exists in our system.
-        User user = handleUserAccount(discordUserDTO);
+        User user;
+        if (AuthUtil.isAuthenticated()) {
+            user = AuthUtil.getCurrentUser();
+            linkDiscordAccountToExistingUser(user, discordUserDTO);
+        } else {
+            user = handleUserAccount(discordUserDTO);
+        }
         if (user == null) {
             log.error("Failed to handle user account for Discord ID: {}", discordUserDTO.getId()); //todo
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -162,7 +169,7 @@ public class DiscordAuthController {
         } catch (NumberFormatException e) {
             return null;
         }
-
+        log.info("Handling user account for Discord ID: {}", discordId);
         // Check if a Discord account already exists
         Optional<UserDiscordAccount> existingAccount = userDiscordAccountService.findByDiscordId(discordId);
         if (existingAccount.isPresent()) {
@@ -192,8 +199,6 @@ public class DiscordAuthController {
                 return null;
             }
         }
-
-
         // Save the Discord account linkage
         userDiscordAccountService.addDiscordAccount(
                 user.getId(),
@@ -203,6 +208,21 @@ public class DiscordAuthController {
         );
 
         return user;
+    }
+
+    private void linkDiscordAccountToExistingUser(User user, DiscordUserDTO discord) {
+        log.info("Linking Discord account to existing user: {}", user.getUsername());
+        //if discord already exists, return
+        if (userDiscordAccountService.findByDiscordId(Long.valueOf(discord.getId())).isPresent()) {
+            throw new RuntimeException("Discord account already linked to another user");
+        }
+        userDiscordAccountService.addDiscordAccount(
+                user.getId(),
+                Long.valueOf(discord.getId()),
+                discord.getUsername(),
+                discord.getAvatar()
+        );
+        log.info("Linked Discord account to user: {}", user.getUsername());
     }
 }
 

@@ -70,6 +70,7 @@ public class UsersScheduler {
             admin.setFirstName("Nick");
             admin.setLastName("Korotov");
             admin.setEmail("korotov.nick@gmail.com");
+            //admin.setEmail("korn03@vse.cz");
 //            admin.setRoles(Set.of(Role.USER, Role.ADMIN));
             admin.setRegisteredAt(Instant.now());
             User createdAdmin = userService.createUser(admin);
