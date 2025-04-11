@@ -20,9 +20,6 @@ public class UserDiscordAccount {
     @Column(name = "discord_username", nullable = false)
     private String discordUsername;
 
-    @Column(name = "discord_discriminator", nullable = false)
-    private String discordDiscriminator;
-
     @Column(name = "discord_avatar")
     private String discordAvatar;
 }

@@ -21,6 +21,9 @@ public class UserExchangeAccount {
     @Column(name = "account_name", nullable = false)
     private String accountName;
 
+    @Column(name = "demo", nullable = false)
+    private boolean demo;
+
     // Read-only pair
     @Column(name = "readonly_api_key", nullable = false)
     private String encryptedReadOnlyApiKey;

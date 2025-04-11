@@ -20,8 +20,7 @@ public class BybitApiClientFactory {
      * Retrieves user-specific read-only API credentials and initializes a Exchange client.
      */
     private com.bybit.api.client.service.BybitApiClientFactory getReadOnlyClientFactory(Long userId, Long id) {
-        UserExchangeAccount account = userExchangeAccountService.getExchangeAccount(userId, id)
-                .orElseThrow(() -> new RuntimeException("Exchange account not found"));
+        UserExchangeAccount account = userExchangeAccountService.getExchangeAccount(userId, id);
 
         String apiKey = userExchangeAccountService.getDecryptedReadOnlyApiKey(account);
         String apiSecret = userExchangeAccountService.getDecryptedReadOnlyApiSecret(account);
@@ -33,8 +32,7 @@ public class BybitApiClientFactory {
      * Retrieves user-specific read-write API credentials and initializes a Exchange client.
      */
     private com.bybit.api.client.service.BybitApiClientFactory getReadWriteClientFactory(Long userId, Long id) {
-        UserExchangeAccount account = userExchangeAccountService.getExchangeAccount(userId, id)
-                .orElseThrow(() -> new RuntimeException("Exchange account not found"));
+        UserExchangeAccount account = userExchangeAccountService.getExchangeAccount(userId, id);
 
         String apiKey = userExchangeAccountService.getDecryptedReadWriteApiKey(account);
         String apiSecret = userExchangeAccountService.getDecryptedReadWriteApiSecret(account);

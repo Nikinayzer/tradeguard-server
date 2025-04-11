@@ -166,6 +166,12 @@ public class DiscordAuthController {
         // Check if a Discord account already exists
         Optional<UserDiscordAccount> existingAccount = userDiscordAccountService.findByDiscordId(discordId);
         if (existingAccount.isPresent()) {
+            userDiscordAccountService.updateDiscordAccount(
+                    existingAccount.get().getUserId(),
+                    discordId,
+                    discordUserDTO.getUsername(),
+                    discordUserDTO.getAvatar()
+            );
             return userService.getById(existingAccount.get().getUserId());
         }
 
@@ -189,11 +195,11 @@ public class DiscordAuthController {
 
 
         // Save the Discord account linkage
-        userDiscordAccountService.saveDiscordAccount(
+        userDiscordAccountService.addDiscordAccount(
                 user.getId(),
                 discordId,
                 discordUserDTO.getUsername(),
-                discordUserDTO.getDiscriminator()
+                discordUserDTO.getAvatar()
         );
 
         return user;

@@ -32,6 +32,7 @@ public class UserConnectionsFromDiscordDTO {
         private String id;
         private String provider;
         private String name;
+        private Boolean demo;
         private String readOnlyApiKey;
         private String readOnlyApiSecret;
         private String readWriteApiKey;

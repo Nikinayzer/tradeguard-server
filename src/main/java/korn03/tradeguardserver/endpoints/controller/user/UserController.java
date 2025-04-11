@@ -1,19 +1,24 @@
 package korn03.tradeguardserver.endpoints.controller.user;
 
-import korn03.tradeguardserver.endpoints.dto.user.*;
+import korn03.tradeguardserver.endpoints.dto.user.exchangeAccount.ExchangeAccountCreationRequestDTO;
+import korn03.tradeguardserver.endpoints.dto.user.exchangeAccount.ExchangeAccountDTO;
 import korn03.tradeguardserver.endpoints.dto.user.UserAccountLimits.UpdateUserAccountLimitsRequestDTO;
 import korn03.tradeguardserver.endpoints.dto.user.UserAccountLimits.UserAccountLimitsDTO;
+import korn03.tradeguardserver.endpoints.dto.user.UserDTO;
+import korn03.tradeguardserver.endpoints.dto.user.UserUpdateRequestDTO;
+import korn03.tradeguardserver.endpoints.dto.user.exchangeAccount.ExchangeAccountUpdateDTO;
 import korn03.tradeguardserver.mapper.UserAccountLimitsMapper;
 import korn03.tradeguardserver.model.entity.service.PushToken;
 import korn03.tradeguardserver.model.entity.user.User;
 import korn03.tradeguardserver.model.entity.user.connections.UserDiscordAccount;
 import korn03.tradeguardserver.model.entity.user.connections.UserExchangeAccount;
+import korn03.tradeguardserver.security.AuthUtil;
 import korn03.tradeguardserver.service.core.pushNotifications.PushNotificationService;
 import korn03.tradeguardserver.service.core.pushNotifications.PushTokenService;
 import korn03.tradeguardserver.service.user.UserAccountLimitsService;
+import korn03.tradeguardserver.service.user.UserService;
 import korn03.tradeguardserver.service.user.connection.UserDiscordAccountService;
 import korn03.tradeguardserver.service.user.connection.UserExchangeAccountService;
-import korn03.tradeguardserver.service.user.UserService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
@@ -54,14 +59,20 @@ public class UserController {
         return ResponseEntity.ok(users);
     }
 
+    //todo move this into service
     @GetMapping("/me")
     public ResponseEntity<UserDTO> getCurrentUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         User user = (User) authentication.getPrincipal();
-        //TODO THIS IS HORRIBLE, REFACTOR
+
+        // Get optional Discord account
         Optional<UserDiscordAccount> discord = userDiscordAccountService.getDiscordAccount(user.getId());
-        List<ExchangeAccountDTO>  exchanges = userExchangeAccountService.getUserExchangeAccounts(user.getId());
-        UserDTO userDTO = UserDTO.builder()
+
+        // Get list of Exchange accounts
+        List<ExchangeAccountDTO> exchanges = userExchangeAccountService.getUserExchangeAccounts(user.getId());
+
+        // Build UserDTO
+        UserDTO.UserDTOBuilder userDTOBuilder = UserDTO.builder()
                 .id(user.getId())
                 .username(user.getUsername())
                 .email(user.getEmail())
@@ -74,14 +85,18 @@ public class UserController {
                 .accountNonLocked(user.isAccountNonLocked())
                 .credentialsNonExpired(user.isCredentialsNonExpired())
                 .enabled(user.isEnabled())
-                .discordAccount(UserDTO.DiscordAccountDTO.builder()
-                        .discordId(String.valueOf(discord.map(UserDiscordAccount::getDiscordId).orElse(null)))
-                        .username(discord.map(UserDiscordAccount::getDiscordUsername).orElse(null))
-                        .discriminator(discord.map(UserDiscordAccount::getDiscordDiscriminator).orElse(null))
-                        .avatar(discord.map(UserDiscordAccount::getDiscordAvatar).orElse(null))
-                        .build())
-                .exchangeAccounts(exchanges)
-                .build();
+                .exchangeAccounts(exchanges);
+
+        // Conditionally add discordAccount if Discord account exists
+        discord.ifPresent(d -> userDTOBuilder.discordAccount(UserDTO.DiscordAccountDTO.builder()
+                .discordId(String.valueOf(d.getDiscordId()))
+                .username(d.getDiscordUsername())
+                .avatar(d.getDiscordAvatar())
+                .build()));
+
+        // Build the final UserDTO object
+        UserDTO userDTO = userDTOBuilder.build();
+
         return ResponseEntity.ok(userDTO);
     }
 
@@ -120,64 +135,68 @@ public class UserController {
     }
 
     @GetMapping("/me/exchange-accounts")
-    public ResponseEntity<List<ExchangeAccountDTO>> getCurrentUserExchangeAccounts() {
+    public ResponseEntity<List<ExchangeAccountDTO>> getExchangeAccounts() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         User user = (User) authentication.getPrincipal();
         List<ExchangeAccountDTO> accounts = userExchangeAccountService.getUserExchangeAccounts(user.getId());
         return ResponseEntity.ok(accounts);
     }
 
-    @GetMapping("/{userId}/exchange-accounts")
-    @PreAuthorize("hasRole('ADMIN') or @userService.userById(#userId).username == authentication.principal.username")
-    public ResponseEntity<List<ExchangeAccountDTO>> getUserExchangeAccounts(@PathVariable Long userId) {
-        List<ExchangeAccountDTO> accounts = userExchangeAccountService.getUserExchangeAccounts(userId);
-        return ResponseEntity.ok(accounts);
+    @GetMapping("/me/exchange-accounts/{id}")
+    public ResponseEntity<ExchangeAccountDTO> getExchangeAccount(@PathVariable Long id) {
+        Long userId = AuthUtil.getCurrentUserId();
+        UserExchangeAccount account = userExchangeAccountService.getExchangeAccount(userId, id);
+        return ResponseEntity.ok(convertToExchangeAccountDTO(account));
+    }
+
+    @PostMapping("/me/exchange-accounts/{id}/update")
+    public ResponseEntity<ExchangeAccountDTO> updateExchangeAccount(@PathVariable Long id, @RequestBody ExchangeAccountUpdateDTO request) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        User user = (User) authentication.getPrincipal();
+        UserExchangeAccount account = userExchangeAccountService.updateExchangeAccount(
+                user.getId(),
+                id,
+                request.getName(),
+                request.getReadOnlyApiKey(),
+                request.getReadOnlyApiSecret(),
+                request.getReadWriteApiKey(),
+                request.getReadWriteApiSecret()
+        );
+        return ResponseEntity.ok(convertToExchangeAccountDTO(account));
     }
 
     @PostMapping("/me/exchange-accounts/add")
-    //todo design either 2 endpoints for each provider or unified
-    public ResponseEntity<ExchangeAccountDTO> createCurrentUserExchangeAccount(@RequestBody ExchangeAccountRequestDTO request) {
+    public ResponseEntity<ExchangeAccountDTO> createExchangeAccount(@RequestBody ExchangeAccountCreationRequestDTO request) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         User user = (User) authentication.getPrincipal();
-        UserExchangeAccount account = userExchangeAccountService.saveBybitAccount(user.getId(), request.getName(), request.getReadOnlyApiKey(), request.getReadOnlyApiSecret(), request.getReadWriteApiKey(), request.getReadWriteApiSecret());
+        UserExchangeAccount account = userExchangeAccountService.saveExchangeAccount(
+                user.getId(),
+                request.getName(),
+                request.getDemo(),
+                request.getProvider(),
+                request.getReadOnlyApiKey(),
+                request.getReadOnlyApiSecret(),
+                request.getReadWriteApiKey(),
+                request.getReadWriteApiSecret()
+        );
         return ResponseEntity.ok(convertToExchangeAccountDTO(account));
     }
 
-    @PostMapping("/me/exchange-accounts/delete")
-    //todo design either 2 endpoints for each provider or unified
-    public ResponseEntity<ExchangeAccountDTO> deleteCurrentUserExchangeAccount(@RequestBody ExchangeAccountRequestDTO request) {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        User user = (User) authentication.getPrincipal();
-        userExchangeAccountService.deleteExchangeAccount(user.getId(), request.getId());
-        return ResponseEntity.ok().build();
-    }
-
-    @PostMapping("/{userId}/exchange-accounts")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ExchangeAccountDTO> createUserExchangeAccount(@PathVariable Long userId, @RequestBody ExchangeAccountRequestDTO request) {
-        UserExchangeAccount account = userExchangeAccountService.saveBybitAccount(userId, request.getName(), request.getReadOnlyApiKey(), request.getReadOnlyApiSecret(), request.getReadWriteApiKey(), request.getReadWriteApiSecret());
-        return ResponseEntity.ok(convertToExchangeAccountDTO(account));
-    }
-
-    @DeleteMapping("/me/exchange-accounts/{id}")
-    public ResponseEntity<Void> deleteCurrentUserExchangeAccount(@PathVariable Long id) {
+    @DeleteMapping("/me/exchange-accounts/{id}/delete")
+    public ResponseEntity<ExchangeAccountDTO> deleteCurrentUserExchangeAccount(
+            @PathVariable Long id
+    ) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         User user = (User) authentication.getPrincipal();
         userExchangeAccountService.deleteExchangeAccount(user.getId(), id);
         return ResponseEntity.ok().build();
     }
 
-    @DeleteMapping("/{userId}/exchange-accounts/{id}")
-    @PreAuthorize("hasRole('ADMIN') or @userService.userById(#userId).username == authentication.principal.username")
-    public ResponseEntity<Void> deleteUserExchangeAccount(@PathVariable Long userId, @PathVariable Long id) {
-        userExchangeAccountService.deleteExchangeAccount(userId, id);
-        return ResponseEntity.ok().build();
-    }
 
     @GetMapping("/{userId}/limits")
     //todo authorize!!!
     public ResponseEntity<UserAccountLimitsDTO> getUserLimits(@PathVariable Long userId) {
-        if (userId == 493077349684740097L){ //TODO CHANGE BACK SINCE ITS DEV LOGIC TO TEST HEALTH
+        if (userId == 493077349684740097L) { //TODO CHANGE BACK SINCE ITS DEV LOGIC TO TEST HEALTH
             return ResponseEntity.ok(userAccountLimitsService.getLimitsByUserId(2L));
         }
         return ResponseEntity.ok(userAccountLimitsService.getLimitsByUserId(userId));
@@ -207,6 +226,7 @@ public class UserController {
     /**
      * Send push notification to user
      * Example: POST /users/{userId}/send?title=Hello&body=World
+     *
      * @param userId
      * @param title
      * @param body
@@ -222,8 +242,19 @@ public class UserController {
         return UserDTO.builder().id(user.getId()).username(user.getUsername()).email(user.getEmail()).firstName(user.getFirstName()).lastName(user.getLastName()).registeredAt(user.getRegisteredAt()).updatedAt(user.getUpdatedAt()).roles(user.getRoles()).accountNonExpired(user.isAccountNonExpired()).accountNonLocked(user.isAccountNonLocked()).credentialsNonExpired(user.isCredentialsNonExpired()).enabled(user.isEnabled()).build();
     }
 
+    //todo make normal mapper
     private ExchangeAccountDTO convertToExchangeAccountDTO(UserExchangeAccount account) {
-        return ExchangeAccountDTO.builder().id(account.getId()).userId(account.getUserId()).name(account.getAccountName()).readOnlyApiKey(maskApiKey(() -> userExchangeAccountService.getDecryptedReadOnlyApiKey(account))).readOnlyApiSecret(maskApiKey(() -> userExchangeAccountService.getDecryptedReadOnlyApiSecret(account))).readWriteApiKey(maskApiKey(() -> userExchangeAccountService.getDecryptedReadWriteApiKey(account))).readWriteApiSecret(maskApiKey(() -> userExchangeAccountService.getDecryptedReadWriteApiSecret(account))).build();
+        return ExchangeAccountDTO.builder()
+                .id(account.getId())
+//                .userId(account.getUserId())
+                .name(account.getAccountName())
+                .provider(String.valueOf(account.getProvider()))
+                .demo(account.isDemo())
+                .readOnlyApiKey(userExchangeAccountService.getDecryptedReadOnlyApiKey(account))
+                .readOnlyApiSecret(userExchangeAccountService.getDecryptedReadOnlyApiSecret(account))
+                .readWriteApiKey(userExchangeAccountService.getDecryptedReadWriteApiKey(account))
+                .readWriteApiSecret(userExchangeAccountService.getDecryptedReadWriteApiSecret(account))
+                .build();
     }
 
     private String maskApiKey(Supplier<String> keySupplier) {

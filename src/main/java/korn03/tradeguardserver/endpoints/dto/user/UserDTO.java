@@ -1,5 +1,6 @@
 package korn03.tradeguardserver.endpoints.dto.user;
 
+import korn03.tradeguardserver.endpoints.dto.user.exchangeAccount.ExchangeAccountDTO;
 import korn03.tradeguardserver.model.entity.user.Role;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -28,15 +29,14 @@ public class UserDTO {
     private boolean credentialsNonExpired;
     private boolean enabled;
 
-    private DiscordAccountDTO discordAccount;
+   private DiscordAccountDTO discordAccount;
     @Data
     @Builder
-    public static class DiscordAccountDTO {
+    public static class DiscordAccountDTO{
         private String discordId;
         private String username;
         private String discriminator;
         private String avatar;
     }
     private List<ExchangeAccountDTO> exchangeAccounts;
-
-} 
+}

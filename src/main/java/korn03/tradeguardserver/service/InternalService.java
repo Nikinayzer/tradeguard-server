@@ -42,6 +42,7 @@ public class InternalService {
                         .id(String.valueOf(account.getId())) //todo think what we can do with String.valueOf()?
                         .name(account.getAccountName())
                         .provider(account.getProvider().name())
+                        .demo(account.isDemo())
                         .readOnlyApiKey(exchangeAccountService.getDecryptedReadOnlyApiKey(account))
                         .readOnlyApiSecret(exchangeAccountService.getDecryptedReadOnlyApiSecret(account))
                         .readWriteApiKey(exchangeAccountService.getDecryptedReadWriteApiKey(account))

@@ -4,7 +4,6 @@ import korn03.tradeguardserver.model.entity.user.connections.UserDiscordAccount;
 import korn03.tradeguardserver.model.repository.user.connections.UserDiscordAccountRepository;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -24,15 +23,23 @@ public class UserDiscordAccountService {
     }
 
     /**
-     * Saves a new Discord account connection for a user.
+     * Adds a new Discord account connection for a user.
      */
-    public UserDiscordAccount saveDiscordAccount(Long userId, Long discordId, String discordUsername, String discordDiscriminator) {
+    public UserDiscordAccount addDiscordAccount(Long userId, Long discordId, String discordUsername, String discordAvatar) {
         UserDiscordAccount account = new UserDiscordAccount();
         account.setUserId(userId);
         account.setDiscordId(discordId);
         account.setDiscordUsername(discordUsername);
-        account.setDiscordDiscriminator(discordDiscriminator);
+        account.setDiscordAvatar(discordAvatar);
         return discordAccountRepository.save(account);
+    }
+
+    public void updateDiscordAccount(Long userId, Long discordId, String discordUsername, String discordAvatar) {
+        UserDiscordAccount account = discordAccountRepository.findByDiscordId(discordId)
+                .orElseThrow(() -> new IllegalArgumentException("Discord account not found"));
+        account.setDiscordUsername(discordUsername);
+        account.setDiscordAvatar(discordAvatar);
+        discordAccountRepository.save(account);
     }
 
     /**

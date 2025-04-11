@@ -11,7 +11,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;
-import java.util.Set;
 
 @Component
 @Slf4j
@@ -61,7 +60,7 @@ public class UsersScheduler {
             user.setRegisteredAt(Instant.now());
             User createdUser = userService.createUser(user);
 //            createDefaultBybitAccount(createdUser.getId(), "Marcel Exchange");
-            createDefaultDiscordAccount(createdUser.getId(), 238283760540450816L, "marcelv3612");
+            //createDefaultDiscordAccount(createdUser.getId(), 238283760540450816L, "marcelv3612", "");
         }
 
         if (!userService.userExists(adminUsername)) {
@@ -74,9 +73,9 @@ public class UsersScheduler {
 //            admin.setRoles(Set.of(Role.USER, Role.ADMIN));
             admin.setRegisteredAt(Instant.now());
             User createdAdmin = userService.createUser(admin);
-            userService.addUserRole(createdAdmin.getId(), Role.ADMIN); //todo handle by id
-            createDefaultBybitAccount(createdAdmin.getId(), "admins exchange");
-            createDefaultDiscordAccount(createdAdmin.getId(), 493077349684740097L, "n1ckor");
+            userService.addUserRole(createdAdmin.getId(), Role.ADMIN);
+            createDefaultBybitAccount(createdAdmin.getId(), "Admin demo bybit");
+            createDefaultDiscordAccount(createdAdmin.getId(), 493077349684740097L, "n1ckor", "c711e2e7b4b31f475e0fa51dc5bed1dc");
         }
         log.debug("DEFAULT USERS, BYBIT ACCOUNTS, AND DISCORD ACCOUNTS CREATED");
     }
@@ -89,9 +88,11 @@ public class UsersScheduler {
                 && !defaultReadWriteApiKey.isEmpty() && !defaultReadWriteApiSecret.isEmpty()) {
 
             try {
-                exchangeAccountService.saveBybitAccount(
+                exchangeAccountService.saveExchangeAccount(
                         userId,
                         accountName,
+                        true,
+                        "BYBIT",
                         defaultReadOnlyApiKey,
                         defaultReadOnlyApiSecret,
                         defaultReadWriteApiKey,
@@ -109,9 +110,9 @@ public class UsersScheduler {
     /**
      * Creates a default Discord account for a user (hardcoded values)
      */
-    private void createDefaultDiscordAccount(Long userId, Long discordId, String discordUsername) {
+    private void createDefaultDiscordAccount(Long userId, Long discordId, String discordUsername, String discordAvatar) {
         try {
-            discordAccountService.saveDiscordAccount(userId, discordId, discordUsername, "42069");
+            discordAccountService.addDiscordAccount(userId, discordId, discordUsername, discordAvatar);
             log.info("Default Discord account created for user ID: {}, Discord ID: {}", userId, discordId);
         } catch (Exception e) {
             log.error("Failed to create default Discord account for user ID: {}", userId, e);

@@ -1,14 +1,14 @@
 package korn03.tradeguardserver.service.user.connection;
 
-import korn03.tradeguardserver.endpoints.dto.user.ExchangeAccountDTO;
+import korn03.tradeguardserver.endpoints.dto.user.exchangeAccount.ExchangeAccountDTO;
 import korn03.tradeguardserver.model.entity.user.connections.ExchangeProvider;
 import korn03.tradeguardserver.model.entity.user.connections.UserExchangeAccount;
 import korn03.tradeguardserver.model.repository.user.connections.UserBybitAccountRepository;
 import korn03.tradeguardserver.service.core.EncryptionService;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Optional;
 
 @Service
 public class UserExchangeAccountService {
@@ -20,24 +20,51 @@ public class UserExchangeAccountService {
         this.accountRepository = accountRepository;
         this.encryptionService = encryptionService;
     }
-    public UserExchangeAccount saveBinanceAccount(
+
+    public UserExchangeAccount saveExchangeAccount(
             Long userId,
             String accountName,
+            Boolean demo,
+            String provider,
+            String readOnlyApiKey,
+            String readOnlyApiSecret,
+            String readWriteApiKey,
+            String readWriteApiSecret
+    ) {
+        if (provider.equalsIgnoreCase(ExchangeProvider.BINANCE.name())) {
+            return saveBinanceAccount(userId, accountName, demo, readOnlyApiKey, readOnlyApiSecret, readWriteApiKey, readWriteApiSecret);
+        } else if (provider.equalsIgnoreCase(ExchangeProvider.BYBIT.name())) {
+            return saveBybitAccount(userId, accountName, demo, readOnlyApiKey, readOnlyApiSecret, readWriteApiKey, readWriteApiSecret);
+        } else {
+            throw new IllegalArgumentException("Unsupported exchange provider: " + provider);
+        }
+    }
+
+    private UserExchangeAccount saveBinanceAccount(
+            Long userId,
+            String accountName,
+            Boolean demo,
             String apiKey,
-            String apiSecret
+            String apiSecret,
+            String readWriteApiKey,
+            String readWriteApiSecret
     ) {
         UserExchangeAccount account = new UserExchangeAccount();
         account.setUserId(userId);
         account.setAccountName(accountName);
         account.setProvider(ExchangeProvider.BINANCE);
+        account.setDemo(demo);
         account.setEncryptedReadOnlyApiKey(encryptionService.encrypt(apiKey));
         account.setEncryptedReadOnlyApiSecret(encryptionService.encrypt(apiSecret));
+        account.setEncryptedReadWriteApiKey(encryptionService.encrypt(readWriteApiKey));
+        account.setEncryptedReadWriteApiSecret(encryptionService.encrypt(readWriteApiSecret));
         return accountRepository.save(account);
     }
 
-    public UserExchangeAccount saveBybitAccount(
+    private UserExchangeAccount saveBybitAccount(
             Long userId,
             String accountName,
+            Boolean demo,
             String readOnlyApiKey,
             String readOnlyApiSecret,
             String readWriteApiKey,
@@ -47,6 +74,7 @@ public class UserExchangeAccountService {
         account.setUserId(userId);
         account.setAccountName(accountName);
         account.setProvider(ExchangeProvider.BYBIT);
+        account.setDemo(demo);
         account.setEncryptedReadOnlyApiKey(encryptionService.encrypt(readOnlyApiKey));
         account.setEncryptedReadOnlyApiSecret(encryptionService.encrypt(readOnlyApiSecret));
         account.setEncryptedReadWriteApiKey(encryptionService.encrypt(readWriteApiKey));
@@ -54,12 +82,40 @@ public class UserExchangeAccountService {
         return accountRepository.save(account);
     }
 
+    public UserExchangeAccount updateExchangeAccount(
+            Long userId,
+            Long id,
+            String accountName,
+            String readOnlyApiKey,
+            String readOnlyApiSecret,
+            String readWriteApiKey,
+            String readWriteApiSecret
+    ) {
+        UserExchangeAccount account = getExchangeAccount(userId, id);
+        account.setAccountName(accountName);
+        if (readOnlyApiKey != null) {
+            account.setEncryptedReadOnlyApiKey(encryptionService.encrypt(readOnlyApiKey));
+        }
+        if (readOnlyApiSecret != null) {
+            account.setEncryptedReadOnlyApiSecret(encryptionService.encrypt(readOnlyApiSecret));
+        }
+        if (readWriteApiKey != null) {
+            account.setEncryptedReadWriteApiKey(encryptionService.encrypt(readWriteApiKey));
+        }
+        if (readWriteApiSecret != null) {
+            account.setEncryptedReadWriteApiSecret(encryptionService.encrypt(readWriteApiSecret));
+        }
+        accountRepository.save(account);
+        return account;
+    }
+
     public List<ExchangeAccountDTO> getUserExchangeAccounts(Long userId) {
         return accountRepository.findByUserId(userId).stream().map(account -> ExchangeAccountDTO.builder()
                 .id(account.getId())
-                .userId(account.getUserId())
+               // .userId(account.getUserId())
                 .provider(String.valueOf(account.getProvider()))
                 .name(account.getAccountName())
+                .demo(account.isDemo())
                 .readOnlyApiKey(getMaskedToken(getDecryptedReadOnlyApiKey(account)))
                 .readOnlyApiSecret(getMaskedToken(getDecryptedReadOnlyApiSecret(account)))
                 .readWriteApiKey(getMaskedToken(getDecryptedReadWriteApiKey(account)))
@@ -67,13 +123,16 @@ public class UserExchangeAccountService {
                 .build()
         ).toList();
     }
+
     public List<UserExchangeAccount> getUserExchangeAccountsEntites(Long userId) {
         return accountRepository.findByUserId(userId);
     }
 
-    public Optional<UserExchangeAccount> getExchangeAccount(Long userId, Long id) {
-        return accountRepository.findByUserIdAndId(userId, id);
+    public UserExchangeAccount getExchangeAccount(Long userId, Long id) {
+        return accountRepository.findByUserIdAndId(userId, id).orElseThrow(() -> new RuntimeException("Exchange account not found"));
     }
+
+    @Transactional
     public void deleteExchangeAccount(Long userId, Long id) {
         accountRepository.deleteByUserIdAndId(userId, id);
     }
