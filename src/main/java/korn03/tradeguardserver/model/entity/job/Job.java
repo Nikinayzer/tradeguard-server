@@ -18,10 +18,11 @@ import java.util.List;
 public class Job {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "job_seq")
+    @SequenceGenerator(name = "job_seq", sequenceName = "job_sequence", initialValue = 1000, allocationSize = 1)
     private Long id;
 
-    @Column(name = "job_id", nullable = false, unique = true)
+    @Column(name = "job_id", nullable = false, unique = false) //if rust restarts
     private Long jobId;
 
     @Column(name = "user_id")

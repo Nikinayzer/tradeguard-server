@@ -1,6 +1,5 @@
 package korn03.tradeguardserver.kafka.events;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
@@ -11,7 +10,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.Instant;
-import java.util.List;
 
 /**
  * Represents a job event message sent/received via Kafka.
@@ -26,34 +24,10 @@ public class JobEventMessage {
     @JsonProperty("job_id")
     private Long jobId;
 
-//    @JsonProperty("user_id")
-//    private Long userId;
-
     @JsonProperty("event_type")
     @JsonDeserialize(using = JobEventTypeDeserializer.class)
     @JsonSerialize(using = JobEventTypeSerializer.class)
     private JobEventType jobEventType;
-
-    @JsonProperty("name")
-    private String name;
-
-    @JsonProperty("coins")
-    private List<String> coins;
-
-    @JsonProperty("side")
-    private String side;
-
-    @JsonProperty("discount_pct")
-    private Double discountPct;
-
-    @JsonProperty("amount")
-    private Double amount;
-
-    @JsonProperty("steps_total")
-    private Integer stepsTotal;
-
-    @JsonProperty("duration_minutes")
-    private Double durationMinutes;
 
     @JsonProperty("source")
     private String source;

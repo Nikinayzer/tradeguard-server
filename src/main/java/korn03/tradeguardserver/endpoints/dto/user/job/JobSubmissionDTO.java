@@ -14,7 +14,9 @@ import java.util.List;
 @AllArgsConstructor
 public class JobSubmissionDTO {
 
-    @NotNull(message = "Name must be specified")
+    //todo not required
+//    @Pattern(regexp = "^(DCA|LIQ)$", message = "Job type must be DCA or LIQ")
+//    @NotNull(message = "Name must be specified")
     private String name;
 
     @NotEmpty(message = "Coins list cannot be empty")

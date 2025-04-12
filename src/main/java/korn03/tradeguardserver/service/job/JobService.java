@@ -1,5 +1,6 @@
 package korn03.tradeguardserver.service.job;
 
+import korn03.tradeguardserver.exception.NotFoundException;
 import korn03.tradeguardserver.kafka.events.JobEventMessage;
 import korn03.tradeguardserver.mapper.JobMapper;
 import korn03.tradeguardserver.model.entity.job.Job;
@@ -77,12 +78,13 @@ public class JobService {
         return jobRepository.findByUserIdAndCreatedAtAfter(userId, cutoff);
     }
 
-    public Optional<Job> getJobById(Long jobId) {
-        return jobRepository.findByJobId(jobId);
+    public Optional<Job> getJobById(Long id) {
+        return jobRepository.findById(id);
     }
 
-    public List<JobEvent> getJobEvents(Long jobId) {
-        return jobEventRepository.findByJobIdOrderByTimestampAsc(jobId);
+    public List<JobEvent> getJobEvents(Long id) {
+        Job job = jobRepository.findById(id).orElseThrow(() -> new NotFoundException("Job not found"));
+        return jobEventRepository.findByJobIdOrderByTimestampAsc(job.getJobId());
     }
 
 }

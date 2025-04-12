@@ -56,44 +56,48 @@ public class JobCommandService {
         return producer.sendJobEvent(message).thenAccept(result -> log.info("✅ LIQ job creation sent: {}", result.getRecordMetadata()));
     }
 
-    public CompletableFuture<Void> sendPauseEvent(Long jobId, Long userId, String source) {
+    public void sendPauseEvent(Long jobId, Long userId, String source) {
         Job job = verifyOwnership(jobId, userId);
         if (!job.getStatus().canPause()) {
+            log.warn("Job {} cannot be paused in current state: {}", jobId, job.getStatus());
             throw new IllegalStateException("Job cannot be paused in current state: " + job.getStatus());
         }
-        return sendSimpleEvent(jobId, new JobEventType.Paused(), source);
+        sendSimpleEvent(jobId, new JobEventType.Paused(), source);
     }
 
-    public CompletableFuture<Void> sendResumeEvent(Long jobId, Long userId, String source) {
+    public void sendResumeEvent(Long jobId, Long userId, String source) {
         Job job = verifyOwnership(jobId, userId);
         if (!job.getStatus().canResume()) {
+            log.warn("Job {} cannot be resumed in current state: {}", jobId, job.getStatus());
             throw new IllegalStateException("Job cannot be resumed in current state: " + job.getStatus());
         }
-        return sendSimpleEvent(jobId, new JobEventType.Resumed(), source);
+        sendSimpleEvent(jobId, new JobEventType.Resumed(), source);
     }
 
-    public CompletableFuture<Void> sendCancelEvent(Long jobId, Long userId, String source) {
+    public void sendCancelEvent(Long jobId, Long userId, String source) {
         Job job = verifyOwnership(jobId, userId);
         if (!job.getStatus().canCancel()) {
+            log.warn("Job {} cannot be canceled in current state: {}", jobId, job.getStatus());
             throw new IllegalStateException("Job cannot be canceled in current state: " + job.getStatus());
         }
 
-        return sendSimpleEvent(jobId, new JobEventType.CanceledOrders(), source);
+        sendSimpleEvent(jobId, new JobEventType.CanceledOrders(), source);
     }
 
-    public CompletableFuture<Void> sendStopEvent(Long jobId, Long userId, String source) {
+    public void sendStopEvent(Long jobId, Long userId, String source) {
         Job job = verifyOwnership(jobId, userId);
         if (!job.getStatus().canStop()) {
+            log.warn("Job {} cannot be stopped in current state: {}", jobId, job.getStatus());
             throw new IllegalStateException("Job cannot be stopped in current state: " + job.getStatus());
         }
 
-        return sendSimpleEvent(jobId, new JobEventType.Stopped(), source);
+        sendSimpleEvent(jobId, new JobEventType.Stopped(), source);
     }
 
-    private CompletableFuture<Void> sendSimpleEvent(Long jobId, JobEventType eventType, String source) {
+    private void sendSimpleEvent(Long jobId, JobEventType eventType, String source) {
         JobEventMessage message = JobEventMessage.builder().jobId(jobId).jobEventType(eventType).source(source).timestamp(Instant.now()).build();
 
-        return producer.sendJobEvent(message).thenAccept(result -> log.info("✅ {} event sent for job {}: {}", eventType.getClass().getSimpleName(), jobId, result.getRecordMetadata()));
+        producer.sendJobEvent(message).thenAccept(result -> log.info("✅ {} event sent for job {}: {}", eventType.getClass().getSimpleName(), jobId, result.getRecordMetadata()));
     }
 
     private Job verifyOwnership(Long jobId, Long userId) {

@@ -13,19 +13,21 @@ import korn03.tradeguardserver.service.job.JobCommandService;
 import korn03.tradeguardserver.service.job.JobService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import okhttp3.Request;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
 
 //todo DTO, JWT handling
 @RestController
@@ -41,6 +43,8 @@ public class JobController {
     public CompletableFuture<ResponseEntity<Map<String, String>>> submitDcaJob(@RequestBody @Valid DcaJobSubmissionDTO request, @RequestHeader("X-Platform-Type") String platformType) {
         User user = AuthUtil.getCurrentUser();
         String source = platformService.resolveSource(platformType);
+        String name = "DCA";
+        request.setName(name);
         request.setSource(source);
         return jobCommandService.sendCreatedDcaJob(request, user.getId()).thenApply(result -> ResponseEntity.accepted().body(Map.of("status", "ACCEPTED", "message", "DCA job submission accepted"))).exceptionally(ex -> {
             log.error("Job submission error", ex);
@@ -52,6 +56,8 @@ public class JobController {
     public CompletableFuture<ResponseEntity<Map<String, String>>> submitLiqJob(@RequestBody @Valid LiqJobSubmissionDTO request, @RequestHeader("X-Platform-Type") String platformType) {
         User user = AuthUtil.getCurrentUser();
         String source = platformService.resolveSource(platformType);
+        String name = "LIQ";
+        request.setName(name);
         request.setSource(source);
         return jobCommandService.sendCreatedLiqJob(request, user.getId()).thenApply(result -> ResponseEntity.accepted().body(Map.of("status", "ACCEPTED", "message", "DCA job submission accepted"))).exceptionally(ex -> {
             log.error("Job submission error", ex);
@@ -59,35 +65,36 @@ public class JobController {
         });
     }
 
-    @PostMapping("/jobs/{jobId}/pause")
-    public ResponseEntity<?> pauseJob(@PathVariable Long jobId, @RequestHeader("X-Platform-Type") String platformType) {
+    @PostMapping("/jobs/{id}/pause")
+    public ResponseEntity<?> pauseJob(@PathVariable Long id, @RequestHeader("X-Platform-Type") String platformType) {
         User user = AuthUtil.getCurrentUser();
         String source = platformService.resolveSource(platformType);
-        jobCommandService.sendPauseEvent(jobId, user.getId(), source);
+        jobCommandService.sendPauseEvent(id, user.getId(), source);
         return ResponseEntity.accepted().body(Map.of("status", "PAUSED"));
     }
 
-    @PostMapping("/jobs/{jobId}/resume")
-    public ResponseEntity<?> resumeJob(@PathVariable Long jobId, @RequestHeader("X-Platform-Type") String platformType) {
+    @PostMapping("/jobs/{id}/resume")
+    public ResponseEntity<?> resumeJob(@PathVariable Long id, @RequestHeader("X-Platform-Type") String platformType) {
         User user = AuthUtil.getCurrentUser();
         String source = platformService.resolveSource(platformType);
-        jobCommandService.sendResumeEvent(jobId, user.getId(), source);
+        jobCommandService.sendResumeEvent(id, user.getId(), source);
         return ResponseEntity.accepted().body(Map.of("status", "RESUMED"));
     }
 
-    @PostMapping("/jobs/{jobId}/stop")
-    public ResponseEntity<?> stopJob(@PathVariable Long jobId, @RequestHeader("X-Platform-Type") String platformType) {
+    @PostMapping("/jobs/{id}/stop")
+    public ResponseEntity<?> stopJob(@PathVariable Long id, @RequestHeader("X-Platform-Type") String platformType) {
         User user = AuthUtil.getCurrentUser();
         String source = platformService.resolveSource(platformType);
-        jobCommandService.sendStopEvent(jobId, user.getId(), source);
+        jobCommandService.sendStopEvent(id, user.getId(), source);
         return ResponseEntity.accepted().body(Map.of("status", "STOPPED"));
     }
 
 
-    @PostMapping("/{jobId}/cancel")
-    public ResponseEntity<?> cancelJob(@PathVariable Long jobId, @RequestParam String source) {
+    @PostMapping("/jobs/{id}/cancel")
+    public ResponseEntity<?> cancelJob(@PathVariable Long id,@RequestHeader("X-Platform-Type") String platformType) {
         User user = AuthUtil.getCurrentUser();
-        jobCommandService.sendCancelEvent(jobId, user.getId(), source);
+        String source = platformService.resolveSource(platformType);
+        jobCommandService.sendCancelEvent(id, user.getId(), source);
         return ResponseEntity.accepted().body(Map.of("status", "CANCELED"));
     }
 
@@ -133,7 +140,6 @@ public class JobController {
     /**
      * Get recent jobs of user within timeframe
      * Example: GET /jobs/{userId}?timeframe=24
-     * USED BY HEALTH MODULE TO  LOAD CONTEXT OF USER JOBS
      * /todo integrate DTOs instead of entity (for whole controller)
      */
     @GetMapping("/jobs/user/{userId}")
@@ -145,18 +151,18 @@ public class JobController {
     /**
      * Get job details by jobId.
      */
-    @GetMapping("/jobs/{jobId}")
-    public ResponseEntity<Job> getJob(@PathVariable Long jobId) {
-        Optional<Job> job = jobService.getJobById(jobId);
+    @GetMapping("/jobs/{id}")
+    public ResponseEntity<Job> getJob(@PathVariable Long id) {
+        Optional<Job> job = jobService.getJobById(id);
         return job.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     /**
      * Get all events for a given jobId.
      */
-    @GetMapping("/jobs/{jobId}/events")
-    public ResponseEntity<List<JobEvent>> getJobEvents(@PathVariable Long jobId) {
-        List<JobEvent> events = jobService.getJobEvents(jobId);
+    @GetMapping("/jobs/{id}/events")
+    public ResponseEntity<List<JobEvent>> getJobEvents(@PathVariable Long id) {
+        List<JobEvent> events = jobService.getJobEvents(id);
         return ResponseEntity.ok(events);
     }
 

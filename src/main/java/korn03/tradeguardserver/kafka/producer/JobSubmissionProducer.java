@@ -40,25 +40,23 @@ public class JobSubmissionProducer {
                 .setHeader(KafkaHeaders.KEY, key)
                 .setHeader(KafkaHeaders.TIMESTAMP, Instant.now().toEpochMilli())
                 .build();
-
+        log.info(kafkaMessage.toString());
         CompletableFuture<SendResult<String, JobEventMessage>> future = kafkaTemplate.send(kafkaMessage);
 
         future.whenComplete((result, ex) -> {
             if (ex == null) {
-//                log.info("✅ Job event sent successfully: type={}, jobId={}, userId={}, partition={}, offset={}",
-//                        jobEventMessage.getJobEventType().getClass().getSimpleName(),
-//                        jobEventMessage.getJobId(),
-//                        jobEventMessage.getUserId(),
-//                        result.getRecordMetadata().partition(),
-//                        result.getRecordMetadata().offset()
-//                );
+                log.info("✅ Job event sent successfully: type={}, jobId={}, partition={}, offset={}",
+                        jobEventMessage.getJobEventType().getClass().getSimpleName(),
+                        jobEventMessage.getJobId(),
+                        result.getRecordMetadata().partition(),
+                        result.getRecordMetadata().offset()
+                );
             } else {
-//                log.error("❌ Failed to send job event: type={}, jobId={}, userId={}, error={}",
-//                        jobEventMessage.getJobEventType().getClass().getSimpleName(),
-//                        jobEventMessage.getJobId(),
-//                        jobEventMessage.getUserId(),
-//                        ex.getMessage(), ex
-//                );
+                log.error("❌ Failed to send job event: type={}, jobId={}, error={}",
+                        jobEventMessage.getJobEventType().getClass().getSimpleName(),
+                        jobEventMessage.getJobId(),
+                        ex.getMessage(), ex
+                );
             }
         });
 
