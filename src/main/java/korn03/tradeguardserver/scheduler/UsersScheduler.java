@@ -37,6 +37,10 @@ public class UsersScheduler {
     private String defaultReadWriteApiKey;
     @Value("${tradeguard.default.bybit.readwrite.secret:}")
     private String defaultReadWriteApiSecret;
+    @Value("${tradeguard.default.binance.readwrite.key:}")
+    private String defaultReadWriteApiKeyNance;
+    @Value("${tradeguard.default.binance.readwrite.secret:}")
+    private String defaultReadWriteApiSecretNance;
 
     public UsersScheduler(UserService userService, UserExchangeAccountService exchangeAccountService, UserDiscordAccountService discordAccountService) {
         this.userService = userService;
@@ -59,8 +63,9 @@ public class UsersScheduler {
 //            user.setRoles(Set.of(Role.USER, Role.ADMIN));
             user.setRegisteredAt(Instant.now());
             User createdUser = userService.createUser(user);
-//            createDefaultBybitAccount(createdUser.getId(), "Marcel Exchange");
-            //createDefaultDiscordAccount(createdUser.getId(), 238283760540450816L, "marcelv3612", "");
+            createDefaultAccount(createdUser.getId(), "MVBb", "BYBIT");
+            createDefaultAccount(createdUser.getId(), "MVNc", "BINANCE");
+            createDefaultDiscordAccount(createdUser.getId(), 238283760540450816L, "marcelv3612", "");
         }
 
         if (!userService.userExists(adminUsername)) {
@@ -75,7 +80,7 @@ public class UsersScheduler {
             admin.setRegisteredAt(Instant.now());
             User createdAdmin = userService.createUser(admin);
             userService.addUserRole(createdAdmin.getId(), Role.ADMIN);
-            createDefaultBybitAccount(createdAdmin.getId(), "Admin demo bybit");
+            createDefaultAccount(createdAdmin.getId(), "Admin demo bybit", "BYBIT");
             createDefaultDiscordAccount(createdAdmin.getId(), 493077349684740097L, "n1ckor", "c711e2e7b4b31f475e0fa51dc5bed1dc");
         }
         log.debug("DEFAULT USERS, BYBIT ACCOUNTS, AND DISCORD ACCOUNTS CREATED");
@@ -84,7 +89,7 @@ public class UsersScheduler {
     /**
      * Creates a default Exchange account for a user if API keys are provided in properties
      */
-    private void createDefaultBybitAccount(Long userId, String accountName) {
+    private void createDefaultAccount(Long userId, String accountName, String provider) {
         if (!defaultReadOnlyApiKey.isEmpty() && !defaultReadOnlyApiSecret.isEmpty()
                 && !defaultReadWriteApiKey.isEmpty() && !defaultReadWriteApiSecret.isEmpty()) {
 
@@ -92,12 +97,12 @@ public class UsersScheduler {
                 exchangeAccountService.saveExchangeAccount(
                         userId,
                         accountName,
-                        true,
-                        "BYBIT",
+                        false,
+                        provider,
                         defaultReadOnlyApiKey,
                         defaultReadOnlyApiSecret,
-                        defaultReadWriteApiKey,
-                        defaultReadWriteApiSecret
+                        provider.equals("BYBIT") ? defaultReadWriteApiKey : defaultReadWriteApiKeyNance,
+                        provider.equals("BYBIT") ? defaultReadWriteApiSecret : defaultReadWriteApiSecretNance
                 );
                 log.info("Default Bybit account created for user ID: {}", userId);
             } catch (Exception e) {

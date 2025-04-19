@@ -9,7 +9,7 @@ import java.util.List;
 public class UserConnectionsDTO {
     private User user;
     private Discord discord;
-    private List<Exchange> exchange;
+    private List<Exchange> exchangeClients;
 
     @Data
     @Builder

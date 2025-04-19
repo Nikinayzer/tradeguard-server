@@ -60,7 +60,7 @@ public class InternalService {
                         .discordId(String.valueOf(discordAccount.getDiscordId()))
                         .username(discordAccount.getDiscordUsername())
                         .build())
-                .exchange(exchangeDTOS)
+                .exchangeClients(exchangeDTOS)
                 .build();
         System.out.println(u);
         return u;

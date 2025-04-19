@@ -58,6 +58,8 @@ logging:
   level:
     root: INFO
     korn03.tradeguardserver: INFO
+    korn03.tradeguardserver.endpoints.controller.auth: DEBUG
+    korn03.tradeguardserver.security: DEBUG
     org.springframework: WARN
     org.springframework.security: DEBUG
     org.apache.kafka: warn
@@ -114,6 +116,10 @@ tradeguard:
       readwrite:
         key: ${TRADEGUARD_BYBIT_READWRITE_KEY:}
         secret: ${TRADEGUARD_BYBIT_READWRITE_SECRET:}
+    binance:
+      readwrite:
+        key: ${TRADEGUARD_BINANCE_READWRITE_KEY:}
+        secret: ${TRADEGUARD_BINANCE_READWRITE_SECRET:}
 
 kafka:
   topic:
