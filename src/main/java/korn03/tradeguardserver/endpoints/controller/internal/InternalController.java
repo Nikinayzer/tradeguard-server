@@ -1,6 +1,6 @@
 package korn03.tradeguardserver.endpoints.controller.internal;
 
-import korn03.tradeguardserver.endpoints.dto.internal.UserConnectionsFromDiscordDTO;
+import korn03.tradeguardserver.endpoints.dto.internal.UserConnectionsDTO;
 import korn03.tradeguardserver.service.InternalService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -20,7 +20,7 @@ public class InternalController {
      * Example: GET /internal/connections/discord/{discordId}
      */
     @GetMapping("/connections/discord/{discordId}")
-    public ResponseEntity<UserConnectionsFromDiscordDTO> getUserConnectionsByDiscordId(@PathVariable Long discordId) {
+    public ResponseEntity<UserConnectionsDTO> getUserConnectionsByDiscordId(@PathVariable Long discordId) {
         return ResponseEntity.ok(internalService.getUserConnectionsByDiscordId(discordId));
     }
 }

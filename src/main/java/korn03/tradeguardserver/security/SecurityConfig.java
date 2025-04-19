@@ -23,6 +23,7 @@ public class SecurityConfig {
         http
                 .csrf(AbstractHttpConfigurer::disable)  // Disable CSRF for APIs
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/actuator/**").permitAll()
                         .requestMatchers("/ping").permitAll()
                         .requestMatchers("/pingsecure").hasRole("ADMIN")
                         .requestMatchers("/auth/**").permitAll()

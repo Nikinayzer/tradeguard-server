@@ -54,7 +54,7 @@ public class UsersScheduler {
             user.setUsername(userUsername);
             user.setPassword(userPassword);
             user.setFirstName("Marcel");
-            user.setLastName("Valový");
+            user.setLastName("Valovy");
             user.setEmail("marcel.valovy@vse.cz");
 //            user.setRoles(Set.of(Role.USER, Role.ADMIN));
             user.setRegisteredAt(Instant.now());

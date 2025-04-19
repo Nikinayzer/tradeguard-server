@@ -1,6 +1,6 @@
 package korn03.tradeguardserver.service;
 
-import korn03.tradeguardserver.endpoints.dto.internal.UserConnectionsFromDiscordDTO;
+import korn03.tradeguardserver.endpoints.dto.internal.UserConnectionsDTO;
 import korn03.tradeguardserver.model.entity.user.User;
 import korn03.tradeguardserver.model.entity.user.connections.UserExchangeAccount;
 import korn03.tradeguardserver.model.entity.user.connections.UserDiscordAccount;
@@ -29,7 +29,7 @@ public class InternalService {
     /**
      * Retrieves user connections (User, Discord, Exchange) based on Discord ID.
      */
-    public UserConnectionsFromDiscordDTO getUserConnectionsByDiscordId(Long discordId) {
+    public UserConnectionsDTO getUserConnectionsByDiscordId(Long discordId) {
         UserDiscordAccount discordAccount = discordAccountService.findByDiscordId(discordId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Discord account not found"));
 
@@ -37,8 +37,8 @@ public class InternalService {
 
         List<UserExchangeAccount> bybitAccounts = exchangeAccountService.getUserExchangeAccountsEntites(user.getId());
 
-        List<UserConnectionsFromDiscordDTO.Exchange> exchangeDTOS = bybitAccounts.stream()
-                .map(account -> UserConnectionsFromDiscordDTO.Exchange.builder()
+        List<UserConnectionsDTO.Exchange> exchangeDTOS = bybitAccounts.stream()
+                .map(account -> UserConnectionsDTO.Exchange.builder()
                         .id(String.valueOf(account.getId())) //todo think what we can do with String.valueOf()?
                         .name(account.getAccountName())
                         .provider(account.getProvider().name())
@@ -50,13 +50,13 @@ public class InternalService {
                         .build())
                 .toList();
 
-        UserConnectionsFromDiscordDTO u = UserConnectionsFromDiscordDTO.builder()
-                .user(UserConnectionsFromDiscordDTO.User.builder()
+        UserConnectionsDTO u = UserConnectionsDTO.builder()
+                .user(UserConnectionsDTO.User.builder()
                         .id(String.valueOf(user.getId()))
                         .email(user.getEmail())
                         .username(user.getUsername())
                         .build())
-                .discord(UserConnectionsFromDiscordDTO.Discord.builder()
+                .discord(UserConnectionsDTO.Discord.builder()
                         .discordId(String.valueOf(discordAccount.getDiscordId()))
                         .username(discordAccount.getDiscordUsername())
                         .build())

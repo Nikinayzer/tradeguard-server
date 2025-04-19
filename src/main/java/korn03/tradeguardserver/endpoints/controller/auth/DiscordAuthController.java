@@ -1,7 +1,7 @@
 package korn03.tradeguardserver.endpoints.controller.auth;
 
 import korn03.tradeguardserver.endpoints.dto.auth.AuthResponseDTO;
-import korn03.tradeguardserver.endpoints.dto.auth.oauth.DiscordCallbackRequestDTO;
+import korn03.tradeguardserver.endpoints.dto.auth.oauth.DiscordExchangeRequestDTO;
 import korn03.tradeguardserver.endpoints.dto.auth.oauth.DiscordTokenResponseDTO;
 import korn03.tradeguardserver.endpoints.dto.auth.oauth.DiscordUserDTO;
 import korn03.tradeguardserver.model.entity.user.User;
@@ -19,7 +19,11 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
 
+import java.net.URI;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.Optional;
+import java.util.UUID;
 
 //todo refactor
 @RestController
@@ -53,17 +57,37 @@ public class DiscordAuthController {
         this.pushTokenService = pushTokenService;
     }
 
-    @PostMapping("/discord/callback")
-    public ResponseEntity<?> discordCallback(
-            @RequestBody DiscordCallbackRequestDTO callbackRequest,
+    @GetMapping("/discord/exchange")
+    public ResponseEntity<?> discordInit() {
+        String state = UUID.randomUUID().toString();
+        String codeVerifier = AuthUtil.generateCodeVerifier();
+        String codeChallenge = AuthUtil.generateCodeChallenge(codeVerifier);
+        
+        HttpHeaders headers = new HttpHeaders();
+        headers.setLocation(URI.create(String.format(
+            "https://discord.com/api/oauth2/authorize?client_id=%s&redirect_uri=%s&response_type=code&scope=identify%%20email&state=%s&code_challenge=%s&code_challenge_method=S256",
+            discordClientId,
+            URLEncoder.encode(discordRedirectUri, StandardCharsets.UTF_8),
+            state,
+            codeChallenge
+        )));
+        
+        return new ResponseEntity<>(headers, HttpStatus.FOUND);
+    }
+
+    @PostMapping("/discord/exchange")
+    public ResponseEntity<?> discordExchange(
+            @RequestBody DiscordExchangeRequestDTO exchangeRequest,
             @RequestHeader(value = "X-Push-Token", required = false) String pushToken
     ) {
-        String code = callbackRequest.getCode();
-        log.info("Authorizing Discord user with code: {}", code);
+        String code = exchangeRequest.getCode();
+        String codeVerifier = exchangeRequest.getCodeVerifier();
+        log.info("Authorizing Discord user with code: {} and codeVerifier: {}", code, codeVerifier);
+        
         // 1. Exchange the code for a Discord access token.
-        DiscordTokenResponseDTO discordToken = exchangeCodeForToken(code, discordRedirectUri, callbackRequest.getCodeVerifier());
+        DiscordTokenResponseDTO discordToken = exchangeCodeForToken(code, discordRedirectUri, codeVerifier);
         if (discordToken == null) {
-            log.error("Failed to exchange code for token: {}", code);  //todo
+            log.error("Failed to exchange code for token: {}", code);
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body("Invalid token exchange with Discord.");
         }
@@ -120,7 +144,7 @@ public class DiscordAuthController {
             headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
             HttpEntity<MultiValueMap<String, String>> requestEntity = new HttpEntity<>(requestBody, headers);
 
-            log.info("Sending token exchange request to Discord...");
+            log.info("Sending token exchange request to Discord with body: {}", requestBody);
 
             ResponseEntity<DiscordTokenResponseDTO> response = restTemplate.postForEntity(
                     "https://discord.com/api/oauth2/token",

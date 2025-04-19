@@ -71,12 +71,13 @@ public class KafkaConfig {
      */
     @Bean
     public NewTopic jobEventsTopic() {
-        return new NewTopic(jobEventsTopic, 3, (short) 3); // Increased replication factor to 3 for better fault tolerance
+        return new NewTopic(jobEventsTopic, 1, (short) 1); // Increased replication factor to 3 for better fault
+        // tolerance
     }
 
     @Bean
     public NewTopic jobSubmissionsTopic() {
-        return new NewTopic(jobSubmissionsTopic, 3, (short) 3);
+        return new NewTopic(jobSubmissionsTopic, 1, (short) 1);
     }
 
     /**

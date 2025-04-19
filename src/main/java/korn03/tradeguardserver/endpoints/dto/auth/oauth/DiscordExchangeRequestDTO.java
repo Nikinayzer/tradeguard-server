@@ -1,9 +1,12 @@
 package korn03.tradeguardserver.endpoints.dto.auth.oauth;
 
-import lombok.Data;
+import lombok.*;
 
 @Data
-public class DiscordCallbackRequestDTO {
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class DiscordExchangeRequestDTO {
     private String code;
     private String codeVerifier;
 }

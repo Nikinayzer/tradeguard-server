@@ -6,7 +6,7 @@ import java.util.List;
 
 @Data
 @Builder
-public class UserConnectionsFromDiscordDTO {
+public class UserConnectionsDTO {
     private User user;
     private Discord discord;
     private List<Exchange> exchange;
