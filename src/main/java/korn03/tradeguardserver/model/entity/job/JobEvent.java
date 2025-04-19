@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
 import java.time.Instant;
 
 @Entity
-@Table(name = "job_events")
+@Table(name = "job_updates")
 @Data
 @Builder
 @NoArgsConstructor

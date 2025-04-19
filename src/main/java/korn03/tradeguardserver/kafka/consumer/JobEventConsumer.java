@@ -8,7 +8,7 @@ import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
 
 /**
- * Service for consuming job events from Kafka.
+ * Service for consuming job updates from Kafka.
  */
 @Service
 @RequiredArgsConstructor
