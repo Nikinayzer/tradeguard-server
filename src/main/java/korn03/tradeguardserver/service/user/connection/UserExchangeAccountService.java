@@ -24,26 +24,31 @@ public class UserExchangeAccountService {
     public UserExchangeAccount saveExchangeAccount(
             Long userId,
             String accountName,
-            Boolean demo,
-            String provider,
+            ExchangeProvider provider,
             String readOnlyApiKey,
             String readOnlyApiSecret,
             String readWriteApiKey,
             String readWriteApiSecret
     ) {
-        if (provider.equalsIgnoreCase(ExchangeProvider.BINANCE.name())) {
-            return saveBinanceAccount(userId, accountName, demo, readOnlyApiKey, readOnlyApiSecret, readWriteApiKey, readWriteApiSecret);
-        } else if (provider.equalsIgnoreCase(ExchangeProvider.BYBIT.name())) {
-            return saveBybitAccount(userId, accountName, demo, readOnlyApiKey, readOnlyApiSecret, readWriteApiKey, readWriteApiSecret);
+        if (provider == ExchangeProvider.BINANCE) {
+            return saveAccount(userId, accountName, provider, false, readOnlyApiKey, readOnlyApiSecret, readWriteApiKey,
+                    readWriteApiSecret);
+        } else if (provider == ExchangeProvider.BYBIT_PROD) {
+            return saveAccount(userId, accountName, provider, false, readOnlyApiKey, readOnlyApiSecret, readWriteApiKey,
+                    readWriteApiSecret);
+        } else if (provider == ExchangeProvider.BYBIT_DEMO) {
+            return saveAccount(userId, accountName, provider, true, readOnlyApiKey, readOnlyApiSecret, readWriteApiKey,
+                    readWriteApiSecret);
         } else {
             throw new IllegalArgumentException("Unsupported exchange provider: " + provider);
         }
     }
 
-    private UserExchangeAccount saveBinanceAccount(
+    private UserExchangeAccount saveAccount(
             Long userId,
             String accountName,
-            Boolean demo,
+            ExchangeProvider provider,
+            boolean demo,
             String apiKey,
             String apiSecret,
             String readWriteApiKey,
@@ -52,31 +57,10 @@ public class UserExchangeAccountService {
         UserExchangeAccount account = new UserExchangeAccount();
         account.setUserId(userId);
         account.setAccountName(accountName);
-        account.setProvider(ExchangeProvider.BINANCE);
+        account.setProvider(provider);
         account.setDemo(demo);
         account.setEncryptedReadOnlyApiKey(encryptionService.encrypt(apiKey));
         account.setEncryptedReadOnlyApiSecret(encryptionService.encrypt(apiSecret));
-        account.setEncryptedReadWriteApiKey(encryptionService.encrypt(readWriteApiKey));
-        account.setEncryptedReadWriteApiSecret(encryptionService.encrypt(readWriteApiSecret));
-        return accountRepository.save(account);
-    }
-
-    private UserExchangeAccount saveBybitAccount(
-            Long userId,
-            String accountName,
-            Boolean demo,
-            String readOnlyApiKey,
-            String readOnlyApiSecret,
-            String readWriteApiKey,
-            String readWriteApiSecret
-    ) {
-        UserExchangeAccount account = new UserExchangeAccount();
-        account.setUserId(userId);
-        account.setAccountName(accountName);
-        account.setProvider(ExchangeProvider.BYBIT);
-        account.setDemo(demo);
-        account.setEncryptedReadOnlyApiKey(encryptionService.encrypt(readOnlyApiKey));
-        account.setEncryptedReadOnlyApiSecret(encryptionService.encrypt(readOnlyApiSecret));
         account.setEncryptedReadWriteApiKey(encryptionService.encrypt(readWriteApiKey));
         account.setEncryptedReadWriteApiSecret(encryptionService.encrypt(readWriteApiSecret));
         return accountRepository.save(account);

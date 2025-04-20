@@ -116,6 +116,9 @@ tradeguard:
       readwrite:
         key: ${TRADEGUARD_BYBIT_READWRITE_KEY:}
         secret: ${TRADEGUARD_BYBIT_READWRITE_SECRET:}
+      demo:
+        key: ${TRADEGUARD_BYBIT_DEMO_KEY:}
+        secret: ${TRADEGUARD_BYBIT_DEMO_SECRET:}
     binance:
       readwrite:
         key: ${TRADEGUARD_BINANCE_READWRITE_KEY:}

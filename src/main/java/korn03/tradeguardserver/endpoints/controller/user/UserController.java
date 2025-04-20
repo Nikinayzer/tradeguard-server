@@ -10,6 +10,7 @@ import korn03.tradeguardserver.endpoints.dto.user.exchangeAccount.ExchangeAccoun
 import korn03.tradeguardserver.mapper.UserAccountLimitsMapper;
 import korn03.tradeguardserver.model.entity.service.PushToken;
 import korn03.tradeguardserver.model.entity.user.User;
+import korn03.tradeguardserver.model.entity.user.connections.ExchangeProvider;
 import korn03.tradeguardserver.model.entity.user.connections.UserDiscordAccount;
 import korn03.tradeguardserver.model.entity.user.connections.UserExchangeAccount;
 import korn03.tradeguardserver.security.AuthUtil;
@@ -26,6 +27,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -169,11 +171,17 @@ public class UserController {
     public ResponseEntity<ExchangeAccountDTO> createExchangeAccount(@RequestBody ExchangeAccountCreationRequestDTO request) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         User user = (User) authentication.getPrincipal();
+        String provider = request.getProvider().toUpperCase(Locale.ROOT);
+        ExchangeProvider exchangeProvider = switch (provider) {
+            case "BINANCE" -> ExchangeProvider.BINANCE;
+            case "BYBIT" -> Boolean.TRUE.equals(request.getDemo()) ? ExchangeProvider.BYBIT_DEMO :
+                ExchangeProvider.BYBIT_PROD;
+            default -> throw new IllegalStateException("Unexpected value: " + provider);
+        };
         UserExchangeAccount account = userExchangeAccountService.saveExchangeAccount(
                 user.getId(),
                 request.getName(),
-                request.getDemo(),
-                request.getProvider(),
+                exchangeProvider,
                 request.getReadOnlyApiKey(),
                 request.getReadOnlyApiSecret(),
                 request.getReadWriteApiKey(),

@@ -3,6 +3,7 @@ package korn03.tradeguardserver.scheduler;
 import jakarta.annotation.PostConstruct;
 import korn03.tradeguardserver.model.entity.user.Role;
 import korn03.tradeguardserver.model.entity.user.User;
+import korn03.tradeguardserver.model.entity.user.connections.ExchangeProvider;
 import korn03.tradeguardserver.service.user.connection.UserExchangeAccountService;
 import korn03.tradeguardserver.service.user.UserService;
 import korn03.tradeguardserver.service.user.connection.UserDiscordAccountService;
@@ -11,6 +12,10 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;
+
+import static korn03.tradeguardserver.model.entity.user.connections.ExchangeProvider.BINANCE;
+import static korn03.tradeguardserver.model.entity.user.connections.ExchangeProvider.BYBIT_DEMO;
+import static korn03.tradeguardserver.model.entity.user.connections.ExchangeProvider.BYBIT_PROD;
 
 @Component
 @Slf4j
@@ -37,10 +42,14 @@ public class UsersScheduler {
     private String defaultReadWriteApiKey;
     @Value("${tradeguard.default.bybit.readwrite.secret:}")
     private String defaultReadWriteApiSecret;
+    @Value("${tradeguard.default.bybit.demo.key:}")
+    private String defaultDemoReadWriteApiKey;
+    @Value("${tradeguard.default.bybit.demo.secret:}")
+    private String defaultDemoReadWriteApiSecret;
     @Value("${tradeguard.default.binance.readwrite.key:}")
-    private String defaultReadWriteApiKeyNance;
+    private String defaultNanceReadWriteApiKey;
     @Value("${tradeguard.default.binance.readwrite.secret:}")
-    private String defaultReadWriteApiSecretNance;
+    private String defaultNanceReadWriteApiSecret;
 
     public UsersScheduler(UserService userService, UserExchangeAccountService exchangeAccountService, UserDiscordAccountService discordAccountService) {
         this.userService = userService;
@@ -63,8 +72,9 @@ public class UsersScheduler {
 //            user.setRoles(Set.of(Role.USER, Role.ADMIN));
             user.setRegisteredAt(Instant.now());
             User createdUser = userService.createUser(user);
-            createDefaultAccount(createdUser.getId(), "MVBb", "BYBIT");
-            createDefaultAccount(createdUser.getId(), "MVNc", "BINANCE");
+            createDefaultAccount(createdUser.getId(), "MVBb-Demo", BYBIT_DEMO);
+//            createDefaultAccount(createdUser.getId(), "MVBb", BYBIT_PROD);
+//            createDefaultAccount(createdUser.getId(), "MVNc", BINANCE);
             createDefaultDiscordAccount(createdUser.getId(), 238283760540450816L, "marcelv3612", "");
         }
 
@@ -80,7 +90,7 @@ public class UsersScheduler {
             admin.setRegisteredAt(Instant.now());
             User createdAdmin = userService.createUser(admin);
             userService.addUserRole(createdAdmin.getId(), Role.ADMIN);
-            createDefaultAccount(createdAdmin.getId(), "Admin demo bybit", "BYBIT");
+            createDefaultAccount(createdAdmin.getId(), "Admin demo bybit", BYBIT_PROD);
             createDefaultDiscordAccount(createdAdmin.getId(), 493077349684740097L, "n1ckor", "c711e2e7b4b31f475e0fa51dc5bed1dc");
         }
         log.debug("DEFAULT USERS, BYBIT ACCOUNTS, AND DISCORD ACCOUNTS CREATED");
@@ -89,27 +99,38 @@ public class UsersScheduler {
     /**
      * Creates a default Exchange account for a user if API keys are provided in properties
      */
-    private void createDefaultAccount(Long userId, String accountName, String provider) {
+    private void createDefaultAccount(Long userId, String accountName, ExchangeProvider provider) {
         if (!defaultReadOnlyApiKey.isEmpty() && !defaultReadOnlyApiSecret.isEmpty()
                 && !defaultReadWriteApiKey.isEmpty() && !defaultReadWriteApiSecret.isEmpty()) {
 
             try {
+                String readWriteApiKey = switch (provider) {
+                    case BYBIT_PROD -> defaultReadWriteApiKey;
+                    case BYBIT_DEMO -> defaultDemoReadWriteApiKey;
+                    case BINANCE -> defaultNanceReadWriteApiKey;
+                };
+
+                String readWriteApiSecret = switch (provider) {
+                    case BYBIT_PROD -> defaultReadWriteApiSecret;
+                    case BYBIT_DEMO -> defaultDemoReadWriteApiSecret;
+                    case BINANCE -> defaultNanceReadWriteApiSecret;
+                };
+
                 exchangeAccountService.saveExchangeAccount(
                         userId,
                         accountName,
-                        false,
                         provider,
                         defaultReadOnlyApiKey,
                         defaultReadOnlyApiSecret,
-                        provider.equals("BYBIT") ? defaultReadWriteApiKey : defaultReadWriteApiKeyNance,
-                        provider.equals("BYBIT") ? defaultReadWriteApiSecret : defaultReadWriteApiSecretNance
+                        readWriteApiKey,
+                        readWriteApiSecret
                 );
-                log.info("Default Bybit account created for user ID: {}", userId);
+                log.info("Default {} account created for user ID: {}", provider, userId);
             } catch (Exception e) {
-                log.error("Failed to create default Bybit account for user ID: {}", userId, e);
+                log.error("Failed to create default {} account for user ID: {}", provider, userId, e);
             }
         } else {
-            log.warn("Skipping Bybit account creation - API keys not provided in properties");
+            log.warn("Skipping {} account creation - API keys not provided in properties", provider);
         }
     }
 
