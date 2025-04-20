@@ -38,8 +38,8 @@ public class KafkaConfig {
     @Value("${spring.kafka.bootstrap-servers}")
     private String bootstrapServers;
 
-    @Value("${kafka.topic.jobs}")
-    private String jobEventsTopic;
+    @Value("${kafka.topic.job-updates}")
+    private String jobUpdatesTopic;
 
     @Value("${kafka.topic.job-submissions}")
     private String jobSubmissionsTopic;
@@ -71,13 +71,12 @@ public class KafkaConfig {
      */
     @Bean
     public NewTopic jobEventsTopic() {
-        return new NewTopic(jobEventsTopic, 1, (short) 1); // Increased replication factor to 3 for better fault
-        // tolerance
+        return new NewTopic(jobUpdatesTopic, 1, (short) 1); // Single partition, single replica for development
     }
 
     @Bean
     public NewTopic jobSubmissionsTopic() {
-        return new NewTopic(jobSubmissionsTopic, 1, (short) 1);
+        return new NewTopic(jobSubmissionsTopic, 1, (short) 1); // Single partition, single replica for development
     }
 
     /**

@@ -20,6 +20,10 @@ spring:
       port: ${REDIS_PORT:6379}
   cache:
     type: ${CACHE_TYPE:redis}
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
   kafka:
     bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS}
     producer:
@@ -126,5 +130,5 @@ tradeguard:
 
 kafka:
   topic:
-    jobs: ${KAFKA_TOPIC_JOBS}
+    job-updates: ${KAFKA_TOPIC_JOB_UPDATES}
     job-submissions: ${KAFKA_TOPIC_JOB_SUBMISSIONS} 

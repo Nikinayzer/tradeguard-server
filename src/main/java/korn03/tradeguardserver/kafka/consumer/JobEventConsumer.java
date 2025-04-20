@@ -17,7 +17,8 @@ public class JobEventConsumer {
 
     private final JobService jobService;
 
-    @KafkaListener(topics = "${kafka.topic.jobs}", groupId = "${spring.kafka.consumer.group-id}", containerFactory = "jobEventListenerFactory")
+    @KafkaListener(topics = "${kafka.topic.job-updates}", groupId = "${spring.kafka.consumer.group-id}",
+            containerFactory = "jobEventListenerFactory")
     public void consumeJobEvent(JobEventMessage jobEventMessage) {
         jobService.processJobEvent(jobEventMessage);
     }
