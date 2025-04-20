@@ -1,7 +1,28 @@
+# Build stage
+FROM --platform=linux/amd64 maven:3.9.6-eclipse-temurin-21-jammy AS build
+WORKDIR /workspace/app
+
+# Set Maven timeout and other options
+ENV MAVEN_OPTS="-Dmaven.wagon.http.pool=false -Dmaven.wagon.http.retryHandler.count=3 -Dmaven.wagon.httpconnectionManager.ttlSeconds=120 -Dmaven.wagon.http.connectTimeout=60000 -Dmaven.wagon.http.readTimeout=60000"
+
+# Copy maven executable to the image
+COPY mvnw .
+COPY .mvn .mvn
+COPY pom.xml .
+COPY src src
+
+# Add Maven settings to ensure proper repository access
+RUN mkdir -p /root/.m2
+COPY settings.xml /root/.m2/settings.xml
+
+# Build a release artifact with debug logging
+RUN mvn -X clean package -DskipTests --no-transfer-progress
+
+# Runtime stage
 FROM --platform=linux/amd64 eclipse-temurin:21-jre-jammy
 VOLUME /tmp
 
-# Copy the pre-built JAR from the host machine
-COPY ./target/TradeGuardServer-0.0.1-SNAPSHOT.jar app.jar
+# Copy the pre-built JAR from the local Maven repository
+COPY target/TradeGuardServer-0.0.1-SNAPSHOT.jar app.jar
 
 ENTRYPOINT ["java","-jar","/app.jar"] 
