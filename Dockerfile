@@ -14,7 +14,7 @@ COPY src ./src
 RUN mvn clean package -DskipTests -X && ls -la target/
 
 # Run stage
-FROM --platform=linux/arm64 bellsoft/liberica-runtime-container:jre-21-slim-musl
+FROM --platform={BUILD_PLATFORM} bellsoft/liberica-runtime-container:jre-21-slim-musl
 WORKDIR /app
 COPY --from=build /app/target/*.jar app.jar
 ENTRYPOINT ["java","-jar","app.jar"] 

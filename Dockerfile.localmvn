@@ -1,5 +1,6 @@
 # Build stage
-FROM --platform=linux/amd64 maven:3.9.6-eclipse-temurin-21-jammy AS build
+ARG BUILD_PLATFORM
+FROM --platform=${BUILD_PLATFORM} bellsoft/liberica-openjdk-debian:21 AS build
 WORKDIR /workspace/app
 
 # Set Maven timeout and other options
@@ -19,7 +20,7 @@ COPY settings.xml /root/.m2/settings.xml
 RUN mvn -X clean package -DskipTests --no-transfer-progress
 
 # Runtime stage
-FROM --platform=linux/amd64 eclipse-temurin:21-jre-jammy
+FROM --platform={BUILD_PLATFORM} bellsoft/liberica-runtime-container:jre-21-slim-musl
 VOLUME /tmp
 
 # Copy the pre-built JAR from the local Maven repository
