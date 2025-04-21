@@ -1,4 +1,5 @@
-FROM --platform=linux/amd64 eclipse-temurin:21-jre-jammy
+# Is not a multi-arch image, so --platform=linux/amd64 throws a warning
+FROM eclipse-temurin:21-jre-jammy
 VOLUME /tmp
 
 # Copy the pre-built JAR from the host machine

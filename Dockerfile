@@ -1,5 +1,6 @@
 # Build stage
-FROM --platform=linux/arm64 bellsoft/liberica-openjdk-debian:21 AS build
+ARG BUILD_PLATFORM
+FROM --platform=${BUILD_PLATFORM} bellsoft/liberica-openjdk-debian:21 AS build
 WORKDIR /app
 
 # Install Maven
