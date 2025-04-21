@@ -108,25 +108,25 @@ discord:
 tradeguard:
   default:
     user:
-      username: ${TRADEGUARD_USER_USERNAME:user}
-      password: ${TRADEGUARD_USER_PASSWORD:user1234}
+      username: ${USER_USERNAME:user}
+      password: ${USER_PASSWORD:user1234}
     admin:
-      username: ${TRADEGUARD_ADMIN_USERNAME:admin}
-      password: ${TRADEGUARD_ADMIN_PASSWORD:admin1234}
+      username: ${ADMIN_USERNAME:admin}
+      password: ${ADMIN_PASSWORD:admin1234}
     bybit:
       readonly:
-        key: ${TRADEGUARD_BYBIT_READONLY_KEY:}
-        secret: ${TRADEGUARD_BYBIT_READONLY_SECRET:}
+        key: ${BYBIT_READONLY_KEY:}
+        secret: ${BYBIT_READONLY_SECRET:}
       readwrite:
-        key: ${TRADEGUARD_BYBIT_READWRITE_KEY:}
-        secret: ${TRADEGUARD_BYBIT_READWRITE_SECRET:}
+        key: ${BYBIT_READWRITE_KEY:}
+        secret: ${BYBIT_READWRITE_SECRET:}
       demo:
-        key: ${TRADEGUARD_BYBIT_DEMO_KEY:}
-        secret: ${TRADEGUARD_BYBIT_DEMO_SECRET:}
+        key: ${BYBIT_DEMO_KEY:}
+        secret: ${BYBIT_DEMO_SECRET:}
     binance:
       readwrite:
-        key: ${TRADEGUARD_BINANCE_READWRITE_KEY:}
-        secret: ${TRADEGUARD_BINANCE_READWRITE_SECRET:}
+        key: ${BINANCE_READWRITE_KEY:}
+        secret: ${BINANCE_READWRITE_SECRET:}
 
 kafka:
   topic:
