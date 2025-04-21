@@ -1,5 +1,6 @@
 # Is not a multi-arch image, so --platform=linux/amd64 throws a warning
-FROM eclipse-temurin:21-jre-jammy
+ARG BUILD_PLATFORM
+FROM --platform=${BUILD_PLATFORM} bellsoft/liberica-runtime-container:jre-21-slim-musl
 VOLUME /tmp
 
 # Copy the pre-built JAR from the host machine

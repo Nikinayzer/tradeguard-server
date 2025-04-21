@@ -4,6 +4,9 @@ import jakarta.annotation.PostConstruct;
 import korn03.tradeguardserver.model.entity.user.Role;
 import korn03.tradeguardserver.model.entity.user.User;
 import korn03.tradeguardserver.model.entity.user.connections.ExchangeProvider;
+import korn03.tradeguardserver.model.entity.user.connections.UserExchangeAccount;
+import korn03.tradeguardserver.model.repository.user.connections.UserBybitAccountRepository;
+import korn03.tradeguardserver.service.core.EncryptionService;
 import korn03.tradeguardserver.service.user.connection.UserExchangeAccountService;
 import korn03.tradeguardserver.service.user.UserService;
 import korn03.tradeguardserver.service.user.connection.UserDiscordAccountService;
@@ -12,6 +15,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Objects;
 
 import static korn03.tradeguardserver.model.entity.user.connections.ExchangeProvider.BINANCE_LIVE;
@@ -25,6 +29,8 @@ public class UsersScheduler {
     private final UserService userService;
     private final UserExchangeAccountService exchangeAccountService;
     private final UserDiscordAccountService discordAccountService;
+    private final UserBybitAccountRepository accountRepository;
+    private final EncryptionService encryptionService;
 
     @Value("${tradeguard.default.user.username}")
     private String userUsername;
@@ -55,10 +61,12 @@ public class UsersScheduler {
     @Value("${tradeguard.run-mode:demo}")
     private String runMode;
 
-    public UsersScheduler(UserService userService, UserExchangeAccountService exchangeAccountService, UserDiscordAccountService discordAccountService) {
+    public UsersScheduler(UserService userService, UserExchangeAccountService exchangeAccountService, UserDiscordAccountService discordAccountService, UserBybitAccountRepository accountRepository, EncryptionService encryptionService) {
         this.userService = userService;
         this.exchangeAccountService = exchangeAccountService;
         this.discordAccountService = discordAccountService;
+        this.accountRepository = accountRepository;
+        this.encryptionService = encryptionService;
     }
 
     /**
@@ -66,6 +74,9 @@ public class UsersScheduler {
      */
     @PostConstruct
     public void initDefaultUser() {
+        // Handle regular user
+        User existingOrNewUser;
+        
         if (!userService.userExists(userUsername)) {
             User user = new User();
             user.setUsername(userUsername);
@@ -75,23 +86,35 @@ public class UsersScheduler {
             user.setEmail("marcel.valovy@vse.cz");
 //            user.setRoles(Set.of(Role.USER, Role.ADMIN));
             user.setRegisteredAt(Instant.now());
-            User createdUser = userService.createUser(user);
+            existingOrNewUser = userService.createUser(user);
 
-            // Create default accounts based on run mode
-            if ("demo".equalsIgnoreCase(runMode)) {
-                createDefaultAccount(createdUser.getId(), "MVBb-Demo", BYBIT_DEMO);
-                log.info("Created DEMO account for user as RUN_MODE is set to: {}", runMode);
-            } else if ("live".equalsIgnoreCase(runMode)) {
-                createDefaultAccount(createdUser.getId(), "MVBb", BYBIT_LIVE);
-                createDefaultAccount(createdUser.getId(), "MVNc", BINANCE_LIVE);
-                log.info("Created LIVE accounts for user as RUN_MODE is set to: {}", runMode);
-            } else {
-                log.warn("Unknown RUN_MODE value: {}. No default exchange accounts created.", runMode);
-            }
-
-            createDefaultDiscordAccount(createdUser.getId(), 238283760540450816L, "marcelv3612", "");
+            log.info("##############################################################");
+            log.info("################# DEFAULT USER BEING CREATED #################");
+            log.info("Creating default {}-mode user: {} with ID: {}", runMode, userUsername, existingOrNewUser.getId());
+        } else {
+            existingOrNewUser = userService.findByUsername(userUsername).orElseThrow();
+            log.info("##############################################################");
+            log.info("############## UPDATING EXISTING USER CONNECTIONS ############");
+            log.info("Updating connections for user: {} with ID: {}", userUsername, existingOrNewUser.getId());
         }
+        
+        // Create or update default accounts based on run mode
+        if ("demo".equalsIgnoreCase(runMode)) {
+            createDefaultAccount(existingOrNewUser.getId(), "MVBb-Demo", BYBIT_DEMO);
+            log.info("Created/Updated DEMO account for user as RUN_MODE is set to: {}", runMode);
+        } else if ("live".equalsIgnoreCase(runMode)) {
+            createDefaultAccount(existingOrNewUser.getId(), "MVBb", BYBIT_LIVE);
+            createDefaultAccount(existingOrNewUser.getId(), "MVNc", BINANCE_LIVE);
+            log.info("Created/Updated LIVE accounts for user as RUN_MODE is set to: {}", runMode);
+        } else {
+            log.warn("Unknown RUN_MODE value: {}. No default exchange accounts created/updated.", runMode);
+        }
+        log.info("##############################################################");
 
+        createDefaultDiscordAccount(existingOrNewUser.getId(), 238283760540450816L, "marcelv3612", "");
+        
+        // Handle admin user
+        User adminUser;
         if (!userService.userExists(adminUsername)) {
             User admin = new User();
             admin.setUsername(adminUsername);
@@ -102,28 +125,39 @@ public class UsersScheduler {
             //admin.setEmail("korn03@vse.cz");
 //            admin.setRoles(Set.of(Role.USER, Role.ADMIN));
             admin.setRegisteredAt(Instant.now());
-            User createdAdmin = userService.createUser(admin);
-            userService.addUserRole(createdAdmin.getId(), Role.ADMIN);
-
-            // Create default accounts based on run mode
-            if ("demo".equalsIgnoreCase(runMode)) {
-                createDefaultAccount(createdAdmin.getId(), "Admin-Demo-Bybit", BYBIT_DEMO);
-                log.info("Created DEMO account for admin as RUN_MODE is set to: {}", runMode);
-            } else if ("live".equalsIgnoreCase(runMode)) {
-                createDefaultAccount(createdAdmin.getId(), "Admin-Bybit", BYBIT_LIVE);
-//                createDefaultAccount(createdAdmin.getId(), "Admin-Binance", BINANCE_LIVE);
-                log.info("Created LIVE accounts for admin as RUN_MODE is set to: {}", runMode);
-            } else {
-                log.warn("Unknown RUN_MODE value: {}. No default exchange accounts created for admin.", runMode);
-            }
-
-            createDefaultDiscordAccount(createdAdmin.getId(), 493077349684740097L, "n1ckor", "c711e2e7b4b31f475e0fa51dc5bed1dc");
+            adminUser = userService.createUser(admin);
+            userService.addUserRole(adminUser.getId(), Role.ADMIN);
+            
+            log.info("##############################################################");
+            log.info("############### DEFAULT ADMIN BEING CREATED #################");
+            log.info("Creating default admin: {} with ID: {}", adminUsername, adminUser.getId());
+        } else {
+            adminUser = userService.findByUsername(adminUsername).orElseThrow();
+            log.info("##############################################################");
+            log.info("############ UPDATING EXISTING ADMIN CONNECTIONS ############");
+            log.info("Updating connections for admin: {} with ID: {}", adminUsername, adminUser.getId());
         }
-        log.debug("DEFAULT USERS, BYBIT ACCOUNTS, AND DISCORD ACCOUNTS CREATED");
+
+        // Create or update admin accounts based on run mode
+        if ("demo".equalsIgnoreCase(runMode)) {
+            createDefaultAccount(adminUser.getId(), "Admin-Demo-Bybit", BYBIT_DEMO);
+            log.info("Created/Updated DEMO account for admin as RUN_MODE is set to: {}", runMode);
+        } else if ("live".equalsIgnoreCase(runMode)) {
+            createDefaultAccount(adminUser.getId(), "Admin-Bybit", BYBIT_LIVE);
+//                createDefaultAccount(adminUser.getId(), "Admin-Binance", BINANCE_LIVE);
+            log.info("Created/Updated LIVE accounts for admin as RUN_MODE is set to: {}", runMode);
+        } else {
+            log.warn("Unknown RUN_MODE value: {}. No default exchange accounts created/updated for admin.", runMode);
+        }
+        log.info("##############################################################");
+
+        createDefaultDiscordAccount(adminUser.getId(), 493077349684740097L, "n1ckor", "c711e2e7b4b31f475e0fa51dc5bed1dc");
+        
+        log.debug("DEFAULT USERS, BYBIT ACCOUNTS, AND DISCORD ACCOUNTS CREATED/UPDATED");
     }
 
     /**
-     * Creates a default Exchange account for a user if API keys are provided in properties
+     * Creates or updates a default Exchange account for a user if API keys are provided in properties
      */
     private void createDefaultAccount(Long userId, String accountName, ExchangeProvider provider) {
         if (!defaultReadOnlyApiKey.isEmpty() && !defaultReadOnlyApiSecret.isEmpty()
@@ -142,29 +176,63 @@ public class UsersScheduler {
                     case BINANCE_LIVE -> defaultNanceReadWriteApiSecret;
                 };
 
-                exchangeAccountService.saveExchangeAccount(
-                        userId,
-                        accountName,
-                        provider,
-                        defaultReadOnlyApiKey,
-                        defaultReadOnlyApiSecret,
-                        readWriteApiKey,
-                        readWriteApiSecret
-                );
-                log.info("Default {} account created for user ID: {}", provider, userId);
+                // Get all existing accounts for this user
+                List<UserExchangeAccount> existingAccounts = accountRepository.findByUserId(userId);
+                
+                // Check if an account with the same name already exists
+                boolean accountExists = false;
+                for (UserExchangeAccount existingAccount : existingAccounts) {
+                    if (existingAccount.getAccountName().equals(accountName)) {
+                        // Update the existing account
+                        existingAccount.setProvider(provider);
+                        existingAccount.setDemo(provider == BYBIT_DEMO);
+                        existingAccount.setEncryptedReadOnlyApiKey(encryptionService.encrypt(defaultReadOnlyApiKey));
+                        existingAccount.setEncryptedReadOnlyApiSecret(encryptionService.encrypt(defaultReadOnlyApiSecret));
+                        existingAccount.setEncryptedReadWriteApiKey(encryptionService.encrypt(readWriteApiKey));
+                        existingAccount.setEncryptedReadWriteApiSecret(encryptionService.encrypt(readWriteApiSecret));
+                        accountRepository.save(existingAccount);
+                        log.info("Updated existing {} account for user ID: {}", provider, userId);
+                        accountExists = true;
+                        break;
+                    }
+                }
+
+                // If no existing account was found, create a new one
+                if (!accountExists) {
+                    exchangeAccountService.saveExchangeAccount(
+                            userId,
+                            accountName,
+                            provider,
+                            defaultReadOnlyApiKey,
+                            defaultReadOnlyApiSecret,
+                            readWriteApiKey,
+                            readWriteApiSecret
+                    );
+                    log.info("Created new {} account for user ID: {}", provider, userId);
+                }
             } catch (Exception e) {
-                log.error("Failed to create default {} account for user ID: {}", provider, userId, e);
+                log.error("Failed to create/update {} account for user ID: {}", provider, userId, e);
             }
         } else {
-            log.warn("Skipping {} account creation - API keys not provided in properties", provider);
+            log.warn("Skipping {} account creation/update - API keys not provided in properties", provider);
         }
     }
 
     /**
-     * Creates a default Discord account for a user (hardcoded values)
+     * Creates a default Discord account for a user (hardcoded values) if it doesn't already exist
      */
     private void createDefaultDiscordAccount(Long userId, Long discordId, String discordUsername, String discordAvatar) {
         try {
+            // Check if discord account already exists for this user
+            boolean accountExists = discordAccountService.findByUserId(userId)
+                    .stream()
+                    .anyMatch(account -> account.getDiscordId().equals(discordId));
+            
+            if (accountExists) {
+                log.info("Discord account already exists for user ID: {}, Discord ID: {}", userId, discordId);
+                return;
+            }
+            
             discordAccountService.addDiscordAccount(userId, discordId, discordUsername, discordAvatar);
             log.info("Default Discord account created for user ID: {}, Discord ID: {}", userId, discordId);
         } catch (Exception e) {

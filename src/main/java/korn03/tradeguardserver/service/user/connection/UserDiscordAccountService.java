@@ -4,6 +4,7 @@ import korn03.tradeguardserver.model.entity.user.connections.UserDiscordAccount;
 import korn03.tradeguardserver.model.repository.user.connections.UserDiscordAccountRepository;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -20,6 +21,16 @@ public class UserDiscordAccountService {
      */
     public Optional<UserDiscordAccount> findByDiscordId(Long discordId) {
         return discordAccountRepository.findByDiscordId(discordId);
+    }
+
+    /**
+     * Finds all Discord accounts for a user by user ID.
+     */
+    public List<UserDiscordAccount> findByUserId(Long userId) {
+        // We'll wrap the single result in a list since the repository returns an Optional<UserDiscordAccount>
+        return discordAccountRepository.findByUserId(userId)
+                .map(List::of)
+                .orElse(List.of());
     }
 
     /**
