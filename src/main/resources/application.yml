@@ -106,6 +106,7 @@ discord:
     token: ${DISCORD_BOT_TOKEN}
 
 tradeguard:
+  run-mode: ${RUN_MODE:demo}
   default:
     user:
       username: ${USER_USERNAME:user}

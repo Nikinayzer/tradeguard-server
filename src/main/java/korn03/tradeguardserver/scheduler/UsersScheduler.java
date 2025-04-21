@@ -12,10 +12,11 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;
+import java.util.Objects;
 
-import static korn03.tradeguardserver.model.entity.user.connections.ExchangeProvider.BINANCE;
+import static korn03.tradeguardserver.model.entity.user.connections.ExchangeProvider.BINANCE_LIVE;
 import static korn03.tradeguardserver.model.entity.user.connections.ExchangeProvider.BYBIT_DEMO;
-import static korn03.tradeguardserver.model.entity.user.connections.ExchangeProvider.BYBIT_PROD;
+import static korn03.tradeguardserver.model.entity.user.connections.ExchangeProvider.BYBIT_LIVE;
 
 @Component
 @Slf4j
@@ -51,6 +52,9 @@ public class UsersScheduler {
     @Value("${tradeguard.default.binance.readwrite.secret:}")
     private String defaultNanceReadWriteApiSecret;
 
+    @Value("${tradeguard.run-mode:demo}")
+    private String runMode;
+
     public UsersScheduler(UserService userService, UserExchangeAccountService exchangeAccountService, UserDiscordAccountService discordAccountService) {
         this.userService = userService;
         this.exchangeAccountService = exchangeAccountService;
@@ -72,9 +76,19 @@ public class UsersScheduler {
 //            user.setRoles(Set.of(Role.USER, Role.ADMIN));
             user.setRegisteredAt(Instant.now());
             User createdUser = userService.createUser(user);
-            createDefaultAccount(createdUser.getId(), "MVBb-Demo", BYBIT_DEMO);
-//            createDefaultAccount(createdUser.getId(), "MVBb", BYBIT_PROD);
-//            createDefaultAccount(createdUser.getId(), "MVNc", BINANCE);
+
+            // Create default accounts based on run mode
+            if ("demo".equalsIgnoreCase(runMode)) {
+                createDefaultAccount(createdUser.getId(), "MVBb-Demo", BYBIT_DEMO);
+                log.info("Created DEMO account for user as RUN_MODE is set to: {}", runMode);
+            } else if ("live".equalsIgnoreCase(runMode)) {
+                createDefaultAccount(createdUser.getId(), "MVBb", BYBIT_LIVE);
+                createDefaultAccount(createdUser.getId(), "MVNc", BINANCE_LIVE);
+                log.info("Created LIVE accounts for user as RUN_MODE is set to: {}", runMode);
+            } else {
+                log.warn("Unknown RUN_MODE value: {}. No default exchange accounts created.", runMode);
+            }
+
             createDefaultDiscordAccount(createdUser.getId(), 238283760540450816L, "marcelv3612", "");
         }
 
@@ -90,7 +104,19 @@ public class UsersScheduler {
             admin.setRegisteredAt(Instant.now());
             User createdAdmin = userService.createUser(admin);
             userService.addUserRole(createdAdmin.getId(), Role.ADMIN);
-            createDefaultAccount(createdAdmin.getId(), "Admin demo bybit", BYBIT_PROD);
+
+            // Create default accounts based on run mode
+            if ("demo".equalsIgnoreCase(runMode)) {
+                createDefaultAccount(createdAdmin.getId(), "Admin-Demo-Bybit", BYBIT_DEMO);
+                log.info("Created DEMO account for admin as RUN_MODE is set to: {}", runMode);
+            } else if ("live".equalsIgnoreCase(runMode)) {
+                createDefaultAccount(createdAdmin.getId(), "Admin-Bybit", BYBIT_LIVE);
+//                createDefaultAccount(createdAdmin.getId(), "Admin-Binance", BINANCE_LIVE);
+                log.info("Created LIVE accounts for admin as RUN_MODE is set to: {}", runMode);
+            } else {
+                log.warn("Unknown RUN_MODE value: {}. No default exchange accounts created for admin.", runMode);
+            }
+
             createDefaultDiscordAccount(createdAdmin.getId(), 493077349684740097L, "n1ckor", "c711e2e7b4b31f475e0fa51dc5bed1dc");
         }
         log.debug("DEFAULT USERS, BYBIT ACCOUNTS, AND DISCORD ACCOUNTS CREATED");
@@ -105,15 +131,15 @@ public class UsersScheduler {
 
             try {
                 String readWriteApiKey = switch (provider) {
-                    case BYBIT_PROD -> defaultReadWriteApiKey;
+                    case BYBIT_LIVE -> defaultReadWriteApiKey;
                     case BYBIT_DEMO -> defaultDemoReadWriteApiKey;
-                    case BINANCE -> defaultNanceReadWriteApiKey;
+                    case BINANCE_LIVE -> defaultNanceReadWriteApiKey;
                 };
 
                 String readWriteApiSecret = switch (provider) {
-                    case BYBIT_PROD -> defaultReadWriteApiSecret;
+                    case BYBIT_LIVE -> defaultReadWriteApiSecret;
                     case BYBIT_DEMO -> defaultDemoReadWriteApiSecret;
-                    case BINANCE -> defaultNanceReadWriteApiSecret;
+                    case BINANCE_LIVE -> defaultNanceReadWriteApiSecret;
                 };
 
                 exchangeAccountService.saveExchangeAccount(

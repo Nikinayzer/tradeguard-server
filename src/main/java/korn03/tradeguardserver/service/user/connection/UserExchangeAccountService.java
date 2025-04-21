@@ -30,10 +30,10 @@ public class UserExchangeAccountService {
             String readWriteApiKey,
             String readWriteApiSecret
     ) {
-        if (provider == ExchangeProvider.BINANCE) {
+        if (provider == ExchangeProvider.BINANCE_LIVE) {
             return saveAccount(userId, accountName, provider, false, readOnlyApiKey, readOnlyApiSecret, readWriteApiKey,
                     readWriteApiSecret);
-        } else if (provider == ExchangeProvider.BYBIT_PROD) {
+        } else if (provider == ExchangeProvider.BYBIT_LIVE) {
             return saveAccount(userId, accountName, provider, false, readOnlyApiKey, readOnlyApiSecret, readWriteApiKey,
                     readWriteApiSecret);
         } else if (provider == ExchangeProvider.BYBIT_DEMO) {

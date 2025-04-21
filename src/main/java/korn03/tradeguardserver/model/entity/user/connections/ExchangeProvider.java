@@ -1,7 +1,7 @@
 package korn03.tradeguardserver.model.entity.user.connections;
 
 public enum ExchangeProvider {
-    BYBIT_PROD,
+    BYBIT_LIVE,
     BYBIT_DEMO,
-    BINANCE
+    BINANCE_LIVE
 }

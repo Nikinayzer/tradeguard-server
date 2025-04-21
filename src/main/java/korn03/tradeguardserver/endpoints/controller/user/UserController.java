@@ -173,9 +173,9 @@ public class UserController {
         User user = (User) authentication.getPrincipal();
         String provider = request.getProvider().toUpperCase(Locale.ROOT);
         ExchangeProvider exchangeProvider = switch (provider) {
-            case "BINANCE" -> ExchangeProvider.BINANCE;
+            case "BINANCE" -> ExchangeProvider.BINANCE_LIVE;
             case "BYBIT" -> Boolean.TRUE.equals(request.getDemo()) ? ExchangeProvider.BYBIT_DEMO :
-                ExchangeProvider.BYBIT_PROD;
+                ExchangeProvider.BYBIT_LIVE;
             default -> throw new IllegalStateException("Unexpected value: " + provider);
         };
         UserExchangeAccount account = userExchangeAccountService.saveExchangeAccount(
