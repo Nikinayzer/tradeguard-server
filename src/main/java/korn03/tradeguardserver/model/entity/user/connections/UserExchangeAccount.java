@@ -15,6 +15,7 @@ public class UserExchangeAccount {
     @Column(name = "user_id", nullable = false)
     private Long userId;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "provider", nullable = false)
     private ExchangeProvider provider;
 
