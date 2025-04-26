@@ -140,8 +140,8 @@ public class UsersScheduler {
      * Creates or updates a default Exchange account for a user if API keys are provided in properties
      */
     private void createDefaultAccount(Long userId, String accountName, ExchangeProvider provider) {
-        if (!defaultReadOnlyApiKey.isEmpty() && !defaultReadOnlyApiSecret.isEmpty()
-                && !defaultReadWriteApiKey.isEmpty() && !defaultReadWriteApiSecret.isEmpty()) {
+        //if (!defaultReadOnlyApiKey.isEmpty() && !defaultReadOnlyApiSecret.isEmpty()
+         //       && !defaultReadWriteApiKey.isEmpty() && !defaultReadWriteApiSecret.isEmpty()) {
 
             try {
                 String readWriteApiKey = switch (provider) {
@@ -194,9 +194,9 @@ public class UsersScheduler {
             } catch (Exception e) {
                 log.error("Failed to create/update {} account for user ID: {}", provider, userId, e);
             }
-        } else {
-            log.warn("Skipping {} account creation/update - API keys not provided in properties", provider);
-        }
+//        } else {
+//            log.warn("Skipping {} account creation/update - API keys not provided in properties", provider);
+//        }
     }
 
     /**
