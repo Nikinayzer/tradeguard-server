@@ -257,7 +257,6 @@ public class UserController {
 //                .userId(account.getUserId())
                 .name(account.getAccountName())
                 .provider(String.valueOf(account.getProvider()))
-                .demo(account.isDemo())
                 .readOnlyApiKey(userExchangeAccountService.getDecryptedReadOnlyApiKey(account))
                 .readOnlyApiSecret(userExchangeAccountService.getDecryptedReadOnlyApiSecret(account))
                 .readWriteApiKey(userExchangeAccountService.getDecryptedReadWriteApiKey(account))

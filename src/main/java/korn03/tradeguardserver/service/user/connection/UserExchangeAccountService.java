@@ -30,37 +30,12 @@ public class UserExchangeAccountService {
             String readWriteApiKey,
             String readWriteApiSecret
     ) {
-        if (provider == ExchangeProvider.BINANCE_LIVE) {
-            return saveAccount(userId, accountName, provider, false, readOnlyApiKey, readOnlyApiSecret, readWriteApiKey,
-                    readWriteApiSecret);
-        } else if (provider == ExchangeProvider.BYBIT_LIVE) {
-            return saveAccount(userId, accountName, provider, false, readOnlyApiKey, readOnlyApiSecret, readWriteApiKey,
-                    readWriteApiSecret);
-        } else if (provider == ExchangeProvider.BYBIT_DEMO) {
-            return saveAccount(userId, accountName, provider, true, readOnlyApiKey, readOnlyApiSecret, readWriteApiKey,
-                    readWriteApiSecret);
-        } else {
-            throw new IllegalArgumentException("Unsupported exchange provider: " + provider);
-        }
-    }
-
-    private UserExchangeAccount saveAccount(
-            Long userId,
-            String accountName,
-            ExchangeProvider provider,
-            boolean demo,
-            String apiKey,
-            String apiSecret,
-            String readWriteApiKey,
-            String readWriteApiSecret
-    ) {
         UserExchangeAccount account = new UserExchangeAccount();
         account.setUserId(userId);
         account.setAccountName(accountName);
         account.setProvider(provider);
-        account.setDemo(demo);
-        account.setEncryptedReadOnlyApiKey(encryptionService.encrypt(apiKey));
-        account.setEncryptedReadOnlyApiSecret(encryptionService.encrypt(apiSecret));
+        account.setEncryptedReadOnlyApiKey(encryptionService.encrypt(readOnlyApiKey));
+        account.setEncryptedReadOnlyApiSecret(encryptionService.encrypt(readOnlyApiSecret));
         account.setEncryptedReadWriteApiKey(encryptionService.encrypt(readWriteApiKey));
         account.setEncryptedReadWriteApiSecret(encryptionService.encrypt(readWriteApiSecret));
         return accountRepository.save(account);
@@ -99,7 +74,6 @@ public class UserExchangeAccountService {
                // .userId(account.getUserId())
                 .provider(String.valueOf(account.getProvider()))
                 .name(account.getAccountName())
-                .demo(account.isDemo())
                 .readOnlyApiKey(getMaskedToken(getDecryptedReadOnlyApiKey(account)))
                 .readOnlyApiSecret(getMaskedToken(getDecryptedReadOnlyApiSecret(account)))
                 .readWriteApiKey(getMaskedToken(getDecryptedReadWriteApiKey(account)))

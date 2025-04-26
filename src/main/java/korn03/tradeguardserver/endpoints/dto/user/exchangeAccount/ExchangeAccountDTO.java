@@ -13,7 +13,6 @@ public class ExchangeAccountDTO {
     private Long id;
     private String provider;
     private String name;
-    private Boolean demo;
     private String readOnlyApiKey;
     private String readOnlyApiSecret;
     private String readWriteApiKey;

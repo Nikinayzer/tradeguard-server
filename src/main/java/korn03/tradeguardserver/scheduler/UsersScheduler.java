@@ -16,11 +16,8 @@ import org.springframework.stereotype.Component;
 
 import java.time.Instant;
 import java.util.List;
-import java.util.Objects;
 
-import static korn03.tradeguardserver.model.entity.user.connections.ExchangeProvider.BINANCE_LIVE;
-import static korn03.tradeguardserver.model.entity.user.connections.ExchangeProvider.BYBIT_DEMO;
-import static korn03.tradeguardserver.model.entity.user.connections.ExchangeProvider.BYBIT_LIVE;
+import static korn03.tradeguardserver.model.entity.user.connections.ExchangeProvider.*;
 
 @Component
 @Slf4j
@@ -57,9 +54,10 @@ public class UsersScheduler {
     private String defaultNanceReadWriteApiKey;
     @Value("${tradeguard.default.binance.readwrite.secret:}")
     private String defaultNanceReadWriteApiSecret;
-
-    @Value("${tradeguard.run-mode:demo}")
-    private String runMode;
+    @Value("${tradeguard.default.binance.demo.key:}")
+    private String defaultNanceDemoApiKey;
+    @Value("${tradeguard.default.binance.demo.secret:}")
+    private String defaultNanceDemoApiSecret;
 
     public UsersScheduler(UserService userService, UserExchangeAccountService exchangeAccountService, UserDiscordAccountService discordAccountService, UserBybitAccountRepository accountRepository, EncryptionService encryptionService) {
         this.userService = userService;
@@ -84,31 +82,25 @@ public class UsersScheduler {
             user.setFirstName("Marcel");
             user.setLastName("Valovy");
             user.setEmail("marcel.valovy@vse.cz");
-//            user.setRoles(Set.of(Role.USER, Role.ADMIN));
             user.setRegisteredAt(Instant.now());
             existingOrNewUser = userService.createUser(user);
 
             log.info("##############################################################");
             log.info("################# DEFAULT USER BEING CREATED #################");
-            log.info("Creating default {}-mode user: {} with ID: {}", runMode, userUsername, existingOrNewUser.getId());
+            log.info("Creating new default user: {} with ID: {}", userUsername, existingOrNewUser.getId());
         } else {
             existingOrNewUser = userService.findByUsername(userUsername).orElseThrow();
             log.info("##############################################################");
             log.info("############## UPDATING EXISTING USER CONNECTIONS ############");
-            log.info("Updating connections for user: {} with ID: {}", userUsername, existingOrNewUser.getId());
+            log.info("Updating existing user's connections: {} with ID: {}", userUsername, existingOrNewUser.getId());
         }
         
         // Create or update default accounts based on run mode
-        if ("demo".equalsIgnoreCase(runMode)) {
-            createDefaultAccount(existingOrNewUser.getId(), "MVBb-Demo", BYBIT_DEMO);
-            log.info("Created/Updated DEMO account for user as RUN_MODE is set to: {}", runMode);
-        } else if ("live".equalsIgnoreCase(runMode)) {
-            createDefaultAccount(existingOrNewUser.getId(), "MVBb", BYBIT_LIVE);
-            createDefaultAccount(existingOrNewUser.getId(), "MVNc", BINANCE_LIVE);
-            log.info("Created/Updated LIVE accounts for user as RUN_MODE is set to: {}", runMode);
-        } else {
-            log.warn("Unknown RUN_MODE value: {}. No default exchange accounts created/updated.", runMode);
-        }
+        createDefaultAccount(existingOrNewUser.getId(), "MVBb-Demo", BYBIT_DEMO);
+        createDefaultAccount(existingOrNewUser.getId(), "MVNc-Demo", BINANCE_DEMO);
+        createDefaultAccount(existingOrNewUser.getId(), "MVBb", BYBIT_LIVE);
+        createDefaultAccount(existingOrNewUser.getId(), "MVNc", BINANCE_LIVE);
+
         log.info("##############################################################");
 
         createDefaultDiscordAccount(existingOrNewUser.getId(), 238283760540450816L, "marcelv3612", "");
@@ -122,8 +114,6 @@ public class UsersScheduler {
             admin.setFirstName("Nick");
             admin.setLastName("Korotov");
             admin.setEmail("korotov.nick@gmail.com");
-            //admin.setEmail("korn03@vse.cz");
-//            admin.setRoles(Set.of(Role.USER, Role.ADMIN));
             admin.setRegisteredAt(Instant.now());
             adminUser = userService.createUser(admin);
             userService.addUserRole(adminUser.getId(), Role.ADMIN);
@@ -138,17 +128,7 @@ public class UsersScheduler {
             log.info("Updating connections for admin: {} with ID: {}", adminUsername, adminUser.getId());
         }
 
-        // Create or update admin accounts based on run mode
-        if ("demo".equalsIgnoreCase(runMode)) {
-            createDefaultAccount(adminUser.getId(), "Admin-Demo-Bybit", BYBIT_DEMO);
-            log.info("Created/Updated DEMO account for admin as RUN_MODE is set to: {}", runMode);
-        } else if ("live".equalsIgnoreCase(runMode)) {
-            createDefaultAccount(adminUser.getId(), "Admin-Bybit", BYBIT_LIVE);
-//                createDefaultAccount(adminUser.getId(), "Admin-Binance", BINANCE_LIVE);
-            log.info("Created/Updated LIVE accounts for admin as RUN_MODE is set to: {}", runMode);
-        } else {
-            log.warn("Unknown RUN_MODE value: {}. No default exchange accounts created/updated for admin.", runMode);
-        }
+        createDefaultAccount(adminUser.getId(), "Admin-Demo-Bybit", BYBIT_DEMO);
         log.info("##############################################################");
 
         createDefaultDiscordAccount(adminUser.getId(), 493077349684740097L, "n1ckor", "c711e2e7b4b31f475e0fa51dc5bed1dc");
@@ -168,12 +148,14 @@ public class UsersScheduler {
                     case BYBIT_LIVE -> defaultReadWriteApiKey;
                     case BYBIT_DEMO -> defaultDemoReadWriteApiKey;
                     case BINANCE_LIVE -> defaultNanceReadWriteApiKey;
+                    case BINANCE_DEMO -> defaultNanceDemoApiKey;
                 };
 
                 String readWriteApiSecret = switch (provider) {
                     case BYBIT_LIVE -> defaultReadWriteApiSecret;
                     case BYBIT_DEMO -> defaultDemoReadWriteApiSecret;
                     case BINANCE_LIVE -> defaultNanceReadWriteApiSecret;
+                    case BINANCE_DEMO -> defaultNanceDemoApiSecret;
                 };
 
                 // Get all existing accounts for this user
@@ -185,8 +167,7 @@ public class UsersScheduler {
                     if (existingAccount.getAccountName().equals(accountName)) {
                         // Update the existing account
                         existingAccount.setProvider(provider);
-                        existingAccount.setDemo(provider == BYBIT_DEMO);
-                        existingAccount.setEncryptedReadOnlyApiKey(encryptionService.encrypt(defaultReadOnlyApiKey));
+                        existingAccount.setEncryptedReadOnlyApiKey(encryptionService.encrypt(defaultReadOnlyApiKey)); // each account should have its own but we use default
                         existingAccount.setEncryptedReadOnlyApiSecret(encryptionService.encrypt(defaultReadOnlyApiSecret));
                         existingAccount.setEncryptedReadWriteApiKey(encryptionService.encrypt(readWriteApiKey));
                         existingAccount.setEncryptedReadWriteApiSecret(encryptionService.encrypt(readWriteApiSecret));
