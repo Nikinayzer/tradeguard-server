@@ -1,11 +1,11 @@
 package korn03.tradeguardserver.endpoints.controller.user;
 
-import korn03.tradeguardserver.endpoints.dto.user.exchangeAccount.ExchangeAccountCreationRequestDTO;
-import korn03.tradeguardserver.endpoints.dto.user.exchangeAccount.ExchangeAccountDTO;
 import korn03.tradeguardserver.endpoints.dto.user.UserAccountLimits.UpdateUserAccountLimitsRequestDTO;
 import korn03.tradeguardserver.endpoints.dto.user.UserAccountLimits.UserAccountLimitsDTO;
 import korn03.tradeguardserver.endpoints.dto.user.UserDTO;
 import korn03.tradeguardserver.endpoints.dto.user.UserUpdateRequestDTO;
+import korn03.tradeguardserver.endpoints.dto.user.exchangeAccount.ExchangeAccountCreationRequestDTO;
+import korn03.tradeguardserver.endpoints.dto.user.exchangeAccount.ExchangeAccountDTO;
 import korn03.tradeguardserver.endpoints.dto.user.exchangeAccount.ExchangeAccountUpdateDTO;
 import korn03.tradeguardserver.mapper.UserAccountLimitsMapper;
 import korn03.tradeguardserver.model.entity.service.PushToken;
@@ -13,7 +13,6 @@ import korn03.tradeguardserver.model.entity.user.User;
 import korn03.tradeguardserver.model.entity.user.connections.ExchangeProvider;
 import korn03.tradeguardserver.model.entity.user.connections.UserDiscordAccount;
 import korn03.tradeguardserver.model.entity.user.connections.UserExchangeAccount;
-import korn03.tradeguardserver.security.AuthUtil;
 import korn03.tradeguardserver.service.core.pushNotifications.PushNotificationService;
 import korn03.tradeguardserver.service.core.pushNotifications.PushTokenService;
 import korn03.tradeguardserver.service.user.UserAccountLimitsService;
@@ -22,8 +21,6 @@ import korn03.tradeguardserver.service.user.connection.UserDiscordAccountService
 import korn03.tradeguardserver.service.user.connection.UserExchangeAccountService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -62,17 +59,14 @@ public class UserController {
     }
 
     //todo move this into service
-    @GetMapping("/me")
-    public ResponseEntity<UserDTO> getCurrentUser() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        User user = (User) authentication.getPrincipal();
+    @GetMapping("/{userId}")
+    public ResponseEntity<UserDTO> getCurrentUser(
+            @PathVariable Long userId
+    ) {
+        Optional<UserDiscordAccount> discord = userDiscordAccountService.getDiscordAccount(userId);
+        List<ExchangeAccountDTO> exchanges = userExchangeAccountService.getUserExchangeAccounts(userId);
 
-        // Get optional Discord account
-        Optional<UserDiscordAccount> discord = userDiscordAccountService.getDiscordAccount(user.getId());
-
-        // Get list of Exchange accounts
-        List<ExchangeAccountDTO> exchanges = userExchangeAccountService.getUserExchangeAccounts(user.getId());
-
+        User user = userService.getById(userId);
         // Build UserDTO
         UserDTO.UserDTOBuilder userDTOBuilder = UserDTO.builder()
                 .id(user.getId())
@@ -102,12 +96,11 @@ public class UserController {
         return ResponseEntity.ok(userDTO);
     }
 
-
-    @PostMapping("/me")
-    public ResponseEntity<UserDTO> updateCurrentUser(@RequestBody UserUpdateRequestDTO request) {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        User user = (User) authentication.getPrincipal();
-
+    @PostMapping("/{userId}")
+    public ResponseEntity<UserDTO> updateCurrentUser(
+            @PathVariable Long userId,
+            @RequestBody UserUpdateRequestDTO request) {
+        User user = userService.getById(userId);
         if (request.getEmail() != null) user.setEmail(request.getEmail());
         if (request.getFirstName() != null) user.setFirstName(request.getFirstName());
         if (request.getLastName() != null) user.setLastName(request.getLastName());
@@ -117,46 +110,29 @@ public class UserController {
         return ResponseEntity.ok(convertToDTO(user));
     }
 
-    @PostMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<UserDTO> updateUser(@PathVariable Long id, @RequestBody UserUpdateRequestDTO request) {
-        User user = userService.getById(id);
-
-        if (request.getEmail() != null) user.setEmail(request.getEmail());
-        if (request.getFirstName() != null) user.setFirstName(request.getFirstName());
-        if (request.getLastName() != null) user.setLastName(request.getLastName());
-
-        return ResponseEntity.ok(convertToDTO(user));
-    }
-
-    @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
-        userService.deleteUser(id);
-        return ResponseEntity.ok().build();
-    }
-
-    @GetMapping("/me/exchange-accounts")
-    public ResponseEntity<List<ExchangeAccountDTO>> getExchangeAccounts() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        User user = (User) authentication.getPrincipal();
-        List<ExchangeAccountDTO> accounts = userExchangeAccountService.getUserExchangeAccounts(user.getId());
+    @GetMapping("/{userId}/exchange-accounts")
+    public ResponseEntity<List<ExchangeAccountDTO>> getExchangeAccounts(
+            @PathVariable Long userId
+    ) {
+        List<ExchangeAccountDTO> accounts = userExchangeAccountService.getUserExchangeAccounts(userId);
         return ResponseEntity.ok(accounts);
     }
 
-    @GetMapping("/me/exchange-accounts/{id}")
-    public ResponseEntity<ExchangeAccountDTO> getExchangeAccount(@PathVariable Long id) {
-        Long userId = AuthUtil.getCurrentUserId();
+    @GetMapping("/{userId}/exchange-accounts/{id}")
+    public ResponseEntity<ExchangeAccountDTO> getExchangeAccount(
+            @PathVariable Long userId,
+            @PathVariable Long id) {
         UserExchangeAccount account = userExchangeAccountService.getExchangeAccount(userId, id);
         return ResponseEntity.ok(convertToExchangeAccountDTO(account));
     }
 
-    @PostMapping("/me/exchange-accounts/{id}/update")
-    public ResponseEntity<ExchangeAccountDTO> updateExchangeAccount(@PathVariable Long id, @RequestBody ExchangeAccountUpdateDTO request) {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        User user = (User) authentication.getPrincipal();
+    @PostMapping("/{userId}/exchange-accounts/{id}/update")
+    public ResponseEntity<ExchangeAccountDTO> updateExchangeAccount(
+            @PathVariable Long userId,
+            @PathVariable Long id,
+            @RequestBody ExchangeAccountUpdateDTO request) {
         UserExchangeAccount account = userExchangeAccountService.updateExchangeAccount(
-                user.getId(),
+                userId,
                 id,
                 request.getName(),
                 request.getReadOnlyApiKey(),
@@ -167,19 +143,19 @@ public class UserController {
         return ResponseEntity.ok(convertToExchangeAccountDTO(account));
     }
 
-    @PostMapping("/me/exchange-accounts/add")
-    public ResponseEntity<ExchangeAccountDTO> createExchangeAccount(@RequestBody ExchangeAccountCreationRequestDTO request) {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        User user = (User) authentication.getPrincipal();
+    @PostMapping("/{userId}/exchange-accounts/add")
+    public ResponseEntity<ExchangeAccountDTO> createExchangeAccount(
+            @PathVariable Long userId,
+            @RequestBody ExchangeAccountCreationRequestDTO request) {
         String provider = request.getProvider().toUpperCase(Locale.ROOT);
         ExchangeProvider exchangeProvider = switch (provider) {
             case "BINANCE" -> ExchangeProvider.BINANCE_LIVE;
             case "BYBIT" -> Boolean.TRUE.equals(request.getDemo()) ? ExchangeProvider.BYBIT_DEMO :
-                ExchangeProvider.BYBIT_LIVE;
+                    ExchangeProvider.BYBIT_LIVE;
             default -> throw new IllegalStateException("Unexpected value: " + provider);
         };
         UserExchangeAccount account = userExchangeAccountService.saveExchangeAccount(
-                user.getId(),
+                userId,
                 request.getName(),
                 exchangeProvider,
                 request.getReadOnlyApiKey(),
@@ -190,29 +166,24 @@ public class UserController {
         return ResponseEntity.ok(convertToExchangeAccountDTO(account));
     }
 
-    @DeleteMapping("/me/exchange-accounts/{id}/delete")
+    @DeleteMapping("/{userId}/exchange-accounts/{id}/delete")
     public ResponseEntity<ExchangeAccountDTO> deleteCurrentUserExchangeAccount(
+            @PathVariable Long userId,
             @PathVariable Long id
     ) {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        User user = (User) authentication.getPrincipal();
-        userExchangeAccountService.deleteExchangeAccount(user.getId(), id);
+        userExchangeAccountService.deleteExchangeAccount(userId, id);
         return ResponseEntity.ok().build();
     }
 
-    @GetMapping("/me/limits")
-    public ResponseEntity<UserAccountLimitsDTO> getCurrentUserLimits() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        User user = (User) authentication.getPrincipal();
-        return ResponseEntity.ok(userAccountLimitsService.getLimitsByUserId(user.getId()));
+    @GetMapping("/{userId}/limits")
+    public ResponseEntity<UserAccountLimitsDTO> getCurrentUserLimits(@PathVariable Long userId) {
+        return ResponseEntity.ok(userAccountLimitsService.getLimitsByUserId(userId));
     }
 
-    @PostMapping("/me/limits")
-    public ResponseEntity<UserAccountLimitsDTO> updateCurrentUserLimits(@RequestBody UpdateUserAccountLimitsRequestDTO request) {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        User user = (User) authentication.getPrincipal();
-        userAccountLimitsService.updateUserLimits(user.getId(), request);
-        return ResponseEntity.ok(userAccountLimitsService.updateUserLimits(user.getId(), request));
+    @PostMapping("/{userId}/limits")
+    public ResponseEntity<UserAccountLimitsDTO> updateCurrentUserLimits(@RequestBody UpdateUserAccountLimitsRequestDTO request, @PathVariable Long userId) {
+        userAccountLimitsService.updateUserLimits(userId, request);
+        return ResponseEntity.ok(userAccountLimitsService.updateUserLimits(userId, request));
     }
 
     @GetMapping("/{userId}/pushTokens")

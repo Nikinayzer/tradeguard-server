@@ -1,7 +1,6 @@
 package korn03.tradeguardserver.model.entity.job;
 
 import jakarta.persistence.*;
-import korn03.tradeguardserver.kafka.events.JobEventType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

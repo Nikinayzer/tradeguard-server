@@ -1,4 +1,4 @@
-package korn03.tradeguardserver.kafka.events;
+package korn03.tradeguardserver.kafka.events.jobUpdates;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.*;

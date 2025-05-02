@@ -1,6 +1,6 @@
 package korn03.tradeguardserver.endpoints.controller.market;
 
-import korn03.tradeguardserver.endpoints.dto.MarketDataDTO;
+import korn03.tradeguardserver.endpoints.dto.market.MarketDataDTO;
 import korn03.tradeguardserver.service.bybit.BybitMarketDataService;
 import org.knowm.xchange.currency.CurrencyPair;
 import org.springframework.http.ResponseEntity;

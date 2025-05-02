@@ -1,4 +1,4 @@
-package korn03.tradeguardserver.kafka.events;
+package korn03.tradeguardserver.kafka.events.jobUpdates;
 
 // ---------------------------------------------------
 // 2) The possible variants of event_type, 

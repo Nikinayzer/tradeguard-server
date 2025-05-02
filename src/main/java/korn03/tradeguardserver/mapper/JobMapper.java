@@ -2,8 +2,8 @@ package korn03.tradeguardserver.mapper;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import korn03.tradeguardserver.kafka.events.JobEventMessage;
-import korn03.tradeguardserver.kafka.events.JobEventType;
+import korn03.tradeguardserver.kafka.events.jobUpdates.JobEventMessage;
+import korn03.tradeguardserver.kafka.events.jobUpdates.JobEventType;
 import korn03.tradeguardserver.model.entity.job.Job;
 import korn03.tradeguardserver.model.entity.job.JobEvent;
 import korn03.tradeguardserver.model.entity.job.JobStatusType;
@@ -18,16 +18,16 @@ public interface JobMapper {
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "userId", expression = "java(2L)") // TODO: Accept later
     @Mapping(target = "status", source = "jobEventType", qualifiedByName = "mapStatus")
-    @Mapping(target = "stepsDone", expression = "java((jobEventMessage.getJobEventType() instanceof korn03.tradeguardserver.kafka.events.JobEventType.StepDone stepDone) ? stepDone.stepIndex() : 0)")
+    @Mapping(target = "stepsDone", expression = "java((jobEventMessage.getJobEventType() instanceof korn03.tradeguardserver.kafka.events.jobUpdates.JobEventType.StepDone stepDone) ? stepDone.stepIndex() : 0)")
 
-    @Mapping(target = "strategy", expression = "java(jobEventMessage.getJobEventType() instanceof korn03.tradeguardserver.kafka.events.JobEventType.Created ? mapStrategy(((korn03.tradeguardserver.kafka.events.JobEventType.Created) jobEventMessage.getJobEventType()).meta().name()) : null)")
+    @Mapping(target = "strategy", expression = "java(jobEventMessage.getJobEventType() instanceof korn03.tradeguardserver.kafka.events.jobUpdates.JobEventType.Created ? mapStrategy(((korn03.tradeguardserver.kafka.events.jobUpdates.JobEventType.Created) jobEventMessage.getJobEventType()).meta().name()) : null)")
     // Access fields from CreatedEventData object
-    @Mapping(target = "coins", expression = "java(jobEventMessage.getJobEventType() instanceof korn03.tradeguardserver.kafka.events.JobEventType.Created ? ((korn03.tradeguardserver.kafka.events.JobEventType.Created) jobEventMessage.getJobEventType()).meta().coins() : null)")
-    @Mapping(target = "side", expression = "java(jobEventMessage.getJobEventType() instanceof korn03.tradeguardserver.kafka.events.JobEventType.Created ? ((korn03.tradeguardserver.kafka.events.JobEventType.Created) jobEventMessage.getJobEventType()).meta().side() : null)")
-    @Mapping(target = "discountPct", expression = "java(jobEventMessage.getJobEventType() instanceof korn03.tradeguardserver.kafka.events.JobEventType.Created ? ((korn03.tradeguardserver.kafka.events.JobEventType.Created) jobEventMessage.getJobEventType()).meta().discountPct() : null)")
-    @Mapping(target = "amount", expression = "java(jobEventMessage.getJobEventType() instanceof korn03.tradeguardserver.kafka.events.JobEventType.Created ? ((korn03.tradeguardserver.kafka.events.JobEventType.Created) jobEventMessage.getJobEventType()).meta().amount() : null)")
-    @Mapping(target = "stepsTotal", expression = "java(jobEventMessage.getJobEventType() instanceof korn03.tradeguardserver.kafka.events.JobEventType.Created ? ((korn03.tradeguardserver.kafka.events.JobEventType.Created) jobEventMessage.getJobEventType()).meta().stepsTotal() : null)")
-    @Mapping(target = "durationMinutes", expression = "java(jobEventMessage.getJobEventType() instanceof korn03.tradeguardserver.kafka.events.JobEventType.Created ? ((korn03.tradeguardserver.kafka.events.JobEventType.Created) jobEventMessage.getJobEventType()).meta().durationMinutes() : null)")
+    @Mapping(target = "coins", expression = "java(jobEventMessage.getJobEventType() instanceof korn03.tradeguardserver.kafka.events.jobUpdates.JobEventType.Created ? ((korn03.tradeguardserver.kafka.events.jobUpdates.JobEventType.Created) jobEventMessage.getJobEventType()).meta().coins() : null)")
+    @Mapping(target = "side", expression = "java(jobEventMessage.getJobEventType() instanceof korn03.tradeguardserver.kafka.events.jobUpdates.JobEventType.Created ? ((korn03.tradeguardserver.kafka.events.jobUpdates.JobEventType.Created) jobEventMessage.getJobEventType()).meta().side() : null)")
+    @Mapping(target = "discountPct", expression = "java(jobEventMessage.getJobEventType() instanceof korn03.tradeguardserver.kafka.events.jobUpdates.JobEventType.Created ? ((korn03.tradeguardserver.kafka.events.jobUpdates.JobEventType.Created) jobEventMessage.getJobEventType()).meta().discountPct() : null)")
+    @Mapping(target = "amount", expression = "java(jobEventMessage.getJobEventType() instanceof korn03.tradeguardserver.kafka.events.jobUpdates.JobEventType.Created ? ((korn03.tradeguardserver.kafka.events.jobUpdates.JobEventType.Created) jobEventMessage.getJobEventType()).meta().amount() : null)")
+    @Mapping(target = "stepsTotal", expression = "java(jobEventMessage.getJobEventType() instanceof korn03.tradeguardserver.kafka.events.jobUpdates.JobEventType.Created ? ((korn03.tradeguardserver.kafka.events.jobUpdates.JobEventType.Created) jobEventMessage.getJobEventType()).meta().stepsTotal() : null)")
+    @Mapping(target = "durationMinutes", expression = "java(jobEventMessage.getJobEventType() instanceof korn03.tradeguardserver.kafka.events.jobUpdates.JobEventType.Created ? ((korn03.tradeguardserver.kafka.events.jobUpdates.JobEventType.Created) jobEventMessage.getJobEventType()).meta().durationMinutes() : null)")
 
     @Mapping(target = "createdAt", source = "timestamp")
     @Mapping(target = "updatedAt", source = "timestamp")
@@ -43,7 +43,7 @@ public interface JobMapper {
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "jobId", ignore = true)
     @Mapping(target = "status", source = "jobEventType", qualifiedByName = "mapStatus")
-    @Mapping(target = "stepsDone", expression = "java((jobEventMessage.getJobEventType() instanceof korn03.tradeguardserver.kafka.events.JobEventType.StepDone stepDone) ? stepDone.stepIndex() : job.getStepsDone())")
+    @Mapping(target = "stepsDone", expression = "java((jobEventMessage.getJobEventType() instanceof korn03.tradeguardserver.kafka.events.jobUpdates.JobEventType.StepDone stepDone) ? stepDone.stepIndex() : job.getStepsDone())")
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", source = "timestamp")
     @Mapping(target = "userId", ignore = true)

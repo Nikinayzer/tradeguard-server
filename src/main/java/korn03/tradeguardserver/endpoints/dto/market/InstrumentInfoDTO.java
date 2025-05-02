@@ -1,4 +1,4 @@
-package korn03.tradeguardserver.endpoints.dto;
+package korn03.tradeguardserver.endpoints.dto.market;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

@@ -1,25 +1,21 @@
 package korn03.tradeguardserver.service.job;
 
 import korn03.tradeguardserver.exception.NotFoundException;
-import korn03.tradeguardserver.kafka.events.JobEventMessage;
+import korn03.tradeguardserver.kafka.events.jobUpdates.JobEventMessage;
 import korn03.tradeguardserver.mapper.JobMapper;
 import korn03.tradeguardserver.model.entity.job.Job;
 import korn03.tradeguardserver.model.entity.job.JobEvent;
 import korn03.tradeguardserver.model.entity.job.JobStatusType;
 import korn03.tradeguardserver.model.repository.job.JobEventRepository;
 import korn03.tradeguardserver.model.repository.job.JobRepository;
-import korn03.tradeguardserver.service.core.CacheService;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
-import java.time.Duration;
 import java.time.Instant;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 
 @Service
 @RequiredArgsConstructor

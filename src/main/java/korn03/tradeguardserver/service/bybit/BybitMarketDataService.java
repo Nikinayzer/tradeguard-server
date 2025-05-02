@@ -3,13 +3,12 @@ package korn03.tradeguardserver.service.bybit;
 import com.bybit.api.client.domain.CategoryType;
 import com.bybit.api.client.domain.market.request.MarketDataRequest;
 import com.bybit.api.client.restApi.BybitApiMarketRestClient;
-import korn03.tradeguardserver.endpoints.dto.InstrumentInfoDTO;
-import korn03.tradeguardserver.endpoints.dto.MarketDataDTO;
+import korn03.tradeguardserver.endpoints.dto.market.InstrumentInfoDTO;
+import korn03.tradeguardserver.endpoints.dto.market.MarketDataDTO;
 import korn03.tradeguardserver.service.core.CacheService;
 import org.knowm.xchange.currency.CurrencyPair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;

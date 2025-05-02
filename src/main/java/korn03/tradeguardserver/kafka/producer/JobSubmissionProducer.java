@@ -1,7 +1,7 @@
 package korn03.tradeguardserver.kafka.producer;
 
-import korn03.tradeguardserver.kafka.events.JobEventMessage;
-import korn03.tradeguardserver.kafka.events.JobEventType;
+import korn03.tradeguardserver.kafka.events.jobUpdates.JobEventMessage;
+import korn03.tradeguardserver.kafka.events.jobUpdates.JobEventType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;

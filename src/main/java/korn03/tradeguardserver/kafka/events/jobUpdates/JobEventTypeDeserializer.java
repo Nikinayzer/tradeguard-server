@@ -1,4 +1,4 @@
-package korn03.tradeguardserver.kafka.events;
+package korn03.tradeguardserver.kafka.events.jobUpdates;
 
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
@@ -11,7 +11,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import static korn03.tradeguardserver.kafka.events.JobEventType.*;
+import static korn03.tradeguardserver.kafka.events.jobUpdates.JobEventType.*;
 
 @Slf4j
 public class JobEventTypeDeserializer extends JsonDeserializer<JobEventType> {

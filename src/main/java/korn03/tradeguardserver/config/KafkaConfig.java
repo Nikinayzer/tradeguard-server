@@ -3,7 +3,9 @@ package korn03.tradeguardserver.config;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import korn03.tradeguardserver.kafka.events.JobEventMessage;
+import korn03.tradeguardserver.kafka.events.equity.Equity;
+import korn03.tradeguardserver.kafka.events.jobUpdates.JobEventMessage;
+import korn03.tradeguardserver.kafka.events.position.Position;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.admin.AdminClientConfig;
@@ -43,6 +45,12 @@ public class KafkaConfig {
 
     @Value("${kafka.topic.job-submissions}")
     private String jobSubmissionsTopic;
+    
+    @Value("${kafka.topic.position-updates}")
+    private String positionUpdatesTopic;
+    
+    @Value("${kafka.topic.equity}")
+    private String equityUpdatesTopic;
 
     /**
      * Creates Kafka Admin client for managing topics.
@@ -78,6 +86,16 @@ public class KafkaConfig {
     public NewTopic jobSubmissionsTopic() {
         return new NewTopic(jobSubmissionsTopic, 1, (short) 1); // Single partition, single replica for development
     }
+    
+    @Bean
+    public NewTopic positionUpdatesTopic() {
+        return new NewTopic(positionUpdatesTopic, 1, (short) 1);
+    }
+    
+    @Bean
+    public NewTopic equityUpdatesTopic() {
+        return new NewTopic(equityUpdatesTopic, 1, (short) 1);
+    }
 
     /**
      * Generic Kafka Template - Can be used for different message types
@@ -108,6 +126,28 @@ public class KafkaConfig {
     public ConcurrentKafkaListenerContainerFactory<String, JobEventMessage> jobEventListenerFactory() {
         ConcurrentKafkaListenerContainerFactory<String, JobEventMessage> factory = new ConcurrentKafkaListenerContainerFactory<>();
         factory.setConsumerFactory(consumerFactory(JobEventMessage.class));
+        factory.setCommonErrorHandler(kafkaErrorHandler());
+        return factory;
+    }
+    
+    /**
+     * Kafka Listener Factory for Position - Uses generic consumerFactory.
+     */
+    @Bean
+    public ConcurrentKafkaListenerContainerFactory<String, Position> positionListenerFactory() {
+        ConcurrentKafkaListenerContainerFactory<String, Position> factory = new ConcurrentKafkaListenerContainerFactory<>();
+        factory.setConsumerFactory(consumerFactory(Position.class));
+        factory.setCommonErrorHandler(kafkaErrorHandler());
+        return factory;
+    }
+    
+    /**
+     * Kafka Listener Factory for Equity - Uses generic consumerFactory.
+     */
+    @Bean
+    public ConcurrentKafkaListenerContainerFactory<String, Equity> equityListenerFactory() {
+        ConcurrentKafkaListenerContainerFactory<String, Equity> factory = new ConcurrentKafkaListenerContainerFactory<>();
+        factory.setConsumerFactory(consumerFactory(Equity.class));
         factory.setCommonErrorHandler(kafkaErrorHandler());
         return factory;
     }
@@ -142,7 +182,7 @@ public class KafkaConfig {
         props.put(ProducerConfig.ENABLE_IDEMPOTENCE_CONFIG, true);
         props.put(ProducerConfig.BATCH_SIZE_CONFIG, 16384);
         props.put(ProducerConfig.LINGER_MS_CONFIG, 1);
-        props.put(ProducerConfig.COMPRESSION_TYPE_CONFIG, "snappy");
+        props.put(ProducerConfig.COMPRESSION_TYPE_CONFIG, "none");
         return props;
     }
 
@@ -169,6 +209,4 @@ public class KafkaConfig {
 
         return new DefaultKafkaConsumerFactory<>(props, new StringDeserializer(), jsonDeserializer, errorHandlingDeserializer.isForKey());
     }
-
-
 }
