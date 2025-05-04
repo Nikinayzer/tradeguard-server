@@ -1,6 +1,7 @@
 package korn03.tradeguardserver.kafka.events.position;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -73,13 +74,13 @@ public class Position {
     private PositionUpdateType updateType;
 
     @JsonProperty("timestamp")
-    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
-    private Instant timestamp;
+    private String timestamp;
 
     @Transient
+    @JsonIgnore
     private String positionKey;
 
     public String getPositionKey() {
-        return userId + "_" + venue + "_" + symbol;
+        return venue + "_" + symbol;
     }
 }

@@ -33,6 +33,8 @@ public class SecurityConfig {
                         .requestMatchers("/jobs/**").permitAll() //todo something with it lol
                         .requestMatchers("/internal/**").permitAll() //do something with it lol
                         .requestMatchers("/users/**").authenticated()
+                        .requestMatchers("/test/mock/**").permitAll()
+                        .requestMatchers("/events/stream").authenticated()
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);

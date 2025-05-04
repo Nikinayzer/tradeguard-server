@@ -1,6 +1,7 @@
 package korn03.tradeguardserver.kafka.events.equity;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.Transient;
@@ -32,8 +33,7 @@ public class Equity {
     private String venue;
 
     @JsonProperty("timestamp")
-    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
-    private Instant timestamp;
+    private String timestamp;
 
     @JsonProperty("wallet_balance")
     private BigDecimal walletBalance;
@@ -48,9 +48,10 @@ public class Equity {
     private BigDecimal bnbBalanceUsdt;
 
     @Transient
+    @JsonIgnore
     private String equityKey;
 
     public String getEquityKey() {
-        return userId + "_" + venue;
+        return  venue;
     }
 }

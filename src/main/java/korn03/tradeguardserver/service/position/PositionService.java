@@ -3,6 +3,7 @@ package korn03.tradeguardserver.service.position;
 import korn03.tradeguardserver.endpoints.dto.user.position.UserPositionsStateDTO;
 import korn03.tradeguardserver.kafka.events.position.Position;
 import korn03.tradeguardserver.service.core.CacheService;
+import korn03.tradeguardserver.service.event.SseEmitterService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -10,11 +11,13 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
+import java.util.Set;
 
 /**
  * Service for managing position data from Kafka in Redis cache.
@@ -25,6 +28,7 @@ import java.util.stream.Collectors;
 public class PositionService {
 
     private final CacheService cacheService;
+    private final SseEmitterService sseService;
     private static final Duration POSITION_TTL = Duration.ofMinutes(1);
     private static final String POSITION_KEY_PREFIX = "position:";
     
@@ -43,13 +47,21 @@ public class PositionService {
         }
         
         try {
-            // Key includes user ID for efficient filtering: position:userId:venue_symbol
             String key = POSITION_KEY_PREFIX + position.getUserId() + ":" + position.getPositionKey();
             cacheService.storeInCache(key, position, POSITION_TTL);
             knownPositionKeys.put(key, true);
             log.debug("Stored position update for key: {}", key);
+            
+            // Send SSE update with full positions state
+            UserPositionsStateDTO positionsState = getUserPositionsState(position.getUserId());
+            if (positionsState != null) {
+                log.info("Sending position update via SSE for user {}", position.getUserId());
+                sseService.sendUpdate(position.getUserId(), "positions", positionsState);
+            } else {
+                log.warn("Could not generate positions state for user {}", position.getUserId());
+            }
         } catch (Exception e) {
-            log.error("Error processing position update for {}", position.getPositionKey(), e);
+            log.error("Error processing position update for {}: {}", position.getPositionKey(), e.getMessage(), e);
         }
     }
     
@@ -75,12 +87,22 @@ public class PositionService {
      */
     public List<Position> getUserPositions(Long userId) {
         String userKeyPrefix = POSITION_KEY_PREFIX + userId + ":";
+        List<Position> userPositions = new ArrayList<>();
         
-        return knownPositionKeys.keySet().stream()
-                .filter(key -> key.startsWith(userKeyPrefix))
-                .map(key -> cacheService.getFromCache(key, Position.class))
-                .filter(Objects::nonNull)
-                .collect(Collectors.toList());
+        for (String key : knownPositionKeys.keySet()) {
+            if (key.startsWith(userKeyPrefix)) {
+                Position position = cacheService.getFromCache(key, Position.class);
+                if (position != null) {
+                    userPositions.add(position);
+                    log.debug("Retrieved position from cache: {}", key);
+                } else {
+                    log.warn("Position not found in cache for key: {}", key);
+                }
+            }
+        }
+        
+        log.info("Found {} positions for user {}", userPositions.size(), userId);
+        return userPositions;
     }
     
     /**
@@ -127,7 +149,7 @@ public class PositionService {
         
         // Find the most recent timestamp
         Instant latestTimestamp = activePositions.stream()
-                .map(Position::getTimestamp)
+                .map(equity -> Instant.parse(equity.getTimestamp()))
                 .max(Instant::compareTo)
                 .orElse(Instant.now());
         
@@ -180,7 +202,7 @@ public class PositionService {
         
         // Find the most recent timestamp
         Instant latestTimestamp = allUserPositions.stream()
-                .map(Position::getTimestamp)
+                .map(equity -> Instant.parse(equity.getTimestamp()))
                 .max(Instant::compareTo)
                 .orElse(Instant.now());
         
@@ -207,5 +229,14 @@ public class PositionService {
                 .map(key -> cacheService.getFromCache(key, Position.class))
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
+    }
+
+    /**
+     * Get the known position cache keys.
+     * 
+     * @return Set of known position keys
+     */
+    public Set<String> getKnownPositionKeys() {
+        return knownPositionKeys.keySet();
     }
 } 

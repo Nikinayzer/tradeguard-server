@@ -24,7 +24,7 @@ public class JobEventMessage {
     @JsonProperty("job_id")
     private Long jobId;
 
-    @JsonProperty("event_type")
+    @JsonProperty("update_type")
     @JsonDeserialize(using = JobEventTypeDeserializer.class)
     @JsonSerialize(using = JobEventTypeSerializer.class)
     private JobEventType jobEventType;
