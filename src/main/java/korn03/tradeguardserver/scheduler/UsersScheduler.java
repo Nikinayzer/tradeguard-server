@@ -1,5 +1,16 @@
 package korn03.tradeguardserver.scheduler;
 
+import static korn03.tradeguardserver.model.entity.user.connections.ExchangeProvider.BINANCE_DEMO;
+import static korn03.tradeguardserver.model.entity.user.connections.ExchangeProvider.BINANCE_LIVE;
+import static korn03.tradeguardserver.model.entity.user.connections.ExchangeProvider.BYBIT_DEMO;
+import static korn03.tradeguardserver.model.entity.user.connections.ExchangeProvider.BYBIT_LIVE;
+
+import java.time.Instant;
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
+
 import jakarta.annotation.PostConstruct;
 import korn03.tradeguardserver.model.entity.user.Role;
 import korn03.tradeguardserver.model.entity.user.User;
@@ -7,17 +18,10 @@ import korn03.tradeguardserver.model.entity.user.connections.ExchangeProvider;
 import korn03.tradeguardserver.model.entity.user.connections.UserExchangeAccount;
 import korn03.tradeguardserver.model.repository.user.connections.UserBybitAccountRepository;
 import korn03.tradeguardserver.service.core.EncryptionService;
-import korn03.tradeguardserver.service.user.connection.UserExchangeAccountService;
 import korn03.tradeguardserver.service.user.UserService;
 import korn03.tradeguardserver.service.user.connection.UserDiscordAccountService;
+import korn03.tradeguardserver.service.user.connection.UserExchangeAccountService;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
-
-import java.time.Instant;
-import java.util.List;
-
-import static korn03.tradeguardserver.model.entity.user.connections.ExchangeProvider.*;
 
 @Component
 @Slf4j
@@ -98,8 +102,8 @@ public class UsersScheduler {
         // Create or update default accounts based on run mode
         createDefaultAccount(existingOrNewUser.getId(), "MVBb-Demo", BYBIT_DEMO);
         createDefaultAccount(existingOrNewUser.getId(), "MVNc-Demo", BINANCE_DEMO);
-        createDefaultAccount(existingOrNewUser.getId(), "MVBb", BYBIT_LIVE);
-        createDefaultAccount(existingOrNewUser.getId(), "MVNc", BINANCE_LIVE);
+        createDefaultAccount(existingOrNewUser.getId(), "MVBb-Live", BYBIT_LIVE);
+        createDefaultAccount(existingOrNewUser.getId(), "MVNc-Live", BINANCE_LIVE);
 
         log.info("##############################################################");
 
