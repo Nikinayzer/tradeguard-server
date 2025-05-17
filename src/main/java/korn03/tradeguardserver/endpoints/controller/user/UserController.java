@@ -192,20 +192,6 @@ public class UserController {
         return ResponseEntity.ok(pushTokens);
     }
 
-    /**
-     * Send push notification to user
-     * Example: POST /users/{userId}/send?title=Hello&body=World
-     *
-     * @param userId
-     * @param title
-     * @param body
-     * @return
-     */
-    @PostMapping("/{userId}/sendPush")
-    public ResponseEntity<Void> sendPushNotification(@PathVariable Long userId, @RequestParam String title, @RequestParam String body) {
-        pushNotificationService.sendPushNotification(userId, title, body);
-        return ResponseEntity.ok().build();
-    }
 
     private UserDTO convertToDTO(User user) {
         return UserDTO.builder().id(user.getId()).username(user.getUsername()).email(user.getEmail()).firstName(user.getFirstName()).lastName(user.getLastName()).registeredAt(user.getRegisteredAt()).updatedAt(user.getUpdatedAt()).roles(user.getRoles()).accountNonExpired(user.isAccountNonExpired()).accountNonLocked(user.isAccountNonLocked()).credentialsNonExpired(user.isCredentialsNonExpired()).enabled(user.isEnabled()).build();

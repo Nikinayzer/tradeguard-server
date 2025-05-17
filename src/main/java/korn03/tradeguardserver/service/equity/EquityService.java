@@ -2,7 +2,7 @@ package korn03.tradeguardserver.service.equity;
 
 import korn03.tradeguardserver.kafka.events.equity.Equity;
 import korn03.tradeguardserver.service.core.CacheService;
-import korn03.tradeguardserver.service.event.SseEmitterService;
+import korn03.tradeguardserver.service.sse.SseEmitterService;
 import korn03.tradeguardserver.endpoints.dto.user.equity.UserEquityStateDTO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

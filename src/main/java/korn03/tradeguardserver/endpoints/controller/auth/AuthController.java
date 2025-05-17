@@ -4,11 +4,13 @@ import korn03.tradeguardserver.endpoints.dto.auth.AuthRequestDTO;
 import korn03.tradeguardserver.endpoints.dto.auth.AuthResponseDTO;
 import korn03.tradeguardserver.endpoints.dto.auth.RegisterRequestDTO;
 import korn03.tradeguardserver.model.entity.user.User;
+import korn03.tradeguardserver.security.AuthUtil;
 import korn03.tradeguardserver.security.JwtService;
 import korn03.tradeguardserver.service.core.pushNotifications.PushTokenService;
 import korn03.tradeguardserver.service.user.UserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -94,12 +96,19 @@ public class AuthController {
         if (pushToken != null) {
             try {
                 pushTokenService.unregisterPushToken(pushToken);
-            }
-            catch (Exception e) {
+            } catch (Exception e) {
                 log.error("Failed to unregister push token: {}", pushToken, e);
             }
 
         }
         return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/validate")
+    public ResponseEntity<Void> validateToken(
+    ) {
+        return AuthUtil.isAuthenticated()
+                ? ResponseEntity.ok().build()
+                : ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
     }
 }

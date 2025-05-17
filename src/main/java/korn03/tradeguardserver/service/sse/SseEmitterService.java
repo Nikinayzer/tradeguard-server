@@ -1,4 +1,4 @@
-package korn03.tradeguardserver.service.event;
+package korn03.tradeguardserver.service.sse;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
@@ -41,32 +41,34 @@ public class SseEmitterService {
     public SseEmitter createEmitter(Long userId) {
         SseEmitter emitter = new SseEmitter(Long.MAX_VALUE); //This way emitter lives as long as possible
         userEmitters.computeIfAbsent(userId, k -> new CopyOnWriteArrayList<>()).add(emitter);
-        log.debug("Added emitter to user's list. User {} now has {} emitters", 
-                userId, userEmitters.get(userId).size());
+        log.debug("Added emitter for user {}", userId);
 
         emitter.onCompletion(() -> {
-            log.debug("SSE emitter completed for user {}", userId);
+            log.trace("SSE connection completed for user {}", userId);
             removeEmitter(userId, emitter);
         });
         emitter.onTimeout(() -> {
-            log.debug("SSE emitter timed out for user {}", userId);
+            log.trace("SSE connection timed out for user {}", userId);
             removeEmitter(userId, emitter);
         });
         emitter.onError(e -> {
-            log.error("SSE error for user {}: {}", userId, e.getMessage());
+            if (e instanceof IOException && e.getMessage().contains("Connection reset by peer")) {
+                log.trace("SSE connection closed by client for user {}", userId);
+            } else {
+                log.debug("SSE connection error for user {}: {}", userId, e.getMessage());
+            }
             removeEmitter(userId, emitter);
         });
         
         try {
-            log.debug("Sending initial ping event to user {}", userId);
+            log.trace("Sending initial ping event to user {}", userId);
             emitter.send(SseEmitter.event()
                     .name("ping")
                     .data("connected", MediaType.TEXT_PLAIN));
-            log.debug("Initial ping event sent successfully to user {}", userId);
+            log.trace("Initial ping event sent successfully to user {}", userId);
         } catch (IOException e) {
-            log.error("Error sending initial ping event to user {}: {}", userId, e.getMessage(), e);
+            log.debug("Error sending initial ping to user {}: {}", userId, e.getMessage());
             emitter.completeWithError(e);
-            return emitter;
         }
         
         log.info("Created SSE emitter for user: {}. Total active connections: {}", 
@@ -116,17 +118,24 @@ public class SseEmitterService {
                             .name(eventType)
                             .data(jsonData, MediaType.APPLICATION_JSON));
                     log.debug("Successfully sent {} event to user {}", eventType, userId);
+                } catch (IOException e) {
+                    if (e.getMessage().contains("Connection reset by peer")) {
+                        log.trace("Client disconnected while sending {} event to user {}", eventType, userId);
+                    } else {
+                        log.debug("Error sending {} event to user {}: {}", eventType, userId, e.getMessage());
+                    }
+                    deadEmitters.add(emitter);
                 } catch (Exception e) {
-                    log.warn("Failed to send event to user {}: {}", userId, e.getMessage(), e);
+                    log.debug("Unexpected error sending {} event to user {}: {}", eventType, userId, e.getMessage());
                     deadEmitters.add(emitter);
                 }
             }
         } catch (Exception e) {
-            log.error("Error serializing data for SSE: {}", e.getMessage(), e);
+            log.error("Error serializing data for SSE: {}", e.getMessage());
         }
 
         if (!deadEmitters.isEmpty()) {
-            log.info("Cleaning up {} dead emitters for user {}", deadEmitters.size(), userId);
+            log.debug("Cleaning up {} dead emitters for user {}", deadEmitters.size(), userId);
             deadEmitters.forEach(emitter -> removeEmitter(userId, emitter));
         }
     }
@@ -142,7 +151,7 @@ public class SseEmitterService {
         
         int userCount = userEmitters.size();
         int connectionCount = getActiveConnectionsCount();
-        log.debug("Sending heartbeats to {} users with {} total connections", userCount, connectionCount);
+        log.trace("Sending heartbeats to {} users with {} total connections", userCount, connectionCount);
         
         Map<String, Object> heartbeatData = Map.of(
             "timestamp", Instant.now().toString(),

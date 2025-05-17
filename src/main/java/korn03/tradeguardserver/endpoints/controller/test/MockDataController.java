@@ -4,24 +4,18 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-import java.util.HashMap;
-import java.util.Set;
+import java.util.*;
 
 import korn03.tradeguardserver.kafka.events.equity.Equity;
 import korn03.tradeguardserver.kafka.events.position.Position;
 import korn03.tradeguardserver.service.equity.EquityService;
 import korn03.tradeguardserver.service.position.PositionService;
-import korn03.tradeguardserver.service.event.SseEmitterService;
+import korn03.tradeguardserver.service.sse.SseEmitterService;
 import korn03.tradeguardserver.service.core.CacheService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
-import org.springframework.context.annotation.Profile;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -43,7 +37,6 @@ public class MockDataController {
 
     private String formattedNow() {
         Instant now = Instant.now();
-
         return DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSSSS'Z'")
                 .withZone(ZoneOffset.UTC)
                 .format(now);

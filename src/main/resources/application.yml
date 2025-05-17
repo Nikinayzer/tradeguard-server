@@ -61,17 +61,26 @@ logging:
     file: "%d{yyyy-MM-dd HH:mm:ss} - %logger{36} - %msg%n"
   level:
     root: INFO
-    korn03.tradeguardserver: INFO
-    korn03.tradeguardserver.endpoints.controller.auth: DEBUG
-    korn03.tradeguardserver.security: DEBUG
-    org.springframework: WARN
-    org.springframework.security: DEBUG
-    org.apache.kafka: warn
-    kafka: warn
-    org.apache.kafka.clients.producer.ProducerConfig: error
-    org.apache.kafka.clients.Metadata: warn
-    org.hibernate.SQL: off
-    org.hibernate.type.descriptor.sql.BasicBinder: off
+    korn03:
+      tradeguardserver:
+        security: DEBUG
+        endpoints:
+          controller:
+            auth: DEBUG
+        service:
+          sse: INFO
+    org:
+      springframework: WARN
+      springframework.security: DEBUG
+      apache:
+        kafka: WARN
+        kafka.clients.producer.ProducerConfig: ERROR
+        kafka.clients.Metadata: WARN
+      hibernate:
+        SQL: OFF
+        type.descriptor.sql.BasicBinder: OFF
+    kafka: WARN
+
 
 management:
   endpoints:

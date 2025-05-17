@@ -3,7 +3,7 @@ package korn03.tradeguardserver.service.position;
 import korn03.tradeguardserver.endpoints.dto.user.position.UserPositionsStateDTO;
 import korn03.tradeguardserver.kafka.events.position.Position;
 import korn03.tradeguardserver.service.core.CacheService;
-import korn03.tradeguardserver.service.event.SseEmitterService;
+import korn03.tradeguardserver.service.sse.SseEmitterService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

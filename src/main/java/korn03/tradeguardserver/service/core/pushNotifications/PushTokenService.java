@@ -38,7 +38,12 @@ public class PushTokenService {
            throw new RuntimeException("Failed to unregister push token", e);
         }
     }
-
+    public List<PushToken> getAllPushTokens() {
+        return pushTokenRepository.findAll();
+    }
+    public List<Long> getAllUserIds() {
+        return pushTokenRepository.findDistinctUserIds();
+    }
     public List<PushToken> getPushTokensByUserId(Long userId) {
         return pushTokenRepository.findByUserId(userId);
     }

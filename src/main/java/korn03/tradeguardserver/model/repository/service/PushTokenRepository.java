@@ -2,6 +2,7 @@ package korn03.tradeguardserver.model.repository.service;
 
 import korn03.tradeguardserver.model.entity.service.PushToken;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -13,4 +14,6 @@ public interface PushTokenRepository extends JpaRepository<PushToken, Long> {
     Optional<PushToken> findByToken(String token);
     void deleteByToken(String token);
     void deleteByTokenAndUserId(String token, Long userId);
+    @Query("SELECT DISTINCT pt.userId FROM PushToken pt")
+    List<Long> findDistinctUserIds();
 }

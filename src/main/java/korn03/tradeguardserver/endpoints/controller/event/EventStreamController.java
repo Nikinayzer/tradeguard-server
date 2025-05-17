@@ -2,17 +2,14 @@ package korn03.tradeguardserver.endpoints.controller.event;
 
 import korn03.tradeguardserver.security.AuthUtil;
 import korn03.tradeguardserver.service.equity.EquityService;
-import korn03.tradeguardserver.service.event.SseEmitterService;
+import korn03.tradeguardserver.service.sse.SseEmitterService;
 import korn03.tradeguardserver.service.position.PositionService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
-import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
 /**
  * Controller for server-sent events (SSE) stream endpoints.
