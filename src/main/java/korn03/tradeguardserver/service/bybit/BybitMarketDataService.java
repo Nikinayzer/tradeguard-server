@@ -6,15 +6,18 @@ import com.bybit.api.client.restApi.BybitApiMarketRestClient;
 import korn03.tradeguardserver.endpoints.dto.market.InstrumentInfoDTO;
 import korn03.tradeguardserver.endpoints.dto.market.MarketDataDTO;
 import korn03.tradeguardserver.service.core.CacheService;
+import korn03.tradeguardserver.service.sse.SseEmitterService;
 import org.knowm.xchange.currency.CurrencyPair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
@@ -30,7 +33,7 @@ public class BybitMarketDataService {
     private static final Map<String, List<String>> CRYPTO_CATEGORIES = Map.of(
             "Major Cryptocurrencies", List.of("BTC", "ETH", "BNB", "XRP", "SOL"),
             "New Tokens", List.of("ENA", "AIXBT", "FARTCOIN"),
-            "Favorites", List.of("XLM", "HBAR", "LINK", "TRX", "TON", "WLD"),
+            "Our Favorites", List.of("XLM", "HBAR", "LINK", "TRX", "TON", "WLD"),
             "Platform Tokens", List.of("ADA", "DOT", "AVAX", "ATOM", "NEAR"),
             "DeFi Tokens", List.of("UNI", "AAVE", "SUSHI", "COMP", "MKR"),
             "Privacy Coins", List.of("XMR", "ZEC", "DASH", "BEAM"),
@@ -40,12 +43,47 @@ public class BybitMarketDataService {
     );
     private final BybitApiMarketRestClient marketDataClient;
     private final CacheService cacheService;
+    private final SseEmitterService sseService;
     private final ExecutorService executorService;
 
-    public BybitMarketDataService(BybitApiMarketRestClient marketDataClient, CacheService cacheService) {
+    private final Map<String, List<MarketDataDTO>> categorizedMarketData = new ConcurrentHashMap<>();
+
+    public BybitMarketDataService(BybitApiMarketRestClient marketDataClient, CacheService cacheService, SseEmitterService sseService) {
         this.marketDataClient = marketDataClient;
         this.cacheService = cacheService;
+        this.sseService = sseService;
         this.executorService = Executors.newFixedThreadPool(10);
+    }
+
+    /**
+     * Scheduled task to fetch and broadcast market data updates
+     */
+    @Scheduled(fixedRate = 60000) // Every minute
+    public void fetchAndBroadcastMarketData() {
+        try {
+            logger.info("Starting scheduled market data update");
+            Map<String, List<MarketDataDTO>> updatedData = fetchAllMarketData();
+            broadcastMarketDataUpdate(updatedData);
+            logger.info("Completed scheduled market data update");
+        } catch (Exception e) {
+            logger.error("Error in scheduled market data update: {}", e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Broadcast market data update to all connected users
+     */
+    private void broadcastMarketDataUpdate(Map<String, List<MarketDataDTO>> data) {
+        sseService.getActiveUserIds().forEach(userId -> {
+            sseService.sendUpdate(userId, "market_data", data);
+        });
+    }
+
+    /**
+     * Get current market data state
+     */
+    public Map<String, List<MarketDataDTO>> getCurrentMarketData() {
+        return new HashMap<>(categorizedMarketData);
     }
 
     /**
@@ -53,7 +91,6 @@ public class BybitMarketDataService {
      *
      * @return Map of category to list of market data
      */
-    //todo scheduled
     public Map<String, List<MarketDataDTO>> fetchAllMarketData() {
         Map<String, List<MarketDataDTO>> result = new HashMap<>();
 
@@ -61,6 +98,8 @@ public class BybitMarketDataService {
             List<MarketDataDTO> categoryData = fetchMarketDataForCoins(category.getValue());
             if (!categoryData.isEmpty()) {
                 result.put(category.getKey(), categoryData);
+                // Update in-memory state
+                categorizedMarketData.put(category.getKey(), categoryData);
             }
         }
 

@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import korn03.tradeguardserver.model.entity.NewsMention;
 import korn03.tradeguardserver.model.repository.NewsMentionRepository;
 import lombok.Getter;
+import lombok.Setter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -11,11 +12,13 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
+//todo refactor
 @Service
 public class NewsService {
 
@@ -25,8 +28,8 @@ public class NewsService {
     private final RestTemplate restTemplate = new RestTemplate();
     private final NewsCacheService cacheService;
     private final NewsMentionRepository newsMentionRepository;
-    @Value("${news.api.key}")
-    private String API_KEY;
+    @Value("${news.api.newsdata}")
+    private String NEWSDATA_API_KEY;
 
     public NewsService(NewsCacheService cacheService, NewsMentionRepository newsMentionRepository) {
         this.cacheService = cacheService;
@@ -64,7 +67,7 @@ public class NewsService {
             boolean isCoinSpecific = !keyword.equalsIgnoreCase("crypto");
 
             for (int i = 0; i < maxPages; i++) {
-                String url = API_URL + "?apikey=" + API_KEY + "&q=" + keyword + "&removeduplicate=1&language=en";
+                String url = API_URL + "?apikey=" + NEWSDATA_API_KEY + "&q=" + keyword + "&removeduplicate=1&language=en";
                 if (nextPage != null) {
                     url += "&page=" + nextPage;
                 }
@@ -103,23 +106,16 @@ public class NewsService {
         private String nextPage;
         private int totalResults;
 
-        public List<Article> getResults() {
-            return results;
-        }
-
-        public String getNextPage() {
-            return nextPage;
-        }
-
-        public int getTotalResults() {
-            return totalResults;
-        }
     }
 
+    @Setter
+    @Getter
     @JsonIgnoreProperties(ignoreUnknown = true)
     public static class Article implements Serializable {
+        @Serial
         private static final long serialVersionUID = 1L;
 
+        // Getters and Setters
         private String article_id;
         private String title;
         private String link;
@@ -128,61 +124,5 @@ public class NewsService {
         private String image_url;
         private List<String> keywords;
 
-        // Getters and Setters
-        public String getArticle_id() {
-            return article_id;
-        }
-
-        public void setArticle_id(String article_id) {
-            this.article_id = article_id;
-        }
-
-        public String getTitle() {
-            return title;
-        }
-
-        public void setTitle(String title) {
-            this.title = title;
-        }
-
-        public String getLink() {
-            return link;
-        }
-
-        public void setLink(String link) {
-            this.link = link;
-        }
-
-        public String getDescription() {
-            return description;
-        }
-
-        public void setDescription(String description) {
-            this.description = description;
-        }
-
-        public String getPubDate() {
-            return pubDate;
-        }
-
-        public void setPubDate(String pubDate) {
-            this.pubDate = pubDate;
-        }
-
-        public String getImage_url() {
-            return image_url;
-        }
-
-        public void setImage_url(String image_url) {
-            this.image_url = image_url;
-        }
-
-        public List<String> getKeywords() {
-            return keywords;
-        }
-
-        public void setKeywords(List<String> keywords) {
-            this.keywords = keywords;
-        }
     }
 }

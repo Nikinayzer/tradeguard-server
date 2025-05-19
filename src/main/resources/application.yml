@@ -103,7 +103,8 @@ jwt:
 
 news:
   api:
-    key: ${NEWS_API_KEY:secret}
+    newsdata: ${NEWS_API_KEY:secret}
+    cryptopanic: ${CRYPTOPANIC_API_KEY:secret}
 
 discord:
   client:
@@ -111,11 +112,8 @@ discord:
     secret: ${DISCORD_CLIENT_SECRET:secret}
   redirect:
     uri: tradeguard://auth/discord
-  bot:
-    token: ${DISCORD_BOT_TOKEN:secret-token}
 
 tradeguard:
-  run-mode: ${RUN_MODE:demo}
   default:
     user:
       username: ${USER_USERNAME:user}

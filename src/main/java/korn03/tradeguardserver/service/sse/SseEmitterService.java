@@ -11,9 +11,11 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -170,5 +172,14 @@ public class SseEmitterService {
         return userEmitters.values().stream()
                 .mapToInt(List::size)
                 .sum();
+    }
+
+    /**
+     * Get all active user IDs that have SSE connections
+     * 
+     * @return Set of user IDs with active connections
+     */
+    public Set<Long> getActiveUserIds() {
+        return new HashSet<>(userEmitters.keySet());
     }
 } 

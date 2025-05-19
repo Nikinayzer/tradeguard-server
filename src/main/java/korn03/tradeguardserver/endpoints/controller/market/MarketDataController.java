@@ -30,10 +30,16 @@ public class MarketDataController {
             @RequestParam String counter) {
         try {
             CurrencyPair pair = new CurrencyPair(base, counter);
+            MarketDataDTO marketData = marketDataService.getCurrentMarketData()
+                    .values().stream()
+                    .flatMap(List::stream)
+                    .filter(data -> data.getInstrument().equals(pair))
+                    .findFirst()
+                    .orElse(null);
 
-            // Fetch market data
-            MarketDataDTO marketData = marketDataService.fetchMarketData(pair);
-
+            if (marketData == null) {
+                return ResponseEntity.notFound().build();
+            }
             return ResponseEntity.ok(marketData);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(null);
@@ -49,7 +55,7 @@ public class MarketDataController {
     @GetMapping("/all")
     public ResponseEntity<Map<String, List<MarketDataDTO>>> getAllMarketData() {
         try {
-            Map<String, List<MarketDataDTO>> allMarketData = marketDataService.fetchAllMarketData();
+            Map<String, List<MarketDataDTO>> allMarketData = marketDataService.getCurrentMarketData();
             return ResponseEntity.ok(allMarketData);
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body(null);
@@ -63,7 +69,11 @@ public class MarketDataController {
     @GetMapping("/tokens")
     public ResponseEntity<List<MarketDataDTO>> getSpecificTokens(@RequestParam List<String> symbols) {
         try {
-            List<MarketDataDTO> tokenData = marketDataService.fetchSpecificTokens(symbols);
+            List<MarketDataDTO> tokenData = marketDataService.getCurrentMarketData()
+                    .values().stream()
+                    .flatMap(List::stream)
+                    .filter(data -> symbols.contains(data.getInstrument().base.getSymbol()))
+                    .toList();
             return ResponseEntity.ok(tokenData);
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body(null);
