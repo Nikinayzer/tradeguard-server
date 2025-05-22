@@ -1,6 +1,5 @@
 package korn03.tradeguardserver.endpoints.dto.user.equity;
 
-import korn03.tradeguardserver.kafka.events.equity.Equity;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -10,47 +9,23 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
 
-/**
- * Data Transfer Object representing a user's combined equity state across all venues.
- */
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class UserEquityStateDTO {
+    private EquitySummary summary;
+    private List<EquityFrontendDTO> venueEquities;
     
-    /**
-     * The user ID
-     */
-    private Long userId;
-    
-    /**
-     * Total wallet balance across all venues (in USDT)
-     */
-    private BigDecimal totalWalletBalance;
-    
-    /**
-     * Total available balance across all venues (in USDT)
-     */
-    private BigDecimal totalAvailableBalance;
-    
-    /**
-     * Total unrealized PnL across all venues (in USDT)
-     */
-    private BigDecimal totalUnrealizedPnl;
-    
-    /**
-     * Total BNB balance value across all venues (in USDT)
-     */
-    private BigDecimal totalBnbBalanceUsdt;
-    
-    /**
-     * The timestamp of this equity state snapshot
-     */
-    private Instant timestamp;
-    
-    /**
-     * Detailed equity information for each venue
-     */
-    private List<Equity> venueEquities;
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class EquitySummary {
+        private BigDecimal totalWalletBalance;
+        private BigDecimal totalAvailableBalance;
+        private BigDecimal totalUnrealizedPnl;
+        private BigDecimal totalBnbBalance;
+        private Instant lastUpdate;
+    }
 } 

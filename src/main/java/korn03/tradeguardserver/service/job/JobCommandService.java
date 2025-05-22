@@ -26,7 +26,7 @@ public class JobCommandService {
 
     public CompletableFuture<Void> sendCreatedDcaJob(DcaJobSubmissionDTO dto, Long userId) {
         JobEventType.CreatedMeta meta = new JobEventType.CreatedMeta(
-                "Dca",
+                "DCA",
                 userId,
                 dto.getCoins(),
                 dto.getSide(),
@@ -42,7 +42,7 @@ public class JobCommandService {
 
     public CompletableFuture<Void> sendCreatedLiqJob(LiqJobSubmissionDTO dto, Long userId) {
         JobEventType.CreatedMeta meta = new JobEventType.CreatedMeta(
-                "Liq",
+                "LIQ",
                 userId,
                 dto.getCoins(),
                 dto.getSide(),

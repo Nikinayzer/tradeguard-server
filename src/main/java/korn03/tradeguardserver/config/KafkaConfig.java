@@ -1,11 +1,12 @@
 package korn03.tradeguardserver.config;
 
+import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import korn03.tradeguardserver.kafka.events.equity.Equity;
+import korn03.tradeguardserver.kafka.events.equity.EquityKafkaDTO;
+import korn03.tradeguardserver.kafka.events.position.PositionKafkaDTO;
 import korn03.tradeguardserver.kafka.events.jobUpdates.JobEventMessage;
-import korn03.tradeguardserver.kafka.events.position.Position;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.admin.AdminClientConfig;
@@ -70,6 +71,7 @@ public class KafkaConfig {
     public ObjectMapper kafkaObjectMapper() {
         ObjectMapper mapper = new ObjectMapper();
         mapper.registerModule(new JavaTimeModule());
+        mapper.enable(MapperFeature.ACCEPT_CASE_INSENSITIVE_ENUMS);
         mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS); // ISO 8601
         return mapper;
     }
@@ -134,9 +136,9 @@ public class KafkaConfig {
      * Kafka Listener Factory for Position - Uses generic consumerFactory.
      */
     @Bean
-    public ConcurrentKafkaListenerContainerFactory<String, Position> positionListenerFactory() {
-        ConcurrentKafkaListenerContainerFactory<String, Position> factory = new ConcurrentKafkaListenerContainerFactory<>();
-        factory.setConsumerFactory(consumerFactory(Position.class));
+    public ConcurrentKafkaListenerContainerFactory<String, PositionKafkaDTO> positionListenerFactory() {
+        ConcurrentKafkaListenerContainerFactory<String, PositionKafkaDTO> factory = new ConcurrentKafkaListenerContainerFactory<>();
+        factory.setConsumerFactory(consumerFactory(PositionKafkaDTO.class));
         factory.setCommonErrorHandler(kafkaErrorHandler());
         return factory;
     }
@@ -145,9 +147,9 @@ public class KafkaConfig {
      * Kafka Listener Factory for Equity - Uses generic consumerFactory.
      */
     @Bean
-    public ConcurrentKafkaListenerContainerFactory<String, Equity> equityListenerFactory() {
-        ConcurrentKafkaListenerContainerFactory<String, Equity> factory = new ConcurrentKafkaListenerContainerFactory<>();
-        factory.setConsumerFactory(consumerFactory(Equity.class));
+    public ConcurrentKafkaListenerContainerFactory<String, EquityKafkaDTO> equityListenerFactory() {
+        ConcurrentKafkaListenerContainerFactory<String, EquityKafkaDTO> factory = new ConcurrentKafkaListenerContainerFactory<>();
+        factory.setConsumerFactory(consumerFactory(EquityKafkaDTO.class));
         factory.setCommonErrorHandler(kafkaErrorHandler());
         return factory;
     }
@@ -191,6 +193,7 @@ public class KafkaConfig {
      */
     public <T> ConsumerFactory<String, T> consumerFactory(Class<T> targetType) {
         JsonDeserializer<T> jsonDeserializer = new JsonDeserializer<>(targetType);
+        jsonDeserializer.setUseTypeHeaders(false);
         jsonDeserializer.addTrustedPackages("*");
         ErrorHandlingDeserializer<T> errorHandlingDeserializer = new ErrorHandlingDeserializer<>(jsonDeserializer);
 

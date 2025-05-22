@@ -36,12 +36,11 @@ spring:
     consumer:
       bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:19092}
       group-id: ${KAFKA_CONSUMER_GROUP:bff-group}
-      auto-offset-reset: ${KAFKA_AUTO_OFFSET_RESET}
+      auto-offset-reset: ${KAFKA_AUTO_OFFSET_RESET:earliest}
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
       properties:
         spring.json.trusted.packages: korn03.tradeguardserver.model
-        spring.json.value.default.type: korn03.tradeguardserver.model.JobEvent
 
 server:
   port: ${SERVER_PORT:8080}

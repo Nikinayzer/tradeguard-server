@@ -1,7 +1,8 @@
 package korn03.tradeguardserver.service.position;
 
+import korn03.tradeguardserver.kafka.events.position.PositionKafkaDTO;
 import korn03.tradeguardserver.endpoints.dto.user.position.UserPositionsStateDTO;
-import korn03.tradeguardserver.kafka.events.position.Position;
+import korn03.tradeguardserver.mapper.PositionMapper;
 import korn03.tradeguardserver.service.core.CacheService;
 import korn03.tradeguardserver.service.sse.SseEmitterService;
 import lombok.RequiredArgsConstructor;
@@ -29,7 +30,8 @@ public class PositionService {
 
     private final CacheService cacheService;
     private final SseEmitterService sseService;
-    private static final Duration POSITION_TTL = Duration.ofMinutes(1);
+    private final PositionMapper positionMapper;
+    private static final Duration POSITION_TTL = Duration.ofMinutes(5);
     private static final String POSITION_KEY_PREFIX = "position:";
     
     // In-memory map to track known position keys
@@ -40,9 +42,9 @@ public class PositionService {
      * 
      * @param position The position data to store
      */
-    public void processPositionUpdate(Position position) {
-        if (position == null) {
-            log.warn("Received null position update");
+    public void processPositionUpdate(PositionKafkaDTO position) {
+        if (position == null || position.getPosition() == null) {
+            log.warn("Received null position update or position details");
             return;
         }
         
@@ -73,10 +75,10 @@ public class PositionService {
      * @param symbol The trading symbol
      * @return The position if found, null otherwise
      */
-    public Position getPosition(Long userId, String venue, String symbol) {
+    public PositionKafkaDTO getPosition(Long userId, String venue, String symbol) {
         String positionKey = venue + "_" + symbol;
         String cacheKey = POSITION_KEY_PREFIX + userId + ":" + positionKey;
-        return cacheService.getFromCache(cacheKey, Position.class);
+        return cacheService.getFromCache(cacheKey, PositionKafkaDTO.class);
     }
     
     /**
@@ -85,13 +87,13 @@ public class PositionService {
      * @param userId The user ID
      * @return List of positions for the user
      */
-    public List<Position> getUserPositions(Long userId) {
+    public List<PositionKafkaDTO> getUserPositions(Long userId) {
         String userKeyPrefix = POSITION_KEY_PREFIX + userId + ":";
-        List<Position> userPositions = new ArrayList<>();
+        List<PositionKafkaDTO> userPositions = new ArrayList<>();
         
         for (String key : knownPositionKeys.keySet()) {
             if (key.startsWith(userKeyPrefix)) {
-                Position position = cacheService.getFromCache(key, Position.class);
+                PositionKafkaDTO position = cacheService.getFromCache(key, PositionKafkaDTO.class);
                 if (position != null) {
                     userPositions.add(position);
                     log.debug("Retrieved position from cache: {}", key);
@@ -113,53 +115,28 @@ public class PositionService {
      * @return A DTO containing active positions and aggregated data
      */
     public UserPositionsStateDTO getUserActivePositions(Long userId) {
-        // Get all positions for this user
-        List<Position> allUserPositions = getUserPositions(userId);
-        
+        List<PositionKafkaDTO> allUserPositions = getUserPositions(userId);
         if (allUserPositions.isEmpty()) {
             return null;
         }
         
-        // Filter to only active positions (qty > 0)
-        List<Position> activePositions = allUserPositions.stream()
-                .filter(position -> position.getQty() != null && position.getQty().compareTo(BigDecimal.ZERO) != 0)
-                .collect(Collectors.toList());
-        
+        List<PositionKafkaDTO> activePositions = filterActivePositions(allUserPositions);
         if (activePositions.isEmpty()) {
             return null;
         }
         
-        // Group active positions by venue
-        Map<String, List<Position>> positionsByVenue = activePositions.stream()
-                .collect(Collectors.groupingBy(Position::getVenue));
+        PositionTotals totals = calculatePositionTotals(activePositions);
+        Instant latestTimestamp = findLatestTimestamp(activePositions);
         
-        // Calculate totals
-        BigDecimal totalPositionValue = BigDecimal.ZERO;
-        BigDecimal totalUnrealizedPnl = BigDecimal.ZERO;
-        
-        for (Position position : activePositions) {
-            if (position.getUsdtAmt() != null) {
-                totalPositionValue = totalPositionValue.add(position.getUsdtAmt());
-            }
-            
-            if (position.getUnrealizedPnl() != null) {
-                totalUnrealizedPnl = totalUnrealizedPnl.add(position.getUnrealizedPnl());
-            }
-        }
-        
-        // Find the most recent timestamp
-        Instant latestTimestamp = activePositions.stream()
-                .map(equity -> Instant.parse(equity.getTimestamp()))
-                .max(Instant::compareTo)
-                .orElse(Instant.now());
-        
-        // Build and return the DTO
         return UserPositionsStateDTO.builder()
-                .userId(userId)
-                .totalPositionValue(totalPositionValue)
-                .totalUnrealizedPnl(totalUnrealizedPnl)
-                .timestamp(latestTimestamp)
-                .activePositions(activePositions)
+                .summary(UserPositionsStateDTO.PositionSummary.builder()
+                    .totalPositionValue(totals.totalPositionValue)
+                    .totalUnrealizedPnl(totals.totalUnrealizedPnl)
+                    .totalPositionsCount(allUserPositions.size())
+                    .activePositionsCount(activePositions.size())
+                    .lastUpdate(latestTimestamp)
+                    .build())
+                .activePositions(positionMapper.toFrontendDTOList(activePositions))
                 .build();
     }
     
@@ -170,52 +147,27 @@ public class PositionService {
      * @return A DTO containing complete position state information
      */
     public UserPositionsStateDTO getUserPositionsState(Long userId) {
-        // Get all positions for this user
-        List<Position> allUserPositions = getUserPositions(userId);
-        
+        List<PositionKafkaDTO> allUserPositions = getUserPositions(userId);
         if (allUserPositions.isEmpty()) {
             return null;
         }
         
-        // Separate active and inactive positions
-        List<Position> activePositions = allUserPositions.stream()
-                .filter(position -> position.getQty() != null && position.getQty().compareTo(BigDecimal.ZERO) != 0)
-                .collect(Collectors.toList());
+        List<PositionKafkaDTO> activePositions = filterActivePositions(allUserPositions);
+        List<PositionKafkaDTO> inactivePositions = filterInactivePositions(allUserPositions);
         
-        List<Position> inactivePositions = allUserPositions.stream()
-                .filter(position -> position.getQty() == null || position.getQty().compareTo(BigDecimal.ZERO) == 0)
-                .collect(Collectors.toList());
+        PositionTotals totals = calculatePositionTotals(activePositions);
+        Instant latestTimestamp = findLatestTimestamp(allUserPositions);
         
-        // Calculate totals for active positions
-        BigDecimal totalPositionValue = BigDecimal.ZERO;
-        BigDecimal totalUnrealizedPnl = BigDecimal.ZERO;
-        
-        for (Position position : activePositions) {
-            if (position.getUsdtAmt() != null) {
-                totalPositionValue = totalPositionValue.add(position.getUsdtAmt());
-            }
-            
-            if (position.getUnrealizedPnl() != null) {
-                totalUnrealizedPnl = totalUnrealizedPnl.add(position.getUnrealizedPnl());
-            }
-        }
-        
-        // Find the most recent timestamp
-        Instant latestTimestamp = allUserPositions.stream()
-                .map(equity -> Instant.parse(equity.getTimestamp()))
-                .max(Instant::compareTo)
-                .orElse(Instant.now());
-        
-        // Build and return the DTO
         return UserPositionsStateDTO.builder()
-                .userId(userId)
-                .totalPositionValue(totalPositionValue)
-                .totalUnrealizedPnl(totalUnrealizedPnl)
-                .timestamp(latestTimestamp)
-                .activePositions(activePositions)
-                .inactivePositions(inactivePositions)
-                .totalPositionsCount(allUserPositions.size())
-                .activePositionsCount(activePositions.size())
+                .summary(UserPositionsStateDTO.PositionSummary.builder()
+                    .totalPositionValue(totals.totalPositionValue)
+                    .totalUnrealizedPnl(totals.totalUnrealizedPnl)
+                    .totalPositionsCount(allUserPositions.size())
+                    .activePositionsCount(activePositions.size())
+                    .lastUpdate(latestTimestamp)
+                    .build())
+                .activePositions(positionMapper.toFrontendDTOList(activePositions))
+                .inactivePositions(positionMapper.toFrontendDTOList(inactivePositions))
                 .build();
     }
     
@@ -224,9 +176,9 @@ public class PositionService {
      * 
      * @return List of positions
      */
-    public List<Position> getAllPositions() {
+    public List<PositionKafkaDTO> getAllPositions() {
         return knownPositionKeys.keySet().stream()
-                .map(key -> cacheService.getFromCache(key, Position.class))
+                .map(key -> cacheService.getFromCache(key, PositionKafkaDTO.class))
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
     }
@@ -238,5 +190,51 @@ public class PositionService {
      */
     public Set<String> getKnownPositionKeys() {
         return knownPositionKeys.keySet();
+    }
+
+    private List<PositionKafkaDTO> filterActivePositions(List<PositionKafkaDTO> positions) {
+        return positions.stream()
+                .filter(position -> position.getPosition() != null && 
+                        position.getPosition().getQty() != null && 
+                        position.getPosition().getQty().compareTo(BigDecimal.ZERO) != 0)
+                .collect(Collectors.toList());
+    }
+
+    private List<PositionKafkaDTO> filterInactivePositions(List<PositionKafkaDTO> positions) {
+        return positions.stream()
+                .filter(position -> position.getPosition() == null || 
+                        position.getPosition().getQty() == null || 
+                        position.getPosition().getQty().compareTo(BigDecimal.ZERO) == 0)
+                .collect(Collectors.toList());
+    }
+
+    private PositionTotals calculatePositionTotals(List<PositionKafkaDTO> positions) {
+        BigDecimal totalPositionValue = BigDecimal.ZERO;
+        BigDecimal totalUnrealizedPnl = BigDecimal.ZERO;
+        
+        for (PositionKafkaDTO position : positions) {
+            PositionKafkaDTO.PositionDetailsKafkaDTO details = position.getPosition();
+            if (details.getUsdtAmt() != null) {
+                totalPositionValue = totalPositionValue.add(details.getUsdtAmt());
+            }
+            if (details.getUnrealizedPnl() != null) {
+                totalUnrealizedPnl = totalUnrealizedPnl.add(details.getUnrealizedPnl());
+            }
+        }
+        
+        return new PositionTotals(totalPositionValue, totalUnrealizedPnl);
+    }
+
+    private Instant findLatestTimestamp(List<PositionKafkaDTO> positions) {
+        return positions.stream()
+                .map(position -> Instant.parse(position.getTimestamp()))
+                .max(Instant::compareTo)
+                .orElse(Instant.now());
+    }
+
+    @lombok.Value
+    private static class PositionTotals {
+        BigDecimal totalPositionValue;
+        BigDecimal totalUnrealizedPnl;
     }
 } 

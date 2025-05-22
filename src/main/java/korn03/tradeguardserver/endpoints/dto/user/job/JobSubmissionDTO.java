@@ -1,5 +1,6 @@
 package korn03.tradeguardserver.endpoints.dto.user.job;
 
+import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -20,7 +21,8 @@ public class JobSubmissionDTO {
     private String name;
 
     @NotEmpty(message = "Coins list cannot be empty")
-    private List<String> coins;
+    @Valid
+    private List<@NotBlank(message = "Coin symbol cannot be blank") String> coins;
 
     @Pattern(regexp = "^(BUY|SELL|BOTH)$", message = "Side must be BUY, SELL or BOTH")
     private String side;
