@@ -45,7 +45,7 @@ public class CacheService {
                 log.debug("Empty string found in cache for key: {}", key);
                 return null;
             }
-            
+
             try {
                 T result = objectMapper.readValue(jsonData, type);
                 log.debug("Retrieved from cache: {} (type: {})", key, type.getSimpleName());
@@ -59,7 +59,7 @@ public class CacheService {
             return null;
         }
     }
-    
+
     /**
      * Get all keys matching a pattern
      */
@@ -73,7 +73,19 @@ public class CacheService {
             return Set.of();
         }
     }
-    
+
+    /**
+     * Delete a key from the cache
+     */
+    public void deleteFromCache(String key) {
+        try {
+            redisTemplate.delete(key);
+            log.debug("Deleted key from cache: {}", key);
+        } catch (Exception e) {
+            log.error("Error deleting key from cache: {}", key, e);
+        }
+    }
+
     /**
      * Check if a key exists in the cache
      */

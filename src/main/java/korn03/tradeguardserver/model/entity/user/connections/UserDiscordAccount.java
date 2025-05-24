@@ -2,9 +2,11 @@ package korn03.tradeguardserver.model.entity.user.connections;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.Getter;
 
 @Data
 @Entity
+@Getter
 @Table(name = "discord_accounts", uniqueConstraints = @UniqueConstraint(columnNames = {"user_id", "discord_id"}))
 public class UserDiscordAccount {
     @Id

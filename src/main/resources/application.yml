@@ -140,5 +140,6 @@ kafka:
     job-updates: ${KAFKA_TOPIC_JOB_UPDATES:job-updates}
     job-submissions: ${KAFKA_TOPIC_JOB_SUBMISSIONS:job-submissions}
     position-updates: ${KAFKA_TOPIC_POSITIONS:position-updates}
+    clean-position-updates: ${KAFKA_TOPIC_CLEAN_POSITIONS:clean-position-updates}
     order-flow: ${KAFKA_TOPIC_ORDER_FLOW:order-flow}
     equity: ${KAFKA_TOPIC_EQUITY_UPDATES:equity}

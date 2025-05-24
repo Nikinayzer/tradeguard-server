@@ -1,9 +1,11 @@
 package korn03.tradeguardserver.endpoints.controller.event;
 
 import korn03.tradeguardserver.endpoints.dto.user.equity.UserEquityStateDTO;
+import korn03.tradeguardserver.endpoints.dto.user.job.UserJobsStateDTO;
 import korn03.tradeguardserver.endpoints.dto.user.position.UserPositionsStateDTO;
 import korn03.tradeguardserver.security.AuthUtil;
 import korn03.tradeguardserver.service.equity.EquityService;
+import korn03.tradeguardserver.service.job.JobService;
 import korn03.tradeguardserver.service.sse.SseEmitterService;
 import korn03.tradeguardserver.service.position.PositionService;
 import korn03.tradeguardserver.service.bybit.BybitMarketDataService;
@@ -26,6 +28,7 @@ public class EventStreamController {
     private final SseEmitterService sseService;
     private final PositionService positionService;
     private final EquityService equityService;
+    private final JobService jobService;
     private final BybitMarketDataService marketDataService;
 
     /**
@@ -61,6 +64,14 @@ public class EventStreamController {
                     sseService.sendUpdate(userId, "equity", equityState);
                 } else {
                     log.info("No equity data available for user {}", userId);
+                }
+
+                UserJobsStateDTO jobsState = jobService.getUserJobsState(userId);
+                if (jobsState != null) {
+                    log.info("Sending initial jobs state to user {}", userId);
+                    sseService.sendUpdate(userId, "jobs", jobsState);
+                } else {
+                    log.info("No jobs data available for user {}", userId);
                 }
                 
                 log.info("Initial data sent to user {}", userId);

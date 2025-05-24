@@ -1,7 +1,7 @@
 package korn03.tradeguardserver.kafka.producer;
 
 import korn03.tradeguardserver.kafka.events.jobUpdates.JobEventMessage;
-import korn03.tradeguardserver.kafka.events.jobUpdates.JobEventType;
+import korn03.tradeguardserver.kafka.events.jobUpdates.JobSubmissionKafkaDTO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -21,7 +21,7 @@ import java.util.concurrent.CompletableFuture;
 @Slf4j
 public class JobSubmissionProducer {
 
-    private final KafkaTemplate<String, JobEventMessage> kafkaTemplate;
+    private final KafkaTemplate<String, JobSubmissionKafkaDTO> kafkaTemplate;
 
     @Value("${kafka.topic.job-submissions}")
     private String jobSubmissionsTopic;
@@ -31,30 +31,30 @@ public class JobSubmissionProducer {
      * Used for submitting jobs or triggering state changes.
      */
     @KafkaHandler
-    public CompletableFuture<SendResult<String, JobEventMessage>> sendJobEvent(JobEventMessage jobEventMessage) {
+    public CompletableFuture<SendResult<String, JobSubmissionKafkaDTO>> sendJobSubmission(JobSubmissionKafkaDTO jobEventMessage) {
         String key = resolveKafkaKey(jobEventMessage);
         assert key != null;
-        Message<JobEventMessage> kafkaMessage = MessageBuilder
+        Message<JobSubmissionKafkaDTO> kafkaMessage = MessageBuilder
                 .withPayload(jobEventMessage)
                 .setHeader(KafkaHeaders.TOPIC, jobSubmissionsTopic)
                 .setHeader(KafkaHeaders.KEY, key)
                 .setHeader(KafkaHeaders.TIMESTAMP, Instant.now().toEpochMilli())
                 .build();
         log.info(kafkaMessage.toString());
-        CompletableFuture<SendResult<String, JobEventMessage>> future = kafkaTemplate.send(kafkaMessage);
+        CompletableFuture<SendResult<String, JobSubmissionKafkaDTO>> future = kafkaTemplate.send(kafkaMessage);
 
         future.whenComplete((result, ex) -> {
             if (ex == null) {
-                log.info("✅ Job event sent successfully: type={}, jobId={}, partition={}, offset={}",
-                        jobEventMessage.getJobEventType().getClass().getSimpleName(),
-                        jobEventMessage.getJobId(),
+                log.info("✅ Job submission sent successfully: userId={}, strategy={}, partition={}, offset={}",
+                        jobEventMessage.getUserId(),
+                        jobEventMessage.getStrategy(),
                         result.getRecordMetadata().partition(),
                         result.getRecordMetadata().offset()
                 );
             } else {
-                log.error("❌ Failed to send job event: type={}, jobId={}, error={}",
-                        jobEventMessage.getJobEventType().getClass().getSimpleName(),
-                        jobEventMessage.getJobId(),
+                log.error("❌ Failed to send job event: userId={}, strategy={}, error={}",
+                        jobEventMessage.getUserId(),
+                        jobEventMessage.getStrategy(),
                         ex.getMessage(), ex
                 );
             }
@@ -62,18 +62,9 @@ public class JobSubmissionProducer {
 
         return future;
     }
-    private String resolveKafkaKey(JobEventMessage msg) {
-        JobEventType type = msg.getJobEventType();
-
-        if (type instanceof JobEventType.Created created) {
-            return String.valueOf(created.meta().userId());
-        }
-
-        if (msg.getJobId() != null) {
-            return String.valueOf(msg.getJobId());
-        }
-
-        return null;
+    private String resolveKafkaKey(JobSubmissionKafkaDTO msg) {
+        String strategy = msg.getStrategy();
+        return String.valueOf(strategy+"-submission-" + msg.getUserId());
     }
 
 } 

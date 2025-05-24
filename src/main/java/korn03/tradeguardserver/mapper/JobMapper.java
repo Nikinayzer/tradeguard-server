@@ -2,15 +2,22 @@ package korn03.tradeguardserver.mapper;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import korn03.tradeguardserver.endpoints.dto.user.job.DcaJobSubmissionDTO;
+import korn03.tradeguardserver.endpoints.dto.user.job.JobFrontendDTO;
+import korn03.tradeguardserver.endpoints.dto.user.job.JobSubmissionDTO;
+import korn03.tradeguardserver.endpoints.dto.user.job.LiqJobSubmissionDTO;
 import korn03.tradeguardserver.kafka.events.jobUpdates.JobEventMessage;
 import korn03.tradeguardserver.kafka.events.jobUpdates.JobEventType;
+import korn03.tradeguardserver.kafka.events.jobUpdates.JobSubmissionKafkaDTO;
 import korn03.tradeguardserver.model.entity.job.Job;
 import korn03.tradeguardserver.model.entity.job.JobEvent;
 import korn03.tradeguardserver.model.entity.job.JobStatusType;
 import korn03.tradeguardserver.model.entity.job.JobStrategyType;
 import org.mapstruct.*;
 
+import java.time.Instant;
 import java.util.Arrays;
+import java.util.List;
 
 @Mapper(componentModel = "spring")
 public interface JobMapper {
@@ -19,16 +26,13 @@ public interface JobMapper {
     @Mapping(target = "userId", expression = "java(2L)") // TODO: Accept later
     @Mapping(target = "status", source = "jobEventType", qualifiedByName = "mapStatus")
     @Mapping(target = "stepsDone", expression = "java((jobEventMessage.getJobEventType() instanceof korn03.tradeguardserver.kafka.events.jobUpdates.JobEventType.StepDone stepDone) ? stepDone.stepIndex() : 0)")
-
     @Mapping(target = "strategy", expression = "java(jobEventMessage.getJobEventType() instanceof korn03.tradeguardserver.kafka.events.jobUpdates.JobEventType.Created ? mapStrategy(((korn03.tradeguardserver.kafka.events.jobUpdates.JobEventType.Created) jobEventMessage.getJobEventType()).meta().name()) : null)")
-    // Access fields from CreatedEventData object
     @Mapping(target = "coins", expression = "java(jobEventMessage.getJobEventType() instanceof korn03.tradeguardserver.kafka.events.jobUpdates.JobEventType.Created ? ((korn03.tradeguardserver.kafka.events.jobUpdates.JobEventType.Created) jobEventMessage.getJobEventType()).meta().coins() : null)")
     @Mapping(target = "side", expression = "java(jobEventMessage.getJobEventType() instanceof korn03.tradeguardserver.kafka.events.jobUpdates.JobEventType.Created ? ((korn03.tradeguardserver.kafka.events.jobUpdates.JobEventType.Created) jobEventMessage.getJobEventType()).meta().side() : null)")
     @Mapping(target = "discountPct", expression = "java(jobEventMessage.getJobEventType() instanceof korn03.tradeguardserver.kafka.events.jobUpdates.JobEventType.Created ? ((korn03.tradeguardserver.kafka.events.jobUpdates.JobEventType.Created) jobEventMessage.getJobEventType()).meta().discountPct() : null)")
     @Mapping(target = "amount", expression = "java(jobEventMessage.getJobEventType() instanceof korn03.tradeguardserver.kafka.events.jobUpdates.JobEventType.Created ? ((korn03.tradeguardserver.kafka.events.jobUpdates.JobEventType.Created) jobEventMessage.getJobEventType()).meta().amount() : null)")
     @Mapping(target = "stepsTotal", expression = "java(jobEventMessage.getJobEventType() instanceof korn03.tradeguardserver.kafka.events.jobUpdates.JobEventType.Created ? ((korn03.tradeguardserver.kafka.events.jobUpdates.JobEventType.Created) jobEventMessage.getJobEventType()).meta().stepsTotal() : null)")
     @Mapping(target = "durationMinutes", expression = "java(jobEventMessage.getJobEventType() instanceof korn03.tradeguardserver.kafka.events.jobUpdates.JobEventType.Created ? ((korn03.tradeguardserver.kafka.events.jobUpdates.JobEventType.Created) jobEventMessage.getJobEventType()).meta().durationMinutes() : null)")
-
     @Mapping(target = "createdAt", source = "timestamp")
     @Mapping(target = "updatedAt", source = "timestamp")
     Job toEntity(JobEventMessage jobEventMessage);
@@ -50,6 +54,30 @@ public interface JobMapper {
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     void updateExistingJob(@MappingTarget Job job, JobEventMessage jobEventMessage);
 
+    // Kafka DTO
+    @Mapping(target = "strategy", source = "name")
+    @Mapping(target = "stepsTotal", source = "totalSteps")
+    @Mapping(target = "durationMinutes", source = "durationMinutes")
+    @Mapping(target = "coins", source = "coins")
+    @Mapping(target = "side", source = "side")
+    @Mapping(target = "force", expression = "java(calculateForce(dto.getDiscountPct()))")
+    @Mapping(target = "discountPct", expression = "java(dto.getDiscountPct() != null ? dto.getDiscountPct() : 0.0)")
+    @Mapping(target = "source", source = "source")
+    @Mapping(target = "timestamp", expression = "java(java.time.Instant.now())")
+    @Mapping(target = "randomnessPct", expression = "java(0.0)")
+    JobSubmissionKafkaDTO toKafkaDTO(JobSubmissionDTO dto);
+
+    // Handle DCA-specific fields
+    @Mapping(target = "totalAmt", source = "amount")
+    @InheritConfiguration(name = "toKafkaDTO")
+    JobSubmissionKafkaDTO toKafkaDTO(DcaJobSubmissionDTO dto);
+
+    // Handle LIQ-specific fields
+    @Mapping(target = "excludeSymbols", expression = "java(new java.util.ArrayList<>())")
+    @Mapping(target = "proportionPct", source = "amount")
+    @InheritConfiguration(name = "toKafkaDTO")
+    JobSubmissionKafkaDTO toKafkaDTO(LiqJobSubmissionDTO dto);
+
     @Named("mapStrategy")
     default JobStrategyType mapStrategy(String name) {
         if (name == null) return null;
@@ -70,6 +98,7 @@ public interface JobMapper {
             default                                  -> JobStatusType.IN_PROGRESS;
         };
     }
+
     @Named("mapJobEventTypeToString")
     default String mapJobEventTypeToString(JobEventType eventType) {
         if (eventType instanceof JobEventType.Created) return "Created";
@@ -83,6 +112,7 @@ public interface JobMapper {
         if (eventType instanceof JobEventType.ErrorEvent) return "Error";
         return "Unknown";
     }
+
     @Named("extractRelevantEventData")
     default String extractRelevantEventData(JobEventType eventType) {
         ObjectMapper mapper = new ObjectMapper();
@@ -97,5 +127,40 @@ public interface JobMapper {
         } catch (JsonProcessingException e) {
             throw new IllegalStateException("Failed to serialize event data", e);
         }
+    }
+
+    // Business logic methods for Kafka DTO
+    default Boolean calculateForce(Double discountPct) {
+        return discountPct != null && discountPct > 0;
+    }
+
+    default String normalizeStrategy(String strategy) {
+        return strategy != null ? strategy.toLowerCase() : null;
+    }
+
+    @Mapping(target = "jobId", source = "id")
+    @Mapping(target = "strategy", source = "strategy")
+    @Mapping(target = "status", source = "status")
+    @Mapping(target = "progress", expression = "java(calculateProgress(job))")
+    JobFrontendDTO toFrontendDTO(Job job);
+
+    List<JobFrontendDTO> toFrontendDTOList(List<Job> jobs);
+
+    default JobFrontendDTO.JobProgress calculateProgress(Job job) {
+        if (job.getStepsTotal() == null || job.getStepsTotal() == 0) {
+            return null;
+        }
+
+        double progressPct = (double) job.getStepsDone() / job.getStepsTotal() * 100;
+        Instant estimatedCompletion = null;
+        if (job.getDurationMinutes() != null && job.getCreatedAt() != null) {
+            estimatedCompletion = job.getCreatedAt().plusSeconds((long) (job.getDurationMinutes() * 60));
+        }
+
+        return JobFrontendDTO.JobProgress.builder()
+                .currentStep(job.getStepsDone())
+                .progressPct(progressPct)
+                .estimatedCompletion(estimatedCompletion)
+                .build();
     }
 }

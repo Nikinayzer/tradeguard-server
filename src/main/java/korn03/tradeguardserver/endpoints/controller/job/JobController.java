@@ -2,15 +2,19 @@ package korn03.tradeguardserver.endpoints.controller.job;
 
 import jakarta.validation.Valid;
 import korn03.tradeguardserver.endpoints.dto.user.job.DcaJobSubmissionDTO;
+import korn03.tradeguardserver.endpoints.dto.user.job.JobSubmissionDTO;
 import korn03.tradeguardserver.endpoints.dto.user.job.LiqJobSubmissionDTO;
 import korn03.tradeguardserver.kafka.producer.JobSubmissionProducer;
 import korn03.tradeguardserver.model.entity.job.Job;
 import korn03.tradeguardserver.model.entity.job.JobEvent;
 import korn03.tradeguardserver.model.entity.user.User;
+import korn03.tradeguardserver.model.entity.user.connections.UserDiscordAccount;
 import korn03.tradeguardserver.security.AuthUtil;
 import korn03.tradeguardserver.service.core.PlatformService;
 import korn03.tradeguardserver.service.job.JobCommandService;
 import korn03.tradeguardserver.service.job.JobService;
+import korn03.tradeguardserver.service.user.UserService;
+import korn03.tradeguardserver.service.user.connection.UserDiscordAccountService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -25,6 +29,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.BiFunction;
 
 //todo DTO, JWT handling
 @RestController
@@ -32,34 +37,51 @@ import java.util.concurrent.CompletableFuture;
 @Slf4j
 public class JobController {
     private final JobService jobService;
-    private final JobSubmissionProducer jobSubmissionProducer;
     private final JobCommandService jobCommandService;
     private final PlatformService platformService;
+    private final UserDiscordAccountService userDiscordAccountService;
 
     @PostMapping("/jobs/dca")
-    public CompletableFuture<ResponseEntity<Map<String, String>>> submitDcaJob(@RequestBody @Valid DcaJobSubmissionDTO request, @RequestHeader("X-Platform-Type") String platformType) {
-        User user = AuthUtil.getCurrentUser();
-        String source = platformService.resolveSource(platformType);
-        String name = "DCA";
-        request.setName(name);
-        request.setSource(source);
-        return jobCommandService.sendCreatedDcaJob(request, user.getId()).thenApply(result -> ResponseEntity.accepted().body(Map.of("status", "ACCEPTED", "message", "DCA job submission accepted"))).exceptionally(ex -> {
-            log.error("Job submission error", ex);
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("status", "REJECTED", "message", ex.getMessage()));
-        });
+    public CompletableFuture<ResponseEntity<Map<String, String>>> submitDcaJob(
+            @RequestBody @Valid DcaJobSubmissionDTO request,
+            @RequestHeader("X-Platform-Type") String platformType) {
+
+        return submitJob(request, platformType, "DCA", jobCommandService::sendCreatedDcaJob);
     }
 
     @PostMapping("/jobs/liq")
-    public CompletableFuture<ResponseEntity<Map<String, String>>> submitLiqJob(@RequestBody @Valid LiqJobSubmissionDTO request, @RequestHeader("X-Platform-Type") String platformType) {
+    public CompletableFuture<ResponseEntity<Map<String, String>>> submitLiqJob(
+            @RequestBody @Valid LiqJobSubmissionDTO request,
+            @RequestHeader("X-Platform-Type") String platformType) {
+
+        return submitJob(request, platformType, "LIQ", jobCommandService::sendCreatedLiqJob);
+    }
+
+    private <T extends JobSubmissionDTO> CompletableFuture<ResponseEntity<Map<String, String>>> submitJob(
+            T request,
+            String platformType,
+            String name,
+            BiFunction<T, Long, CompletableFuture<Void>> jobSender) {
+
         User user = AuthUtil.getCurrentUser();
         String source = platformService.resolveSource(platformType);
-        String name = "LIQ";
         request.setName(name);
         request.setSource(source);
-        return jobCommandService.sendCreatedLiqJob(request, user.getId()).thenApply(result -> ResponseEntity.accepted().body(Map.of("status", "ACCEPTED", "message", "DCA job submission accepted"))).exceptionally(ex -> {
-            log.error("Job submission error", ex);
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("status", "REJECTED", "message", ex.getMessage()));
-        });
+
+        Long userId = user.getId();
+        Optional<UserDiscordAccount> discord = userDiscordAccountService.getDiscordAccount(userId);
+        if (discord.isPresent()) {
+            userId = discord.get().getDiscordId();
+        }
+        log.info("REC {} job for userId: {}", name, userId);
+        return jobSender.apply(request, userId)
+                .thenApply(result -> ResponseEntity.accepted()
+                        .body(Map.of("status", "ACCEPTED", "message", name + " job submission accepted")))
+                .exceptionally(ex -> {
+                    log.error("Job submission error", ex);
+                    return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                            .body(Map.of("status", "REJECTED", "message", ex.getMessage()));
+                });
     }
 
     @PostMapping("/jobs/{id}/pause")

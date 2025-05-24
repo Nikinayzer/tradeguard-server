@@ -10,10 +10,6 @@ import java.util.Optional;
 @Repository
 public interface UserDiscordAccountRepository extends JpaRepository<UserDiscordAccount, Long> {
     Optional<UserDiscordAccount> findByUserId(Long userId);
-
     Optional<UserDiscordAccount> findByDiscordId(Long discordId);
-
-    Optional<UserDiscordAccount> findByUserIdAndId(Long userId, Long id);
-
     void deleteByUserIdAndId(Long userId, Long id);
 }

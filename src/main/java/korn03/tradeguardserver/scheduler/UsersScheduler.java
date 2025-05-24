@@ -209,9 +209,9 @@ public class UsersScheduler {
     private void createDefaultDiscordAccount(Long userId, Long discordId, String discordUsername, String discordAvatar) {
         try {
             // Check if discord account already exists for this user
-            boolean accountExists = discordAccountService.findByUserId(userId)
-                    .stream()
-                    .anyMatch(account -> account.getDiscordId().equals(discordId));
+            boolean accountExists = discordAccountService.getDiscordAccount(userId)
+                    .map(account -> account.getDiscordId().equals(discordId))
+                    .orElse(false);
             
             if (accountExists) {
                 log.info("Discord account already exists for user ID: {}, Discord ID: {}", userId, discordId);

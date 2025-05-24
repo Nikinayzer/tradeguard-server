@@ -24,13 +24,10 @@ public class UserDiscordAccountService {
     }
 
     /**
-     * Finds all Discord accounts for a user by user ID.
+     * Retrieves a specific Discord account by user ID
      */
-    public List<UserDiscordAccount> findByUserId(Long userId) {
-        // We'll wrap the single result in a list since the repository returns an Optional<UserDiscordAccount>
-        return discordAccountRepository.findByUserId(userId)
-                .map(List::of)
-                .orElse(List.of());
+    public Optional<UserDiscordAccount> getDiscordAccount(Long userId) {
+        return discordAccountRepository.findByUserId(userId);
     }
 
     /**
@@ -51,20 +48,6 @@ public class UserDiscordAccountService {
         account.setDiscordUsername(discordUsername);
         account.setDiscordAvatar(discordAvatar);
         discordAccountRepository.save(account);
-    }
-
-    /**
-     * Retrieves Discord account of a user by user ID.
-     */
-    public Optional<UserDiscordAccount> getUserDiscordAccounts(Long userId) {
-        return discordAccountRepository.findByUserId(userId);
-    }
-
-    /**
-     * Retrieves a specific Discord account by user ID and account ID.
-     */
-    public Optional<UserDiscordAccount> getDiscordAccount(Long userId) {
-        return discordAccountRepository.findByUserId(userId);
     }
 
     /**

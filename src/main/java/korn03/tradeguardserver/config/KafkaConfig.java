@@ -4,7 +4,9 @@ import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import korn03.tradeguardserver.kafka.events.equity.EquityKafkaDTO;
+import korn03.tradeguardserver.kafka.events.jobUpdates.JobSubmissionKafkaDTO;
 import korn03.tradeguardserver.kafka.events.position.PositionKafkaDTO;
 import korn03.tradeguardserver.kafka.events.jobUpdates.JobEventMessage;
 import lombok.RequiredArgsConstructor;
@@ -49,6 +51,9 @@ public class KafkaConfig {
     
     @Value("${kafka.topic.position-updates}")
     private String positionUpdatesTopic;
+    
+    @Value("${kafka.topic.clean-position-updates}")
+    private String cleanPositionUpdatesTopic;
     
     @Value("${kafka.topic.equity}")
     private String equityUpdatesTopic;
@@ -95,6 +100,11 @@ public class KafkaConfig {
     }
     
     @Bean
+    public NewTopic cleanPositionUpdatesTopic() {
+        return new NewTopic(cleanPositionUpdatesTopic, 1, (short) 1);
+    }
+    
+    @Bean
     public NewTopic equityUpdatesTopic() {
         return new NewTopic(equityUpdatesTopic, 1, (short) 1);
     }
@@ -111,8 +121,8 @@ public class KafkaConfig {
      * Specific Kafka Template for JobSubmissionMessage
      */
     @Bean
-    public KafkaTemplate<String, JobEventMessage> jobSubmissionKafkaTemplate(ObjectMapper kafkaObjectMapper) {
-        JsonSerializer<JobEventMessage> serializer = new JsonSerializer<>(kafkaObjectMapper);
+    public KafkaTemplate<String, JobSubmissionKafkaDTO> jobSubmissionKafkaTemplate(ObjectMapper kafkaObjectMapper) {
+        JsonSerializer<JobSubmissionKafkaDTO> serializer = new JsonSerializer<>(kafkaObjectMapper);
 
         return new KafkaTemplate<>(new DefaultKafkaProducerFactory<>(
                 defaultKafkaProducerProps(),

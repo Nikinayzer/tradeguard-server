@@ -5,7 +5,9 @@ import korn03.tradeguardserver.endpoints.dto.user.job.LiqJobSubmissionDTO;
 import korn03.tradeguardserver.exception.NotFoundException;
 import korn03.tradeguardserver.kafka.events.jobUpdates.JobEventMessage;
 import korn03.tradeguardserver.kafka.events.jobUpdates.JobEventType;
+import korn03.tradeguardserver.kafka.events.jobUpdates.JobSubmissionKafkaDTO;
 import korn03.tradeguardserver.kafka.producer.JobSubmissionProducer;
+import korn03.tradeguardserver.mapper.JobMapper;
 import korn03.tradeguardserver.model.entity.job.Job;
 import korn03.tradeguardserver.model.repository.job.JobRepository;
 import lombok.RequiredArgsConstructor;
@@ -23,37 +25,19 @@ public class JobCommandService {
     private final JobSubmissionProducer producer;
     private final JobRepository jobRepository;
     private final JobService jobService;
+    private final JobMapper jobMapper;
 
     public CompletableFuture<Void> sendCreatedDcaJob(DcaJobSubmissionDTO dto, Long userId) {
-        JobEventType.CreatedMeta meta = new JobEventType.CreatedMeta(
-                "DCA",
-                userId,
-                dto.getCoins(),
-                dto.getSide(),
-                dto.getDiscountPct(),
-                dto.getAmount(),
-                dto.getTotalSteps(),
-                dto.getDurationMinutes());
-
-        JobEventMessage message = JobEventMessage.builder().jobId(null).jobEventType(new JobEventType.Created(meta)).source(dto.getSource()).timestamp(Instant.now()).build();
-
-        return producer.sendJobEvent(message).thenAccept(result -> log.info("✅ DCA job creation sent: {}", result.getRecordMetadata()));
+        JobSubmissionKafkaDTO kafkaDTO = jobMapper.toKafkaDTO(dto);
+        kafkaDTO.setUserId(userId);
+        return producer.sendJobSubmission(kafkaDTO).thenAccept(result -> log.info("✅ DCA job creation sent: {}", result.getRecordMetadata()));
     }
 
     public CompletableFuture<Void> sendCreatedLiqJob(LiqJobSubmissionDTO dto, Long userId) {
-        JobEventType.CreatedMeta meta = new JobEventType.CreatedMeta(
-                "LIQ",
-                userId,
-                dto.getCoins(),
-                dto.getSide(),
-                dto.getDiscountPct(),
-                dto.getAmount(),
-                dto.getTotalSteps(),
-                dto.getDurationMinutes());
+        JobSubmissionKafkaDTO kafkaDTO = jobMapper.toKafkaDTO(dto);
+        kafkaDTO.setUserId(userId);
 
-        JobEventMessage message = JobEventMessage.builder().jobId(null).jobEventType(new JobEventType.Created(meta)).source(dto.getSource()).timestamp(Instant.now()).build();
-
-        return producer.sendJobEvent(message).thenAccept(result -> log.info("✅ LIQ job creation sent: {}", result.getRecordMetadata()));
+        return producer.sendJobSubmission(kafkaDTO).thenAccept(result -> log.info("✅ LIQ job creation sent: {}", result.getRecordMetadata()));
     }
 
     public void sendPauseEvent(Long jobId, Long userId, String source) {
@@ -95,9 +79,15 @@ public class JobCommandService {
     }
 
     private void sendSimpleEvent(Long jobId, JobEventType eventType, String source) {
-        JobEventMessage message = JobEventMessage.builder().jobId(jobId).jobEventType(eventType).source(source).timestamp(Instant.now()).build();
+        JobEventMessage message = JobEventMessage.builder()
+                .jobId(jobId)
+                .jobEventType(eventType)
+                .source(source)
+                .timestamp(Instant.now())
+                .build();
 
-        producer.sendJobEvent(message).thenAccept(result -> log.info("✅ {} event sent for job {}: {}", eventType.getClass().getSimpleName(), jobId, result.getRecordMetadata()));
+        //TODO decide of another topic is needed
+        //producer.sendJobSubmission(message).thenAccept(result -> log.info("✅ {} event sent for job {}: {}", eventType.getClass().getSimpleName(), jobId, result.getRecordMetadata()));
     }
 
     private Job verifyOwnership(Long jobId, Long userId) {

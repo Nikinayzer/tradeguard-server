@@ -12,7 +12,7 @@ import lombok.NoArgsConstructor;
 import java.time.Instant;
 
 /**
- * Represents a job event message sent/received via Kafka.
+ * Represents a job event message received via Kafka.
  */
 @Data
 @Builder
