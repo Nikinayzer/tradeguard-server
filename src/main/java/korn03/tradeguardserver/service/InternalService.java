@@ -39,11 +39,9 @@ public class InternalService {
 
         List<UserConnectionsDTO.Exchange> exchangeDTOS = bybitAccounts.stream()
                 .map(account -> UserConnectionsDTO.Exchange.builder()
-                        .id(String.valueOf(account.getId())) //todo think what we can do with String.valueOf()?
+                        .id(String.valueOf(account.getId()))
                         .name(account.getAccountName())
                         .provider(account.getProvider().name())
-                        .readOnlyApiKey(exchangeAccountService.getDecryptedReadOnlyApiKey(account))
-                        .readOnlyApiSecret(exchangeAccountService.getDecryptedReadOnlyApiSecret(account))
                         .readWriteApiKey(exchangeAccountService.getDecryptedReadWriteApiKey(account))
                         .readWriteApiSecret(exchangeAccountService.getDecryptedReadWriteApiSecret(account))
                         .build())

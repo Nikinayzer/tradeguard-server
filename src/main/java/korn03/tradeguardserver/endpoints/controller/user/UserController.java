@@ -135,8 +135,6 @@ public class UserController {
                 userId,
                 id,
                 request.getName(),
-                request.getReadOnlyApiKey(),
-                request.getReadOnlyApiSecret(),
                 request.getReadWriteApiKey(),
                 request.getReadWriteApiSecret()
         );
@@ -158,8 +156,6 @@ public class UserController {
                 userId,
                 request.getName(),
                 exchangeProvider,
-                request.getReadOnlyApiKey(),
-                request.getReadOnlyApiSecret(),
                 request.getReadWriteApiKey(),
                 request.getReadWriteApiSecret()
         );
@@ -204,8 +200,6 @@ public class UserController {
 //                .userId(account.getUserId())
                 .name(account.getAccountName())
                 .provider(String.valueOf(account.getProvider()))
-                .readOnlyApiKey(userExchangeAccountService.getDecryptedReadOnlyApiKey(account))
-                .readOnlyApiSecret(userExchangeAccountService.getDecryptedReadOnlyApiSecret(account))
                 .readWriteApiKey(userExchangeAccountService.getDecryptedReadWriteApiKey(account))
                 .readWriteApiSecret(userExchangeAccountService.getDecryptedReadWriteApiSecret(account))
                 .build();

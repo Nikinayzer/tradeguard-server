@@ -11,8 +11,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class ExchangeAccountUpdateDTO {
     private String name;
-    private String readOnlyApiKey;
-    private String readOnlyApiSecret;
     private String readWriteApiKey;
     private String readWriteApiSecret;
 }

@@ -17,18 +17,6 @@ public class BybitApiClientFactory {
     }
 
     /**
-     * Retrieves user-specific read-only API credentials and initializes a Exchange client.
-     */
-    private com.bybit.api.client.service.BybitApiClientFactory getReadOnlyClientFactory(Long userId, Long id) {
-        UserExchangeAccount account = userExchangeAccountService.getExchangeAccount(userId, id);
-
-        String apiKey = userExchangeAccountService.getDecryptedReadOnlyApiKey(account);
-        String apiSecret = userExchangeAccountService.getDecryptedReadOnlyApiSecret(account);
-
-        return com.bybit.api.client.service.BybitApiClientFactory.newInstance(apiKey, apiSecret);
-    }
-
-    /**
      * Retrieves user-specific read-write API credentials and initializes a Exchange client.
      */
     private com.bybit.api.client.service.BybitApiClientFactory getReadWriteClientFactory(Long userId, Long id) {
@@ -38,13 +26,6 @@ public class BybitApiClientFactory {
         String apiSecret = userExchangeAccountService.getDecryptedReadWriteApiSecret(account);
 
         return com.bybit.api.client.service.BybitApiClientFactory.newInstance(apiKey, apiSecret);
-    }
-
-    /**
-     * Returns a user-specific Exchange Account client (read-only).
-     */
-    public BybitApiAsyncAccountRestClient getReadOnlyAccountClient(Long userId, Long id) {
-        return getReadOnlyClientFactory(userId, id).newAsyncAccountRestClient();
     }
 
     /**

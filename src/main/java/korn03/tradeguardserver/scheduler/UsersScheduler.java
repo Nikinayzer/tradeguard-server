@@ -42,10 +42,6 @@ public class UsersScheduler {
     @Value("${tradeguard.default.admin.password}")
     private String adminPassword;
 
-    @Value("${tradeguard.default.bybit.readonly.key:}")
-    private String defaultReadOnlyApiKey;
-    @Value("${tradeguard.default.bybit.readonly.secret:}")
-    private String defaultReadOnlyApiSecret;
     @Value("${tradeguard.default.bybit.readwrite.key:}")
     private String defaultReadWriteApiKey;
     @Value("${tradeguard.default.bybit.readwrite.secret:}")
@@ -144,9 +140,6 @@ public class UsersScheduler {
      * Creates or updates a default Exchange account for a user if API keys are provided in properties
      */
     private void createDefaultAccount(Long userId, String accountName, ExchangeProvider provider) {
-        //if (!defaultReadOnlyApiKey.isEmpty() && !defaultReadOnlyApiSecret.isEmpty()
-         //       && !defaultReadWriteApiKey.isEmpty() && !defaultReadWriteApiSecret.isEmpty()) {
-
             try {
                 String readWriteApiKey = switch (provider) {
                     case BYBIT_LIVE -> defaultReadWriteApiKey;
@@ -164,15 +157,11 @@ public class UsersScheduler {
 
                 // Get all existing accounts for this user
                 List<UserExchangeAccount> existingAccounts = accountRepository.findByUserId(userId);
-                
-                // Check if an account with the same name already exists
+
                 boolean accountExists = false;
                 for (UserExchangeAccount existingAccount : existingAccounts) {
                     if (existingAccount.getAccountName().equals(accountName)) {
-                        // Update the existing account
                         existingAccount.setProvider(provider);
-                        existingAccount.setEncryptedReadOnlyApiKey(encryptionService.encrypt(defaultReadOnlyApiKey)); // each account should have its own but we use default
-                        existingAccount.setEncryptedReadOnlyApiSecret(encryptionService.encrypt(defaultReadOnlyApiSecret));
                         existingAccount.setEncryptedReadWriteApiKey(encryptionService.encrypt(readWriteApiKey));
                         existingAccount.setEncryptedReadWriteApiSecret(encryptionService.encrypt(readWriteApiSecret));
                         accountRepository.save(existingAccount);
@@ -188,8 +177,6 @@ public class UsersScheduler {
                             userId,
                             accountName,
                             provider,
-                            defaultReadOnlyApiKey,
-                            defaultReadOnlyApiSecret,
                             readWriteApiKey,
                             readWriteApiSecret
                     );

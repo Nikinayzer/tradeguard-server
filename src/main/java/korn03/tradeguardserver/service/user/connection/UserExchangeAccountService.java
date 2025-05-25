@@ -25,8 +25,6 @@ public class UserExchangeAccountService {
             Long userId,
             String accountName,
             ExchangeProvider provider,
-            String readOnlyApiKey,
-            String readOnlyApiSecret,
             String readWriteApiKey,
             String readWriteApiSecret
     ) {
@@ -34,8 +32,6 @@ public class UserExchangeAccountService {
         account.setUserId(userId);
         account.setAccountName(accountName);
         account.setProvider(provider);
-        account.setEncryptedReadOnlyApiKey(encryptionService.encrypt(readOnlyApiKey));
-        account.setEncryptedReadOnlyApiSecret(encryptionService.encrypt(readOnlyApiSecret));
         account.setEncryptedReadWriteApiKey(encryptionService.encrypt(readWriteApiKey));
         account.setEncryptedReadWriteApiSecret(encryptionService.encrypt(readWriteApiSecret));
         return accountRepository.save(account);
@@ -45,19 +41,11 @@ public class UserExchangeAccountService {
             Long userId,
             Long id,
             String accountName,
-            String readOnlyApiKey,
-            String readOnlyApiSecret,
             String readWriteApiKey,
             String readWriteApiSecret
     ) {
         UserExchangeAccount account = getExchangeAccount(userId, id);
         account.setAccountName(accountName);
-        if (readOnlyApiKey != null) {
-            account.setEncryptedReadOnlyApiKey(encryptionService.encrypt(readOnlyApiKey));
-        }
-        if (readOnlyApiSecret != null) {
-            account.setEncryptedReadOnlyApiSecret(encryptionService.encrypt(readOnlyApiSecret));
-        }
         if (readWriteApiKey != null) {
             account.setEncryptedReadWriteApiKey(encryptionService.encrypt(readWriteApiKey));
         }
@@ -74,8 +62,6 @@ public class UserExchangeAccountService {
                // .userId(account.getUserId())
                 .provider(String.valueOf(account.getProvider()))
                 .name(account.getAccountName())
-                .readOnlyApiKey(getMaskedToken(getDecryptedReadOnlyApiKey(account)))
-                .readOnlyApiSecret(getMaskedToken(getDecryptedReadOnlyApiSecret(account)))
                 .readWriteApiKey(getMaskedToken(getDecryptedReadWriteApiKey(account)))
                 .readWriteApiSecret(getMaskedToken(getDecryptedReadWriteApiSecret(account)))
                 .build()
@@ -93,14 +79,6 @@ public class UserExchangeAccountService {
     @Transactional
     public void deleteExchangeAccount(Long userId, Long id) {
         accountRepository.deleteByUserIdAndId(userId, id);
-    }
-
-    public String getDecryptedReadOnlyApiKey(UserExchangeAccount account) {
-        return encryptionService.decrypt(account.getEncryptedReadOnlyApiKey());
-    }
-
-    public String getDecryptedReadOnlyApiSecret(UserExchangeAccount account) {
-        return encryptionService.decrypt(account.getEncryptedReadOnlyApiSecret());
     }
 
     public String getDecryptedReadWriteApiKey(UserExchangeAccount account) {
