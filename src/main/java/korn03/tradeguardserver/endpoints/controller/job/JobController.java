@@ -4,7 +4,6 @@ import jakarta.validation.Valid;
 import korn03.tradeguardserver.endpoints.dto.user.job.DcaJobSubmissionDTO;
 import korn03.tradeguardserver.endpoints.dto.user.job.JobSubmissionDTO;
 import korn03.tradeguardserver.endpoints.dto.user.job.LiqJobSubmissionDTO;
-import korn03.tradeguardserver.kafka.producer.JobSubmissionProducer;
 import korn03.tradeguardserver.model.entity.job.Job;
 import korn03.tradeguardserver.model.entity.job.JobEvent;
 import korn03.tradeguardserver.model.entity.user.User;
@@ -13,7 +12,6 @@ import korn03.tradeguardserver.security.AuthUtil;
 import korn03.tradeguardserver.service.core.PlatformService;
 import korn03.tradeguardserver.service.job.JobCommandService;
 import korn03.tradeguardserver.service.job.JobService;
-import korn03.tradeguardserver.service.user.UserService;
 import korn03.tradeguardserver.service.user.connection.UserDiscordAccountService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -110,7 +108,7 @@ public class JobController {
 
 
     @PostMapping("/jobs/{id}/cancel")
-    public ResponseEntity<?> cancelJob(@PathVariable Long id,@RequestHeader("X-Platform-Type") String platformType) {
+    public ResponseEntity<?> cancelJob(@PathVariable Long id, @RequestHeader("X-Platform-Type") String platformType) {
         User user = AuthUtil.getCurrentUser();
         String source = platformService.resolveSource(platformType);
         jobCommandService.sendCancelEvent(id, user.getId(), source);
@@ -136,9 +134,8 @@ public class JobController {
      */
     @GetMapping("/users/jobs")
     public ResponseEntity<List<Job>> getUserJobs() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        User user = (User) authentication.getPrincipal();
-        List<Job> jobs = jobService.getJobsByUserId(user.getId());
+        Long userId = AuthUtil.getCurrentUser().getId();
+        List<Job> jobs = jobService.getJobsByUserId(userId);
         return ResponseEntity.ok(jobs);
     }
 
@@ -147,25 +144,30 @@ public class JobController {
      *
      * @return list of active jobs
      */
+    @Deprecated
     @GetMapping("/users/jobs/active")
     public ResponseEntity<List<Job>> getUserActiveJobs() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        User user = (User) authentication.getPrincipal();
-        List<Job> jobs = jobService.getActiveJobsByUserId(user.getId());
+        Long userId = AuthUtil.getCurrentUser().getId();
+        List<Job> jobs = jobService.getActiveJobsByUserId(userId);
         return ResponseEntity.ok(jobs);
 
+    }
+
+    @GetMapping("users/jobs/completed")
+    public ResponseEntity<List<Job>> getUserCompletedJobs() {
+        Long userId = AuthUtil.getCurrentUser().getId();
+        List<Job> jobs = jobService.getCompletedJobsByUserId(userId);
+        return ResponseEntity.ok(jobs);
     }
 
     /**
      * Get recent jobs of user within timeframe
      * Example: GET /jobs/{userId}?timeframe=24
-     * /todo integrate DTOs instead of entity (for whole controller)
      */
     @GetMapping("/jobs/user/{userId}")
     public ResponseEntity<List<Job>> getRecentJobsByUserId(@PathVariable Long userId, @RequestParam(required = false) Integer timeframe) {
         return ResponseEntity.ok(jobService.getRecentJobsByUserId(userId, timeframe));
     }
-
 
     /**
      * Get job details by jobId.

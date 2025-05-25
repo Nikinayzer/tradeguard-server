@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import korn03.tradeguardserver.endpoints.dto.user.risk.RiskReportDTO;
 import korn03.tradeguardserver.kafka.events.equity.EquityKafkaDTO;
 import korn03.tradeguardserver.kafka.events.jobUpdates.JobSubmissionKafkaDTO;
 import korn03.tradeguardserver.kafka.events.position.PositionKafkaDTO;
@@ -58,6 +59,9 @@ public class KafkaConfig {
     @Value("${kafka.topic.equity}")
     private String equityUpdatesTopic;
 
+    @Value("${kafka.topic.risk-updates}")
+    private String riskUpdatesTopic;
+
     /**
      * Creates Kafka Admin client for managing topics.
      */
@@ -107,6 +111,11 @@ public class KafkaConfig {
     @Bean
     public NewTopic equityUpdatesTopic() {
         return new NewTopic(equityUpdatesTopic, 1, (short) 1);
+    }
+
+    @Bean
+    public NewTopic riskUpdatesTopic() {
+        return new NewTopic(riskUpdatesTopic, 1, (short) 1);
     }
 
     /**
@@ -160,6 +169,17 @@ public class KafkaConfig {
     public ConcurrentKafkaListenerContainerFactory<String, EquityKafkaDTO> equityListenerFactory() {
         ConcurrentKafkaListenerContainerFactory<String, EquityKafkaDTO> factory = new ConcurrentKafkaListenerContainerFactory<>();
         factory.setConsumerFactory(consumerFactory(EquityKafkaDTO.class));
+        factory.setCommonErrorHandler(kafkaErrorHandler());
+        return factory;
+    }
+
+    /**
+     * Kafka Listener Factory for Risk Updates
+     */
+    @Bean
+    public ConcurrentKafkaListenerContainerFactory<String, RiskReportDTO> riskUpdatesListenerFactory() {
+        ConcurrentKafkaListenerContainerFactory<String, RiskReportDTO> factory = new ConcurrentKafkaListenerContainerFactory<>();
+        factory.setConsumerFactory(consumerFactory(RiskReportDTO.class));
         factory.setCommonErrorHandler(kafkaErrorHandler());
         return factory;
     }

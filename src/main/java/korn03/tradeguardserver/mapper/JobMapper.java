@@ -3,7 +3,7 @@ package korn03.tradeguardserver.mapper;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import korn03.tradeguardserver.endpoints.dto.user.job.DcaJobSubmissionDTO;
-import korn03.tradeguardserver.endpoints.dto.user.job.JobFrontendDTO;
+import korn03.tradeguardserver.endpoints.dto.user.job.JobDTO;
 import korn03.tradeguardserver.endpoints.dto.user.job.JobSubmissionDTO;
 import korn03.tradeguardserver.endpoints.dto.user.job.LiqJobSubmissionDTO;
 import korn03.tradeguardserver.kafka.events.jobUpdates.JobEventMessage;
@@ -129,38 +129,19 @@ public interface JobMapper {
         }
     }
 
-    // Business logic methods for Kafka DTO
     default Boolean calculateForce(Double discountPct) {
         return discountPct != null && discountPct > 0;
     }
-
     default String normalizeStrategy(String strategy) {
         return strategy != null ? strategy.toLowerCase() : null;
     }
 
-    @Mapping(target = "jobId", source = "id")
+    @Mapping(target = "id", source = "id")
     @Mapping(target = "strategy", source = "strategy")
     @Mapping(target = "status", source = "status")
-    @Mapping(target = "progress", expression = "java(calculateProgress(job))")
-    JobFrontendDTO toFrontendDTO(Job job);
+    @Mapping(target = "stepsDone", source = "stepsDone")
+    JobDTO toDTO(Job job);
 
-    List<JobFrontendDTO> toFrontendDTOList(List<Job> jobs);
+    List<JobDTO> toDTOList(List<Job> jobs);
 
-    default JobFrontendDTO.JobProgress calculateProgress(Job job) {
-        if (job.getStepsTotal() == null || job.getStepsTotal() == 0) {
-            return null;
-        }
-
-        double progressPct = (double) job.getStepsDone() / job.getStepsTotal() * 100;
-        Instant estimatedCompletion = null;
-        if (job.getDurationMinutes() != null && job.getCreatedAt() != null) {
-            estimatedCompletion = job.getCreatedAt().plusSeconds((long) (job.getDurationMinutes() * 60));
-        }
-
-        return JobFrontendDTO.JobProgress.builder()
-                .currentStep(job.getStepsDone())
-                .progressPct(progressPct)
-                .estimatedCompletion(estimatedCompletion)
-                .build();
-    }
 }

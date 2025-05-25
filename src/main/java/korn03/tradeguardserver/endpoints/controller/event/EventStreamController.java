@@ -3,12 +3,14 @@ package korn03.tradeguardserver.endpoints.controller.event;
 import korn03.tradeguardserver.endpoints.dto.user.equity.UserEquityStateDTO;
 import korn03.tradeguardserver.endpoints.dto.user.job.UserJobsStateDTO;
 import korn03.tradeguardserver.endpoints.dto.user.position.UserPositionsStateDTO;
+import korn03.tradeguardserver.endpoints.dto.user.risk.RiskReportDTO;
 import korn03.tradeguardserver.security.AuthUtil;
 import korn03.tradeguardserver.service.equity.EquityService;
 import korn03.tradeguardserver.service.job.JobService;
 import korn03.tradeguardserver.service.sse.SseEmitterService;
 import korn03.tradeguardserver.service.position.PositionService;
 import korn03.tradeguardserver.service.bybit.BybitMarketDataService;
+import korn03.tradeguardserver.service.risk.RiskService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -30,6 +32,7 @@ public class EventStreamController {
     private final EquityService equityService;
     private final JobService jobService;
     private final BybitMarketDataService marketDataService;
+    private final RiskService riskService;
 
     /**
      * Main SSE stream endpoint that provides real-time updates for all data types.
@@ -72,6 +75,14 @@ public class EventStreamController {
                     sseService.sendUpdate(userId, "jobs", jobsState);
                 } else {
                     log.info("No jobs data available for user {}", userId);
+                }
+
+                RiskReportDTO riskReport = riskService.getUserRiskReport(userId);
+                if (riskReport != null) {
+                    log.info("Sending initial risk report to user {}", userId);
+                    sseService.sendUpdate(userId, "risk_report", riskReport);
+                } else {
+                    log.info("No risk report available for user {}", userId);
                 }
                 
                 log.info("Initial data sent to user {}", userId);

@@ -143,3 +143,4 @@ kafka:
     clean-position-updates: ${KAFKA_TOPIC_CLEAN_POSITIONS:clean-position-updates}
     order-flow: ${KAFKA_TOPIC_ORDER_FLOW:order-flow}
     equity: ${KAFKA_TOPIC_EQUITY_UPDATES:equity}
+    risk-updates: ${KAFKA_TOPIC_RISK_UPDATES:risk-updates}

@@ -15,4 +15,5 @@ public interface JobRepository extends JpaRepository<Job, Long> {
     List<Job> findByUserId(Long userId);
     List<Job> findByUserIdAndCreatedAtAfter(Long userId, Instant createdAt);
     List<Job> findByUserIdAndStatusNotLike(Long userId, JobStatusType status);
+    List<Job> findByUserIdAndStatusIn(Long userId, List<JobStatusType> statuses);
 }

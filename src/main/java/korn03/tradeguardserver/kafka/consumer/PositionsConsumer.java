@@ -17,8 +17,7 @@ public class PositionsConsumer {
 
     private final PositionService positionService;
 
-    @KafkaListener(topics = "${kafka.topic.position-updates}", groupId = "${spring.kafka.consumer.group-id}",
-            containerFactory = "positionListenerFactory")
+    @KafkaListener(topics = "${kafka.topic.position-updates}", groupId = "${spring.kafka.consumer.group-id}", containerFactory = "positionListenerFactory")
     public void consumePositionUpdate(PositionKafkaDTO position) {
         log.info("Received position update: {}", position);
         positionService.processPositionUpdate(position);

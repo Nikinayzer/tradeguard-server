@@ -39,7 +39,7 @@ public class Job {
     @Column(name = "steps_done", nullable = false)
     private Integer stepsDone;
 
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "job_coins", joinColumns = @JoinColumn(name = "job_id"))
     @Column(name = "coins")
     private List<String> coins;

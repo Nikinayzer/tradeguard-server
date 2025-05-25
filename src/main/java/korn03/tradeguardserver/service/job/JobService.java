@@ -1,6 +1,5 @@
 package korn03.tradeguardserver.service.job;
 
-import korn03.tradeguardserver.endpoints.dto.user.job.JobFrontendDTO;
 import korn03.tradeguardserver.endpoints.dto.user.job.UserJobsStateDTO;
 import korn03.tradeguardserver.exception.NotFoundException;
 import korn03.tradeguardserver.kafka.events.jobUpdates.JobEventMessage;
@@ -108,7 +107,7 @@ public class JobService {
                     .activeJobsCount(activeJobs.size())
                     .lastUpdate(latestTimestamp)
                     .build())
-                .activeJobs(jobMapper.toFrontendDTOList(activeJobs))
+                .activeJobs(jobMapper.toDTOList(activeJobs))
                 .build();
     }
 
@@ -125,6 +124,10 @@ public class JobService {
 
     public List<Job> getJobsByUserId(Long userId) {
         return jobRepository.findByUserId(userId);
+    }
+    public List<Job> getCompletedJobsByUserId(Long userId) {
+        List<JobStatusType> completedStatuses = List.of(JobStatusType.FINISHED, JobStatusType.CANCELED, JobStatusType.STOPPED);
+        return jobRepository.findByUserIdAndStatusIn(userId, completedStatuses);
     }
     public List<Job> getActiveJobsByUserId(Long userId){
         return jobRepository.findByUserIdAndStatusNotLike(userId, JobStatusType.FINISHED);
