@@ -14,7 +14,7 @@ import java.util.List;
 @AllArgsConstructor
 public class UserJobsStateDTO {
     private JobsSummary summary;
-    private List<JobFrontendDTO> activeJobs;
+    private List<JobDTO> activeJobs;
     
     @Data
     @Builder
