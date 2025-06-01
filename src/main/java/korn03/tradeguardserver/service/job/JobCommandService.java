@@ -91,7 +91,7 @@ public class JobCommandService {
     }
 
     private Job verifyOwnership(Long jobId, Long userId) {
-        return jobService.getJobById(jobId).filter(job -> job.getUserId().equals(userId)).orElseThrow(() -> new NotFoundException("Job not found"));
+        return jobService.getJobEntityById(jobId).filter(job -> job.getUserId().equals(userId)).orElseThrow(() -> new NotFoundException("Job not found"));
     }
 }
 

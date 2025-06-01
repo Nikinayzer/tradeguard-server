@@ -23,4 +23,8 @@ public enum JobStatusType {
     public boolean canStop() {
         return this != CANCELED && this != FINISHED && this != STOPPED;
     }
+
+    public boolean isActive() {
+        return this != FINISHED && this != CANCELED && this != STOPPED;
+    }
 }

@@ -1,5 +1,6 @@
 package korn03.tradeguardserver.service.job;
 
+import korn03.tradeguardserver.endpoints.dto.user.job.JobDTO;
 import korn03.tradeguardserver.endpoints.dto.user.job.UserJobsStateDTO;
 import korn03.tradeguardserver.exception.NotFoundException;
 import korn03.tradeguardserver.kafka.events.jobUpdates.JobEventMessage;
@@ -10,44 +11,59 @@ import korn03.tradeguardserver.model.entity.job.JobEvent;
 import korn03.tradeguardserver.model.entity.job.JobStatusType;
 import korn03.tradeguardserver.model.repository.job.JobEventRepository;
 import korn03.tradeguardserver.model.repository.job.JobRepository;
+import korn03.tradeguardserver.service.core.CacheService;
 import korn03.tradeguardserver.service.sse.SseEmitterService;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import java.time.Duration;
 import java.time.Instant;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class JobService {
 
+    private static final String JOB_KEY_PATTERN = "job:%d";
+    private static final Duration JOB_TTL = Duration.ofHours(48);
+
     private final JobRepository jobRepository;
     private final JobEventRepository jobEventRepository;
     private final JobMapper jobMapper;
     private final SseEmitterService sseService;
+    private final CacheService cacheService;
 
     private final Logger logger = LoggerFactory.getLogger(JobService.class);
 
     /**
-     * Handles a job event from Kafka.
+     * Handles a real-time job event from Kafka.
      * Updates the Job entity if it exists; otherwise, creates a new Job entity.
-     * Always creates and saves a JobEvent entity.
-     * Sends SSE update with new jobs state.
+     * Always sends SSE update with new jobs state.
      *
      * @see JobEventMessage
      */
     public void processJobEvent(JobEventMessage jobEventMessage) {
-        Optional<Job> existingJob = jobRepository.findByJobId(jobEventMessage.getJobId());
+        Optional<Job> existingJob = jobRepository.findByJobId(jobEventMessage.getJobId())
+                .or(() -> Optional.ofNullable(
+                        cacheService.getFromCache(String.format(JOB_KEY_PATTERN, jobEventMessage.getJobId()), Job.class)
+                ));
 
         if (existingJob.isPresent()) {
             Job job = existingJob.get();
             jobMapper.updateExistingJob(job, jobEventMessage);
-            jobRepository.save(job);
-            
-            // Send SSE update with new jobs state
+
+            if (job.getStatus().isActive()) {
+                String jobKey = String.format(JOB_KEY_PATTERN, job.getJobId());
+                cacheService.storeInCache(jobKey, job, JOB_TTL);
+            } else {
+                jobRepository.save(job);
+                String jobKey = String.format(JOB_KEY_PATTERN, job.getJobId());
+                cacheService.deleteFromCache(jobKey);
+            }
+
             UserJobsStateDTO jobsState = getUserJobsState(job.getUserId());
             if (jobsState != null) {
                 sseService.sendUpdate(job.getUserId(), "jobs", jobsState);
@@ -58,16 +74,14 @@ public class JobService {
                 if (jobEventMessage.getJobEventType() instanceof JobEventType.Created created) {
                     userId = created.meta().userId();
                 }
-                
                 if (userId == null) {
                     logger.error("Cannot create new job without userId for jobId: {}", jobEventMessage.getJobId());
                     return;
                 }
-                
                 Job newJob = jobMapper.toEntity(jobEventMessage);
-                jobRepository.save(newJob);
-                
-                // Send SSE update with new jobs state
+                String jobKey = String.format(JOB_KEY_PATTERN, newJob.getJobId());
+                cacheService.storeInCache(jobKey, newJob, JOB_TTL);
+
                 UserJobsStateDTO jobsState = getUserJobsState(userId);
                 if (jobsState != null) {
                     sseService.sendUpdate(userId, "jobs", jobsState);
@@ -76,37 +90,72 @@ public class JobService {
                 logger.error("❌ Failed to save job: {}", jobEventMessage, e);
             }
         }
-        
-        JobEvent eventEntity = jobMapper.toJobEvent(jobEventMessage);
-        try {
-            logger.info("Saving job event: {}", eventEntity);
-            jobEventRepository.save(eventEntity);
-        } catch (Exception e) {
-            logger.error("❌ Failed to save job event: {}", eventEntity, e);
+    }
+
+    /**
+     * Handles a historical job event from Kafka.
+     * Updates the Job entity if it exists; otherwise, creates a new Job entity.
+     *
+     * @param jobEventMessage The job event message to process
+     */
+    public void processHistoricalJobEvent(JobEventMessage jobEventMessage) {
+        Optional<Job> existingJob = jobRepository.findByJobId(jobEventMessage.getJobId())
+                .or(() -> Optional.ofNullable(
+                        cacheService.getFromCache(String.format(JOB_KEY_PATTERN, jobEventMessage.getJobId()), Job.class)
+                ));
+
+        if (existingJob.isPresent()) {
+            Job job = existingJob.get();
+            jobMapper.updateExistingJob(job, jobEventMessage);
+
+            if (job.getStatus() != JobStatusType.FINISHED && job.getStatus() != JobStatusType.CANCELED && job.getStatus() != JobStatusType.STOPPED) {
+                String jobKey = String.format(JOB_KEY_PATTERN, job.getJobId());
+                cacheService.storeInCache(jobKey, job, JOB_TTL);
+            } else {
+                jobRepository.save(job);
+                String jobKey = String.format(JOB_KEY_PATTERN, job.getJobId());
+                cacheService.deleteFromCache(jobKey);
+            }
+        } else {
+            try {
+                Long userId = null;
+                if (jobEventMessage.getJobEventType() instanceof JobEventType.Created created) {
+                    userId = created.meta().userId();
+                }
+                if (userId == null) {
+                    logger.error("Cannot create new job without userId for jobId: {}", jobEventMessage.getJobId());
+                    return;
+                }
+                Job newJob = jobMapper.toEntity(jobEventMessage);
+                String jobKey = String.format(JOB_KEY_PATTERN, newJob.getJobId());
+                cacheService.storeInCache(jobKey, newJob, JOB_TTL);
+            } catch (Exception e) {
+                logger.error("❌ Failed to save historical job: {}", jobEventMessage, e);
+            }
         }
     }
 
     /**
      * Get the complete jobs state for a user including active jobs and summary statistics.
-     * 
+     *
      * @param userId The user ID
      * @return A DTO containing complete jobs state information
      */
     public UserJobsStateDTO getUserJobsState(Long userId) {
-        List<Job> allJobs = getJobsByUserId(userId);
+        List<Job> activeJobs = getActiveJobsByUserId(userId);
+        List<Job> completedJobs = getCompletedJobsEntitiesByUserId(userId);
+        List<Job> allJobs = new ArrayList<>(activeJobs);
+        allJobs.addAll(completedJobs);
         if (allJobs.isEmpty()) {
             return null;
         }
-        
-        List<Job> activeJobs = getActiveJobsByUserId(userId);
         Instant latestTimestamp = findLatestTimestamp(allJobs);
-        
         return UserJobsStateDTO.builder()
                 .summary(UserJobsStateDTO.JobsSummary.builder()
-                    .totalJobsCount(allJobs.size())
-                    .activeJobsCount(activeJobs.size())
-                    .lastUpdate(latestTimestamp)
-                    .build())
+                        .totalJobsCount(allJobs.size())
+                        .activeJobsCount(activeJobs.size())
+                        .lastUpdate(latestTimestamp)
+                        .build())
                 .activeJobs(jobMapper.toDTOList(activeJobs))
                 .build();
     }
@@ -119,29 +168,60 @@ public class JobService {
     }
 
     public List<Job> getAllJobs() {
-        return jobRepository.findAll();
+        Set<Job> allJobs = new HashSet<>(jobRepository.findAll());
+        Set<String> jobKeys = cacheService.getKeys("job:*");
+        for (String key : jobKeys) {
+            Job cachedJob = cacheService.getFromCache(key, Job.class);
+            if (cachedJob != null) {
+                allJobs.add(cachedJob);
+            }
+        }
+        return allJobs.stream()
+                .sorted(Comparator.comparing(Job::getCreatedAt).reversed())
+                .collect(Collectors.toList());
     }
 
     public List<Job> getJobsByUserId(Long userId) {
         return jobRepository.findByUserId(userId);
     }
-    public List<Job> getCompletedJobsByUserId(Long userId) {
+
+    public List<Job> getCompletedJobsEntitiesByUserId(Long userId) {
         List<JobStatusType> completedStatuses = List.of(JobStatusType.FINISHED, JobStatusType.CANCELED, JobStatusType.STOPPED);
         return jobRepository.findByUserIdAndStatusIn(userId, completedStatuses);
     }
-    public List<Job> getActiveJobsByUserId(Long userId){
-        return jobRepository.findByUserIdAndStatusNotLike(userId, JobStatusType.FINISHED);
+    public List<JobDTO> getCompletedJobsDTOByUserId(Long userId) {
+        List<Job> jobs = getCompletedJobsEntitiesByUserId(userId);
+        return jobMapper.toDTOList(jobs);
     }
+
+    public List<Job> getActiveJobsByUserId(Long userId) {
+        Set<String> jobKeys = cacheService.getKeys("job:*");
+        return jobKeys.stream()
+                .map(key -> cacheService.getFromCache(key, Job.class))
+                .filter(Objects::nonNull)
+                .filter(job -> job.getUserId().equals(userId))
+                .filter(job -> job.getStatus().isActive())
+                .collect(Collectors.toList());
+    }
+
     public List<Job> getRecentJobsByUserId(Long userId, Integer timeframe) {
         int hours = (timeframe != null && timeframe > 0) ? timeframe : 24;
         Instant cutoff = Instant.now().minusSeconds(hours * 3600L);
-        return jobRepository.findByUserIdAndCreatedAtAfter(userId, cutoff);
+        List<Job> activeJobs = getActiveJobsByUserId(userId);
+        List<Job> completedJobs = jobRepository.findByUserIdAndCreatedAtAfter(userId, cutoff);
+        List<Job> allJobs = new ArrayList<>(activeJobs);
+        allJobs.addAll(completedJobs);
+        return allJobs;
     }
 
-    public Optional<Job> getJobById(Long id) {
+    public Optional<Job> getJobEntityById(Long id) {
+        String jobKey = String.format(JOB_KEY_PATTERN, id);
+        Optional<Job> cachedJob = Optional.ofNullable(cacheService.getFromCache(jobKey, Job.class));
+        if (cachedJob.isPresent()) {
+            return cachedJob;
+        }
         return jobRepository.findById(id);
     }
-
     public List<JobEvent> getJobEvents(Long id) {
         Job job = jobRepository.findById(id).orElseThrow(() -> new NotFoundException("Job not found"));
         return jobEventRepository.findByJobIdOrderByTimestampAsc(job.getJobId());

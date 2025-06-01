@@ -2,10 +2,10 @@ package korn03.tradeguardserver.endpoints.controller.job;
 
 import jakarta.validation.Valid;
 import korn03.tradeguardserver.endpoints.dto.user.job.DcaJobSubmissionDTO;
+import korn03.tradeguardserver.endpoints.dto.user.job.JobDTO;
 import korn03.tradeguardserver.endpoints.dto.user.job.JobSubmissionDTO;
 import korn03.tradeguardserver.endpoints.dto.user.job.LiqJobSubmissionDTO;
 import korn03.tradeguardserver.model.entity.job.Job;
-import korn03.tradeguardserver.model.entity.job.JobEvent;
 import korn03.tradeguardserver.model.entity.user.User;
 import korn03.tradeguardserver.model.entity.user.connections.UserDiscordAccount;
 import korn03.tradeguardserver.security.AuthUtil;
@@ -17,8 +17,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
 
@@ -154,10 +152,9 @@ public class JobController {
     }
 
     @GetMapping("users/jobs/completed")
-    public ResponseEntity<List<Job>> getUserCompletedJobs() {
+    public ResponseEntity<List<JobDTO>> getUserCompletedJobs() {
         Long userId = AuthUtil.getCurrentUser().getId();
-        List<Job> jobs = jobService.getCompletedJobsByUserId(userId);
-        return ResponseEntity.ok(jobs);
+        return ResponseEntity.ok( jobService.getCompletedJobsDTOByUserId(userId));
     }
 
     /**
@@ -174,17 +171,8 @@ public class JobController {
      */
     @GetMapping("/jobs/{id}")
     public ResponseEntity<Job> getJob(@PathVariable Long id) {
-        Optional<Job> job = jobService.getJobById(id);
+        Optional<Job> job = jobService.getJobEntityById(id);
         return job.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
-    }
-
-    /**
-     * Get all events for a given jobId.
-     */
-    @GetMapping("/jobs/{id}/events")
-    public ResponseEntity<List<JobEvent>> getJobEvents(@PathVariable Long id) {
-        List<JobEvent> events = jobService.getJobEvents(id);
-        return ResponseEntity.ok(events);
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

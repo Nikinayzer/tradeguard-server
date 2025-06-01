@@ -22,7 +22,8 @@ import java.util.List;
 @Mapper(componentModel = "spring")
 public interface JobMapper {
 
-    @Mapping(target = "id", ignore = true)
+    //@Mapping(target = "id", ignore = true)
+    @Mapping(target = "jobId", source = "jobId")
     @Mapping(target = "userId", expression = "java(2L)") // TODO: Accept later
     @Mapping(target = "status", source = "jobEventType", qualifiedByName = "mapStatus")
     @Mapping(target = "stepsDone", expression = "java((jobEventMessage.getJobEventType() instanceof korn03.tradeguardserver.kafka.events.jobUpdates.JobEventType.StepDone stepDone) ? stepDone.stepIndex() : 0)")
@@ -37,14 +38,14 @@ public interface JobMapper {
     @Mapping(target = "updatedAt", source = "timestamp")
     Job toEntity(JobEventMessage jobEventMessage);
 
-    @Mapping(target = "id", ignore = true)
+    //@Mapping(target = "id", ignore = true)
     @Mapping(target = "jobId", source = "jobId")
     @Mapping(target = "eventType", source = "jobEventType", qualifiedByName = "mapJobEventTypeToString")
     @Mapping(target = "timestamp", source = "timestamp")
     @Mapping(target = "eventData", source = "jobEventType", qualifiedByName = "extractRelevantEventData")
     JobEvent toJobEvent(JobEventMessage jobEventMessage);
 
-    @Mapping(target = "id", ignore = true)
+   // @Mapping(target = "id", ignore = true)
     @Mapping(target = "jobId", ignore = true)
     @Mapping(target = "status", source = "jobEventType", qualifiedByName = "mapStatus")
     @Mapping(target = "stepsDone", expression = "java((jobEventMessage.getJobEventType() instanceof korn03.tradeguardserver.kafka.events.jobUpdates.JobEventType.StepDone stepDone) ? stepDone.stepIndex() : job.getStepsDone())")
@@ -136,7 +137,8 @@ public interface JobMapper {
         return strategy != null ? strategy.toLowerCase() : null;
     }
 
-    @Mapping(target = "id", source = "id")
+    //@Mapping(target = "id", source = "id")
+    @Mapping(target = "id", source = "jobId")
     @Mapping(target = "strategy", source = "strategy")
     @Mapping(target = "status", source = "status")
     @Mapping(target = "stepsDone", source = "stepsDone")

@@ -15,10 +15,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
@@ -32,6 +34,7 @@ import org.springframework.util.backoff.FixedBackOff;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 /**
  * Configuration class for Kafka settings.
@@ -91,6 +94,16 @@ public class KafkaConfig {
     @Bean
     public NewTopic jobEventsTopic() {
         return new NewTopic(jobUpdatesTopic, 1, (short) 1); // Single partition, single replica for development
+    }
+    @Bean
+    public KafkaConsumer<String, JobEventMessage> replayKafkaConsumer(
+            KafkaProperties properties,
+            ConsumerFactory<String, JobEventMessage> factory
+    ) {
+        Map<String, Object> consumerProps = new HashMap<>(properties.buildConsumerProperties());
+        consumerProps.put(ConsumerConfig.GROUP_ID_CONFIG, "${kafka.topic.job-updates}" + UUID.randomUUID());
+        consumerProps.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
+        return new KafkaConsumer<>(consumerProps, new StringDeserializer(), new JsonDeserializer<>(JobEventMessage.class));
     }
 
     @Bean
