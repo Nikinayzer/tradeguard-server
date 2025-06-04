@@ -204,9 +204,4 @@ public class UserController {
                 .readWriteApiSecret(userExchangeAccountService.getDecryptedReadWriteApiSecret(account))
                 .build();
     }
-
-    private String maskApiKey(Supplier<String> keySupplier) {
-        String key = keySupplier.get();
-        return userExchangeAccountService.getMaskedToken(key);
-    }
 }

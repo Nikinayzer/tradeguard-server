@@ -84,7 +84,7 @@ public class PositionService {
             // Send SSE update with full positions state
             UserPositionsStateDTO positionsState = getUserPositionsState(transformedPosition.getUserId());
             if (positionsState != null) {
-                log.info("Sending position update via SSE for user {}", transformedPosition.getUserId());
+                log.debug("Sending position update via SSE for user {}", transformedPosition.getUserId());
                 sseService.sendUpdate(transformedPosition.getUserId(), "positions", positionsState);
             } else {
                 log.warn("Could not generate positions state for user {}", transformedPosition.getUserId());
@@ -211,7 +211,7 @@ public class PositionService {
             }
         }
         
-        log.info("Found {} positions for user {}", userPositions.size(), userId);
+        log.debug("Found {} positions for user {}", userPositions.size(), userId);
         return userPositions;
     }
     

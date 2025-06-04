@@ -27,13 +27,11 @@ public interface UserAccountLimitsMapper {
     @Mapping(source = "maxDailyTrades", target = "maxDailyTrades", qualifiedByName = "stringToInteger")
     @Mapping(source = "tradingCooldown", target = "tradingCooldown", qualifiedByName = "stringToInteger")
     @Mapping(source = "maxPortfolioRisk", target = "maxPortfolioRisk", qualifiedByName = "stringToBigDecimal")
-    @Mapping(source = "allowDcaForce", target = "allowDcaForce", qualifiedByName = "stringToBoolean")
-    @Mapping(source = "allowLiqForce", target = "allowLiqForce", qualifiedByName = "stringToBoolean")
     @Mapping(source = "dailyLossLimit", target = "dailyLossLimit", qualifiedByName = "stringToBigDecimal")
     @Mapping(source = "maxConsecutiveLosses", target = "maxConsecutiveLosses", qualifiedByName = "stringToInteger")
     @Mapping(source = "maxDailyBalanceChange", target = "maxDailyBalanceChange", qualifiedByName = "stringToBigDecimal")
-    @Mapping(source = "volatilityLimit", target = "volatilityLimit", qualifiedByName = "stringToBigDecimal")
-    @Mapping(source = "liquidityThreshold", target = "liquidityThreshold", qualifiedByName = "stringToBigDecimal")
+//    @Mapping(source = "volatilityLimit", target = "volatilityLimit", qualifiedByName = "stringToBigDecimal")
+//    @Mapping(source = "liquidityThreshold", target = "liquidityThreshold", qualifiedByName = "stringToBigDecimal")
     UserAccountLimits toEntity(UpdateUserAccountLimitsRequestDTO dto);
 
     @Mapping(target = "id", ignore = true)

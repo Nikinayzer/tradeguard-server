@@ -130,9 +130,11 @@ public class DiscordAuthController {
 
             log.info("Discord token exchange response status: {}", response.getStatusCode());
 
-            if (!response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {
+            if (!response.getStatusCode().is2xxSuccessful()) {
                 log.error("Token exchange failed. Response: {}", response);
                 return null;
+            } else {
+                response.getBody();
             }
 
             return response.getBody();
@@ -153,8 +155,10 @@ public class DiscordAuthController {
                 userRequestEntity,
                 DiscordUserDTO.class);
 
-        if (!response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {
+        if (!response.getStatusCode().is2xxSuccessful()) {
             return null;
+        } else {
+            response.getBody();
         }
         return response.getBody();
     }

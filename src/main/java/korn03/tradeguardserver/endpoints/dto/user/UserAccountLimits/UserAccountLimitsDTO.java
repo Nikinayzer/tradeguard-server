@@ -22,13 +22,10 @@ public class UserAccountLimitsDTO {
     private Integer maxDailyTrades;
     private Integer tradingCooldown;
 
-    private Boolean allowDcaForce;
-    private Boolean allowLiqForce;
-
     // Continuous Monitoring Limits
     private BigDecimal dailyLossLimit;
     private Integer maxConsecutiveLosses;
     private BigDecimal maxDailyBalanceChange;
-    private BigDecimal volatilityLimit;
-    private BigDecimal liquidityThreshold;
+//    private BigDecimal volatilityLimit;
+//    private BigDecimal liquidityThreshold;
 }

@@ -54,8 +54,8 @@ public class UserAccountLimitsService {
     public void createDefaultLimits(User user) {
         UserAccountLimits limits = UserAccountLimits.builder()
                 .userId(user.getId())
-                .maxSingleJobLimit(BigDecimal.valueOf(5000))
-                .maxDailyTradingLimit(BigDecimal.valueOf(15000))
+                .maxSingleJobLimit(BigDecimal.valueOf(500))
+                .maxDailyTradingLimit(BigDecimal.valueOf(1000))
                 .maxConcurrentOrders(3)
                 .maxDailyTrades(10)
                 .tradingCooldown(2) // 2 minutes
@@ -63,10 +63,8 @@ public class UserAccountLimitsService {
                 .dailyLossLimit(BigDecimal.valueOf(5000))
                 .maxConsecutiveLosses(3)
                 .maxDailyBalanceChange(BigDecimal.valueOf(10.0))
-                .volatilityLimit(BigDecimal.valueOf(10.0)) //todo think about this
-                .liquidityThreshold(BigDecimal.valueOf(1000000))
-                .allowDcaForce(true)
-                .allowLiqForce(true)
+//                .volatilityLimit(BigDecimal.valueOf(10.0))
+//                .liquidityThreshold(BigDecimal.valueOf(1000000))
                 .build();
 
         userAccountLimitsRepository.save(limits);

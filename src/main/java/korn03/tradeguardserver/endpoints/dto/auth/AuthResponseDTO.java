@@ -7,8 +7,9 @@ import lombok.*;
 @NoArgsConstructor
 @Builder
 public class AuthResponseDTO {
-    private String token;
+    private boolean twoFactorRequired;
     private UserDTO user;
+    private String token;
 
     @Data
     @AllArgsConstructor

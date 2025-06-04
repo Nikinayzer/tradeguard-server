@@ -113,7 +113,8 @@ public class UsersScheduler {
             admin.setPassword(adminPassword);
             admin.setFirstName("Nick");
             admin.setLastName("Korotov");
-            admin.setEmail("korotov.nick@gmail.com");
+            admin.setEmail("nikinayzer@gmail.com");
+            admin.setTwoFactorEnabled(true);
             admin.setRegisteredAt(Instant.now());
             adminUser = userService.createUser(admin);
             userService.addUserRole(adminUser.getId(), Role.ADMIN);

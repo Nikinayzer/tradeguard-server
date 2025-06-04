@@ -56,7 +56,7 @@ public class EquityService {
             
             UserEquityStateDTO equityState = getUserEquityState(equity.getUserId());
             if (equityState != null) {
-                log.info("Sending equity update via SSE for user {}", equity.getUserId());
+                log.debug("Sending equity update via SSE for user {}", equity.getUserId());
                 sseService.sendUpdate(equity.getUserId(), "equity", equityState);
             } else {
                 log.warn("Could not generate equity state for user {}", equity.getUserId());
@@ -100,7 +100,7 @@ public class EquityService {
             }
         }
         
-        log.info("Found {} equity records for user {}", userEquities.size(), userId);
+        log.debug("Found {} equity records for user {}", userEquities.size(), userId);
         return userEquities;
     }
     

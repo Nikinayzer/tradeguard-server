@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.jboss.aerogear.security.otp.api.Base32;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -31,6 +32,9 @@ public class User implements UserDetails {
 
     @Column(unique = true, nullable = false)
     private String email;
+
+    @Column(nullable = false)
+    private boolean emailVerified = false;
 
     @Column(nullable = true)
     private String firstName;
@@ -109,4 +113,19 @@ public class User implements UserDetails {
     public boolean isEnabled() {
         return enabled;
     }
+
+    // 2fa
+    @Column(nullable = false)
+    private boolean twoFactorEnabled = false;
+
+    @Column
+    private String twoFactorSecret = Base32.random();
+
+//    @Enumerated(EnumType.STRING)
+//    @Column
+//    private TwoFactorType twoFactorType;
+
+//    @ElementCollection(fetch = FetchType.EAGER)
+//    @CollectionTable(name = "user_backup_codes", joinColumns = @JoinColumn(name = "user_id"))
+//    private Set<String> backupCodes;
 }
