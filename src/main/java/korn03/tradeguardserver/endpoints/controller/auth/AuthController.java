@@ -64,6 +64,7 @@ public class AuthController {
             User user = userService.getByEmailOrThrow(request.getIdentifier());
             request.setIdentifier(user.getUsername());
         }
+        //todo something better
         Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(request.getIdentifier(), request.getPassword()));
         SecurityContextHolder.clearContext();
         User user = (User) authentication.getPrincipal();
@@ -91,9 +92,6 @@ public class AuthController {
             @RequestBody UserUpdatePasswordRequestDTO request
     ) {
         User user = userService.getByEmailOrThrow(request.getEmail());
-        if (!userService.validateDateOfBirth(user.getId(), request.getDateOfBirth())) {
-            return ResponseEntity.badRequest().body("Invalid date of birth");
-        }
         otpService.sendOtp(user.getEmail(), user.getFirstName(), OtpContext.PASSWORD_RESET);
         return ResponseEntity.ok("Verification request was sent to your email. Please check your inbox.");
     }
@@ -104,7 +102,7 @@ public class AuthController {
     ) {
         String email = request.getEmail();
         User user = userService.getByEmailOrThrow(email);
-        String otp = request.getOtp();
+        String otp = request.getCode();
         if (otpService.verifyOtp(email, otp)) {
             userService.changeUserPassword(user.getId(), request.getNewPassword());
             return buildAuthResponse(user, false, null);

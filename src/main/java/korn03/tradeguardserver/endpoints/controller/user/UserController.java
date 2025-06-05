@@ -7,13 +7,13 @@ import korn03.tradeguardserver.endpoints.dto.user.UserUpdateRequestDTO;
 import korn03.tradeguardserver.endpoints.dto.user.exchangeAccount.ExchangeAccountCreationRequestDTO;
 import korn03.tradeguardserver.endpoints.dto.user.exchangeAccount.ExchangeAccountDTO;
 import korn03.tradeguardserver.endpoints.dto.user.exchangeAccount.ExchangeAccountUpdateDTO;
+import korn03.tradeguardserver.endpoints.dto.user.settings.security.UserSecuritySettingsDTO;
 import korn03.tradeguardserver.mapper.UserAccountLimitsMapper;
 import korn03.tradeguardserver.model.entity.service.PushToken;
 import korn03.tradeguardserver.model.entity.user.User;
 import korn03.tradeguardserver.model.entity.user.connections.ExchangeProvider;
 import korn03.tradeguardserver.model.entity.user.connections.UserDiscordAccount;
 import korn03.tradeguardserver.model.entity.user.connections.UserExchangeAccount;
-import korn03.tradeguardserver.service.auth.OtpService;
 import korn03.tradeguardserver.service.core.pushNotifications.PushNotificationService;
 import korn03.tradeguardserver.service.core.pushNotifications.PushTokenService;
 import korn03.tradeguardserver.service.user.UserAccountLimitsService;
@@ -171,6 +171,8 @@ public class UserController {
         return ResponseEntity.ok().build();
     }
 
+    // TODO refactor below into UserSettingsController
+
     @GetMapping("/{userId}/limits")
     public ResponseEntity<UserAccountLimitsDTO> getCurrentUserLimits(@PathVariable Long userId) {
         return ResponseEntity.ok(userAccountLimitsService.getLimitsByUserId(userId));
@@ -181,6 +183,29 @@ public class UserController {
         userAccountLimitsService.updateUserLimits(userId, request);
         return ResponseEntity.ok(userAccountLimitsService.updateUserLimits(userId, request));
     }
+
+    @GetMapping("/{userId}/settings/security")
+    public ResponseEntity<UserSecuritySettingsDTO> getCurrentUserSettings(
+            @PathVariable Long userId
+    ) {
+        User user = userService.getById(userId);
+        UserSecuritySettingsDTO settings = UserSecuritySettingsDTO.builder()
+                .twoFactorEnabled(user.isTwoFactorEnabled())
+                .build();
+        return ResponseEntity.ok(settings);
+    }
+
+    @PostMapping("/{userId}/settings/security/update")
+    public ResponseEntity<UserSecuritySettingsDTO> updateCurrentUserSettings(
+            @PathVariable Long userId,
+            @RequestBody UserSecuritySettingsDTO settings
+    ) {
+        userService.toggleUserTwoFactor(
+                userId,
+                settings.isTwoFactorEnabled());
+        return ResponseEntity.ok(settings);
+    }
+
 
     @GetMapping("/{userId}/pushTokens")
     public ResponseEntity<List<PushToken>> getUserPushTokens(@PathVariable Long userId) {

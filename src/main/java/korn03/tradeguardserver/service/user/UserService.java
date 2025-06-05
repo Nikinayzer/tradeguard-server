@@ -48,7 +48,7 @@ public class UserService {
     }
 
     public User getByEmailOrThrow(String email) throws UsernameNotFoundException {
-        return userRepository.findUserByEmail(email).orElseThrow(() -> new UsernameNotFoundException("User not found"));
+        return userRepository.findUserByEmail(email).orElseThrow(() -> new UsernameNotFoundException("No user found"));
     }
 
     public Optional<User> findByUsername(String username) throws UsernameNotFoundException {
@@ -74,7 +74,7 @@ public class UserService {
 //        if (Objects.equals(user.getEmail(), "korn03@vse.cz")){
 //            return user; //todo testing
 //        }
-        user.setEmailVerified(false);
+        user.setEmailVerified(user.isEmailVerified());
         user.setAccountNonExpired(true);
         user.setAccountNonLocked(true);
         user.setCredentialsNonExpired(true);

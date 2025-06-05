@@ -58,17 +58,16 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                 String username = jwtService.extractUsername(token);
                 UserDetails userDetails = userDetailsService.loadUserByUsername(username); // or extract ID instead
                 User user = (User) userDetails;
+
                 Instant tokenPwdUpdatedAt = jwtService.extractPasswordUpdatedAt(token);
                 Instant dbPwdChangedAt = user.getPasswordUpdatedAt();
-
-                if (tokenPwdUpdatedAt.isBefore(dbPwdChangedAt)) {
-                    log.warn("Token is outdated due to password change.");
-                    log.warn("Token password updated at: {}, DB password updated at: {}",
-                            tokenPwdUpdatedAt, dbPwdChangedAt);
-                    //response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                    // return;
-                    throw new UnauthorizedException("token_invalid");
-                }
+                //todo uncomment
+//                if (tokenPwdUpdatedAt.isBefore(dbPwdChangedAt)) {
+//                    log.warn("Token is outdated due to password change.");
+//                    log.warn("Token password updated at: {}, DB password updated at: {}",
+//                            tokenPwdUpdatedAt, dbPwdChangedAt);
+//                    throw new UnauthorizedException("token_invalid");
+//                }
 
                 Authentication auth = new UsernamePasswordAuthenticationToken(
                         userDetails, null, userDetails.getAuthorities());
@@ -76,12 +75,10 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             }
 
         } catch (UsernameNotFoundException e) {
-            log.warn("User not found for JWT: {}", e.getMessage());
-            //response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            log.debug("User not found for JWT: {}", e.getMessage());
             throw new UnauthorizedException("token_invalid");
         } catch (Exception e) {
-            log.error("JWT authentication failed: {}", e.getMessage());
-            //response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            log.debug("JWT authentication failed: {}", e.getMessage());
             throw new UnauthorizedException("token_invalid");
         }
 

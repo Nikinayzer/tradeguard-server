@@ -11,7 +11,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class UserUpdatePasswordRequestVerifyDTO {
     @NotNull
-    private String otp;
+    private String code;
     @NotNull
     private String email;
     @NotNull

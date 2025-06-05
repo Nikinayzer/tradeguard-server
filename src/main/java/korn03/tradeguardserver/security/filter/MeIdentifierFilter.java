@@ -88,7 +88,7 @@ public class MeIdentifierFilter extends OncePerRequestFilter {
                 response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid user ID format");
                 return;
             } catch (Exception e) {
-                log.error("Error checking user permissions", e);
+                log.warn("Error checking user permissions", e);
                 response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Error processing request");
                 return;
             }

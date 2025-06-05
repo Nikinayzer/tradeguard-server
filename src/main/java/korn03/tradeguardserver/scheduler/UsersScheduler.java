@@ -84,6 +84,7 @@ public class UsersScheduler {
             user.setFirstName("Marcel");
             user.setLastName("Valový");
             user.setDateOfBirth(LocalDate.parse("2001-01-01")); // Example date, adjust as needed
+            user.setEmailVerified(true);
             user.setEmail("marcel.valovy@vse.cz");
             user.setRegisteredAt(Instant.now());
             existingOrNewUser = userService.createUser(user);
@@ -98,7 +99,6 @@ public class UsersScheduler {
             log.info("Updating existing user's connections: {} with ID: {}", userUsername, existingOrNewUser.getId());
         }
 
-        // Create or update default accounts based on run mode
         createDefaultAccount(existingOrNewUser.getId(), "MVBb-Demo", BYBIT_DEMO);
         createDefaultAccount(existingOrNewUser.getId(), "MVNc-Demo", BINANCE_DEMO);
         createDefaultAccount(existingOrNewUser.getId(), "MVBb-Live", BYBIT_LIVE);
@@ -118,7 +118,8 @@ public class UsersScheduler {
             admin.setLastName("Korotov");
             admin.setDateOfBirth(LocalDate.parse("2002-02-21"));
             admin.setEmail("nikinayzer@gmail.com");
-            admin.setTwoFactorEnabled(true);
+            admin.setEmailVerified(true);
+            admin.setTwoFactorEnabled(false);
             admin.setRegisteredAt(Instant.now());
             adminUser = userService.createUser(admin);
             userService.addUserRole(adminUser.getId(), Role.ADMIN);
