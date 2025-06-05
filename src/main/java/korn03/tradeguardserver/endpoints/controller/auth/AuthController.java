@@ -1,15 +1,19 @@
 package korn03.tradeguardserver.endpoints.controller.auth;
 
+import jakarta.validation.Valid;
 import korn03.tradeguardserver.endpoints.dto.auth.AuthRequestDTO;
 import korn03.tradeguardserver.endpoints.dto.auth.AuthResponseDTO;
-import korn03.tradeguardserver.endpoints.dto.auth.RegisterRequestDTO;
 import korn03.tradeguardserver.endpoints.dto.auth.twofactor.OtpVerificationRequestDTO;
+import korn03.tradeguardserver.endpoints.dto.user.UserRegisterRequestDTO;
+import korn03.tradeguardserver.endpoints.dto.user.UserUpdatePasswordRequestDTO;
+import korn03.tradeguardserver.endpoints.dto.user.UserUpdatePasswordRequestVerifyDTO;
 import korn03.tradeguardserver.model.entity.user.User;
 import korn03.tradeguardserver.security.AuthUtil;
 import korn03.tradeguardserver.security.JwtService;
 import korn03.tradeguardserver.service.auth.OtpContext;
 import korn03.tradeguardserver.service.auth.OtpService;
 import korn03.tradeguardserver.service.core.pushNotifications.PushTokenService;
+import korn03.tradeguardserver.service.email.EmailService;
 import korn03.tradeguardserver.service.user.UserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,7 +23,6 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -34,33 +37,22 @@ public class AuthController {
     private final UserService userService;
     private final OtpService otpService;
     private final PushTokenService pushTokenService;
+    private final EmailService emailService;
 
-    public AuthController(AuthenticationManager authenticationManager, JwtService jwtService, UserService userService, OtpService otpService, PushTokenService pushTokenService) {
+    public AuthController(AuthenticationManager authenticationManager, JwtService jwtService, UserService userService, OtpService otpService, PushTokenService pushTokenService, EmailService emailService, EmailService emailService1) {
         this.authenticationManager = authenticationManager;
         this.jwtService = jwtService;
         this.userService = userService;
         this.otpService = otpService;
         this.pushTokenService = pushTokenService;
+        this.emailService = emailService1;
     }
 
     @PostMapping("/register")
-    public ResponseEntity<AuthResponseDTO> register(@RequestBody RegisterRequestDTO request) {
-        if (userService.userExists(request.getUsername())) {
-            return ResponseEntity.badRequest().build();
-        }
-
-        User user = new User();
-        user.setUsername(request.getUsername());
-        user.setPassword(request.getPassword());
-        user.setEmail(request.getEmail());
-        user.setFirstName(request.getFirstName());
-        user.setLastName(request.getLastName());
-
-        User createdUser = userService.createUser(user);
-
-        String token = jwtService.generateToken(createdUser);
-        AuthResponseDTO response = AuthResponseDTO.builder().token(token).user(AuthResponseDTO.UserDTO.builder().username(createdUser.getUsername()).firstName(createdUser.getFirstName()).email(createdUser.getEmail()).build()).build();
-        return ResponseEntity.ok(response);
+    public ResponseEntity<?> register(@RequestBody UserRegisterRequestDTO request) {
+        userService.createUserFromDTO(request);
+        emailService.sendRegistrationEmail(request.getEmail(), request.getFirstName());
+        return ResponseEntity.ok("all good");
     }
 
     @PostMapping("/login")
@@ -68,15 +60,18 @@ public class AuthController {
             @RequestBody AuthRequestDTO request,
             @RequestHeader(value = "X-Push-Token", required = false) String pushToken
     ) {
-        Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword()));
+        if (request.getIdentifier().contains("@")) {
+            User user = userService.getByEmailOrThrow(request.getIdentifier());
+            request.setIdentifier(user.getUsername());
+        }
+        Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(request.getIdentifier(), request.getPassword()));
         SecurityContextHolder.clearContext();
         User user = (User) authentication.getPrincipal();
 
-        if (!user.isTwoFactorEnabled()) {
+        if (!user.isTwoFactorEnabled() && user.isEmailVerified()) {
             return buildAuthResponse(user, false, pushToken);
         }
-
-        otpService.sendOtp(user, OtpContext.LOGIN);
+        otpService.sendOtp(user.getEmail(), user.getFirstName(), OtpContext.LOGIN);
         return buildAuthResponse(user, true, null);
     }
 
@@ -87,22 +82,35 @@ public class AuthController {
         if (!otpService.verifyOtp(request.getEmail(), request.getCode())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid OTP");
         }
-
-        User user = userService.getByEmail(request.getEmail()).orElseThrow(() -> new UsernameNotFoundException("User not found"));
+        User user = userService.verifyUserEmail(request.getEmail());
         return buildAuthResponse(user, false, pushToken);
     }
 
-    private ResponseEntity<AuthResponseDTO> buildAuthResponse(User user, boolean twoFactorRequired, String pushToken) {
-        String token = jwtService.generateToken(user);
-
-        Authentication authentication = new UsernamePasswordAuthenticationToken(user.getUsername(), user.getPassword());
-        SecurityContextHolder.getContext().setAuthentication(authentication);
-
-        if (pushToken != null) {
-            pushTokenService.registerPushToken(user.getId(), pushToken);
+    @PostMapping("/password-change")
+    public ResponseEntity<?> changePassword(
+            @RequestBody UserUpdatePasswordRequestDTO request
+    ) {
+        User user = userService.getByEmailOrThrow(request.getEmail());
+        if (!userService.validateDateOfBirth(user.getId(), request.getDateOfBirth())) {
+            return ResponseEntity.badRequest().body("Invalid date of birth");
         }
+        otpService.sendOtp(user.getEmail(), user.getFirstName(), OtpContext.PASSWORD_RESET);
+        return ResponseEntity.ok("Verification request was sent to your email. Please check your inbox.");
+    }
 
-        return ResponseEntity.ok(AuthResponseDTO.builder().twoFactorRequired(twoFactorRequired).token(twoFactorRequired ? null : token).user(convertUser(user)).build());
+    @PostMapping("/password-change/verify")
+    public ResponseEntity<?> verifyPasswordChange(
+            @Valid @RequestBody UserUpdatePasswordRequestVerifyDTO request
+    ) {
+        String email = request.getEmail();
+        User user = userService.getByEmailOrThrow(email);
+        String otp = request.getOtp();
+        if (otpService.verifyOtp(email, otp)) {
+            userService.changeUserPassword(user.getId(), request.getNewPassword());
+            return buildAuthResponse(user, false, null);
+        } else {
+            return ResponseEntity.badRequest().body("Invalid OTP");
+        }
     }
 
     @PostMapping("/logout")
@@ -122,6 +130,25 @@ public class AuthController {
     @GetMapping("/validate")
     public ResponseEntity<Void> validateToken() {
         return AuthUtil.isAuthenticated() ? ResponseEntity.ok().build() : ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+    }
+
+    private ResponseEntity<AuthResponseDTO> buildAuthResponse(User user, boolean twoFactorRequired, String pushToken) {
+        String token = jwtService.generateToken(user);
+
+        Authentication authentication = new UsernamePasswordAuthenticationToken(user.getUsername(), user.getPassword());
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+
+        if (pushToken != null) {
+            pushTokenService.registerPushToken(user.getId(), pushToken);
+        }
+
+        return ResponseEntity.ok(
+                AuthResponseDTO.builder()
+                        .twoFactorRequired(twoFactorRequired)
+                        .token(twoFactorRequired ? null : token)
+                        .expiration(jwtService.extractExpiration(token).toString())
+                        .user(convertUser(user))
+                        .build());
     }
 
     private AuthResponseDTO.UserDTO convertUser(User user) {

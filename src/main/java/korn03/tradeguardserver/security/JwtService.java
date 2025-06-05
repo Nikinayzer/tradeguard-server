@@ -10,6 +10,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Service;
 
+import java.time.Instant;
 import java.util.Date;
 import java.util.stream.Collectors;
 
@@ -31,6 +32,8 @@ public class JwtService {
         return Jwts.builder()
                 .subject(userDetails.getUsername())
                 .claim("userId", userId)
+                .claim("email", ((User) userDetails).getEmail())
+                .claim("passwordUpdatedAt", ((User) userDetails).getPasswordUpdatedAt().toEpochMilli())
                 .claim("roles", userDetails.getAuthorities().stream()
                         .map(GrantedAuthority::getAuthority)
                         .collect(Collectors.toList()))
@@ -51,6 +54,14 @@ public class JwtService {
             return false;
         }
     }
+    public Date extractExpiration(String token) {
+        return Jwts.parser()
+                .setSigningKey(Keys.hmacShaKeyFor(secretKey.getBytes()))
+                .build()
+                .parseClaimsJws(token)
+                .getBody()
+                .getExpiration();
+    }
 
     public Long extractUserId(String token) {
         return Jwts.parser()
@@ -68,5 +79,15 @@ public class JwtService {
                 .parseClaimsJws(token)
                 .getBody()
                 .getSubject();
+    }
+    public Instant extractPasswordUpdatedAt(String token) {
+        Long epochMillis = Jwts.parser()
+                .setSigningKey(Keys.hmacShaKeyFor(secretKey.getBytes()))
+                .build()
+                .parseClaimsJws(token)
+                .getBody()
+                .get("passwordUpdatedAt", Long.class);
+
+        return Instant.ofEpochMilli(epochMillis);
     }
 }

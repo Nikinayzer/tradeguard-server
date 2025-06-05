@@ -10,19 +10,10 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class UserRegisterRequestDTO {
+public class UserUpdatePasswordRequestDTO {
     @NotNull
-    private String username;
-    @NotNull
-    private String password;
-    @NotNull
-    @Email
+    @Email(message = "Invalid email format")
     private String email;
-    @NotNull
-    private String firstName;
-    @NotNull
-    private String lastName;
-    @NotNull
     @Pattern(regexp = "\\d{4}-\\d{2}-\\d{2}", message = "Date of birth must be in format yyyy-MM-dd")
-    private String dateOfBirth;
-} 
+    private String dateOfBirth; // Only for unauthenticated users
+}

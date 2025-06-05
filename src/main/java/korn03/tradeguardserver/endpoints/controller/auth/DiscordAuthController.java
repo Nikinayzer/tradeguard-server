@@ -97,6 +97,7 @@ public class DiscordAuthController {
         String token = jwtService.generateToken(user);
         AuthResponseDTO response = AuthResponseDTO.builder()
                 .token(token)
+                .expiration(jwtService.extractExpiration(token).toString())
                 .user(AuthResponseDTO.UserDTO.builder()
                         .username(user.getUsername())
                         .firstName(user.getFirstName())

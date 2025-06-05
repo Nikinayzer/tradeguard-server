@@ -9,11 +9,23 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import java.nio.file.AccessDeniedException;
+import java.time.Instant;
+import java.util.HashMap;
 import java.util.Map;
 
 @Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    @ExceptionHandler(ApiException.class)
+    public ResponseEntity<Map<String, Object>> handleApiException(ApiException ex) {
+        Map<String, Object> body = new HashMap<>();
+        body.put("error", "api_error");
+        body.put("code", ex.getCode());
+        body.put("message", ex.getMessage());
+        body.put("timestamp", ex.getTimestamp());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
+    }
 
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<?> handleAccessDenied(AccessDeniedException ex) {
@@ -21,6 +33,15 @@ public class GlobalExceptionHandler {
                 "error", "Access denied",
                 "message", "You do not have permission to perform this action."
         ));
+    }
+    @ExceptionHandler(UnauthorizedException.class)
+    public ResponseEntity<Map<String, Object>> handleUnauthorized(UnauthorizedException ex) {
+        Map<String, Object> body = new HashMap<>();
+        body.put("error", "unauthorized");
+        body.put("reason", ex.getMessage()); // "token_expired" etc
+        body.put("timestamp", Instant.now());
+
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(body);
     }
 
     @ExceptionHandler(NotFoundException.class)

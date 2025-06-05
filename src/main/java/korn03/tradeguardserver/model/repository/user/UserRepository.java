@@ -28,6 +28,8 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     boolean existsByEmail(String email);
 
+    boolean existsByEmailAndEmailVerifiedTrue(String email);
+
     @Lock(LockModeType.WRITE)
     void deleteById(long id);
 

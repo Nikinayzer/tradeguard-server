@@ -112,7 +112,7 @@ jwt:
   secret: ${JWT_SECRET:secret}
   expiration: ${JWT_EXPIRATION:86400000}
 otp:
-    expiration-minutes: ${OTP_EXPIRATION_MINUTES:2}
+    expiration-minutes: ${OTP_EXPIRATION_MINUTES:5}
 
 news:
   api:

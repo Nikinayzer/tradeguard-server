@@ -14,34 +14,39 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
+import java.util.List;
+
 @Configuration
 @EnableWebSecurity
-@EnableMethodSecurity // Enables @PreAuthorize, @Secured
+@EnableMethodSecurity
 public class SecurityConfig {
+    private static final List<String> PUBLIC_PATHS = List.of(
+            "/actuator/**",
+            "/auth/**",
+            "/market",
+            "/market/**",
+            "/error",
+            "/jobs/**",
+            "/internal/**"
+    );
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http, JwtAuthFilter jwtAuthFilter) throws Exception {
         http
-                .csrf(AbstractHttpConfigurer::disable)  // Disable CSRF for APIs
-                .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/actuator/**").permitAll()
-                        .requestMatchers("/ping").permitAll()
-                        .requestMatchers("/pingsecure").hasRole("ADMIN")
-                        .requestMatchers("/auth/**").permitAll()
-                        .requestMatchers("/market","/market/**").permitAll()
-                        .requestMatchers("/error").permitAll()
-                        .requestMatchers("/jobs/**").permitAll() //todo something with it lol
-                        .requestMatchers("/internal/**").permitAll() //do something with it lol
-                        .requestMatchers("/users/**").authenticated()
-                        .requestMatchers("/test/mock/**").permitAll()
-                        .requestMatchers("/events/stream").authenticated()
-                        .anyRequest().authenticated()
+                .csrf(AbstractHttpConfigurer::disable)
+                .authorizeHttpRequests(auth -> {
+                            PUBLIC_PATHS.forEach(path -> auth.requestMatchers(path).permitAll());
+                            auth
+                                    .anyRequest().authenticated();
+                        }
                 )
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
-//                .oauth2ResourceServer(oauth2 -> oauth2
-//                        .jwt(Customizer.withDefaults())  // Use OAuth2 JWT authentication
-//                );
         return http.build();
+    }
+
+    @Bean
+    public JwtAuthFilter jwtAuthFilter(JwtService jwtService, CustomUserDetailsService userDetailsService) {
+        return new JwtAuthFilter(jwtService, userDetailsService, PUBLIC_PATHS);
     }
 
     @Bean

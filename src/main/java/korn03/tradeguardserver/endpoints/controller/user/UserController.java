@@ -13,6 +13,7 @@ import korn03.tradeguardserver.model.entity.user.User;
 import korn03.tradeguardserver.model.entity.user.connections.ExchangeProvider;
 import korn03.tradeguardserver.model.entity.user.connections.UserDiscordAccount;
 import korn03.tradeguardserver.model.entity.user.connections.UserExchangeAccount;
+import korn03.tradeguardserver.service.auth.OtpService;
 import korn03.tradeguardserver.service.core.pushNotifications.PushNotificationService;
 import korn03.tradeguardserver.service.core.pushNotifications.PushTokenService;
 import korn03.tradeguardserver.service.user.UserAccountLimitsService;
@@ -26,7 +27,6 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 @RestController
@@ -187,7 +187,6 @@ public class UserController {
         List<PushToken> pushTokens = pushTokenService.getPushTokensByUserId(userId);
         return ResponseEntity.ok(pushTokens);
     }
-
 
     private UserDTO convertToDTO(User user) {
         return UserDTO.builder().id(user.getId()).username(user.getUsername()).email(user.getEmail()).firstName(user.getFirstName()).lastName(user.getLastName()).registeredAt(user.getRegisteredAt()).updatedAt(user.getUpdatedAt()).roles(user.getRoles()).accountNonExpired(user.isAccountNonExpired()).accountNonLocked(user.isAccountNonLocked()).credentialsNonExpired(user.isCredentialsNonExpired()).enabled(user.isEnabled()).build();

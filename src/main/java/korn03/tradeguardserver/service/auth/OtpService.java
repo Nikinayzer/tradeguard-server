@@ -30,21 +30,26 @@ public class OtpService {
     @Value("${otp.expiration-minutes}")
     private Integer otpExpirationMinutes;
 
-    public void sendOtp(User user, OtpContext context) { //context is important for other otp based actions, todo
+    public void sendOtp(String email, String firstName, OtpContext context) {
         try {
-            oneTimePasswordCache.invalidate(user.getEmail());
+            oneTimePasswordCache.invalidate(email);
         } catch (Exception e) {
             log.error("FAILED TO INVALIDATE OTP CACHE: {}", e.getMessage());
+        }
+        if (OtpAlreadySent(email)) {
+            log.warn("OTP already sent for user: {}",email);
+           return;
         }
 
         SecureRandom random = new SecureRandom();
         int otp = 100_000 + random.nextInt(900_000);
-        oneTimePasswordCache.put(user.getEmail(), otp);
+        oneTimePasswordCache.put(email, otp);
 
         CompletableFuture.runAsync(() ->
                 emailService.sendOtpTemplateEmail(
-                        user.getEmail(),
-                        user.getFirstName(),
+                        email,
+                        context.getReason(),
+                        firstName,
                         otp,
                         otpExpirationMinutes,
                         deeplinkBuilder.build(DeeplinkRoute.OTP,
@@ -54,7 +59,12 @@ public class OtpService {
                 )
         );
     }
+    public boolean OtpAlreadySent(String email) {
+        Integer cachedOtp = oneTimePasswordCache.getIfPresent(email);
+        return cachedOtp != null;
+    }
 
+    //todo refactor Cache to <Integer, Integer> (ID, OTP)
     public boolean verifyOtp(String email, String otp) {
         try {
             Integer cachedOtp = oneTimePasswordCache.get(email);

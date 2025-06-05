@@ -4,6 +4,8 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import korn03.tradeguardserver.exception.UnauthorizedException;
+import korn03.tradeguardserver.model.entity.user.User;
 import korn03.tradeguardserver.security.CustomUserDetailsService;
 import korn03.tradeguardserver.security.JwtService;
 import lombok.extern.slf4j.Slf4j;
@@ -14,49 +16,77 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Component;
+import org.springframework.util.AntPathMatcher;
 import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.time.Instant;
+import java.util.List;
+
 @Slf4j
 @Component
 public class JwtAuthFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
     private final CustomUserDetailsService userDetailsService;
+    private final List<String> publicPaths;
+    private final AntPathMatcher pathMatcher = new AntPathMatcher();
 
-    public JwtAuthFilter(JwtService jwtService, CustomUserDetailsService userDetailsService) {
+    public JwtAuthFilter(JwtService jwtService, CustomUserDetailsService userDetailsService, List<String> publicPaths1) {
         this.jwtService = jwtService;
         this.userDetailsService = userDetailsService;
+        this.publicPaths = publicPaths1;
     }
 
-@Override
-protected void doFilterInternal(@NotNull HttpServletRequest request,
-                                @NotNull HttpServletResponse response,
-                                @NotNull FilterChain filterChain)
-        throws ServletException, IOException {
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        String path = request.getServletPath();
+        return publicPaths.stream().anyMatch(pattern -> pathMatcher.match(pattern, path));
+    }
 
-    try {
-        String token = getJwtFromRequest(request);
+    @Override
+    protected void doFilterInternal(@NotNull HttpServletRequest request,
+                                    @NotNull HttpServletResponse response,
+                                    @NotNull FilterChain filterChain)
+            throws ServletException, IOException {
 
-        if (token != null && jwtService.validateToken(token)) {
-            String username = jwtService.extractUsername(token);
-            UserDetails userDetails = userDetailsService.loadUserByUsername(username); // or extract ID instead
-            Authentication auth = new UsernamePasswordAuthenticationToken(
-                    userDetails, null, userDetails.getAuthorities());
-            SecurityContextHolder.getContext().setAuthentication(auth);
+        try {
+            String token = getJwtFromRequest(request);
+
+            if (token != null && jwtService.validateToken(token)) {
+                String username = jwtService.extractUsername(token);
+                UserDetails userDetails = userDetailsService.loadUserByUsername(username); // or extract ID instead
+                User user = (User) userDetails;
+                Instant tokenPwdUpdatedAt = jwtService.extractPasswordUpdatedAt(token);
+                Instant dbPwdChangedAt = user.getPasswordUpdatedAt();
+
+                if (tokenPwdUpdatedAt.isBefore(dbPwdChangedAt)) {
+                    log.warn("Token is outdated due to password change.");
+                    log.warn("Token password updated at: {}, DB password updated at: {}",
+                            tokenPwdUpdatedAt, dbPwdChangedAt);
+                    //response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                    // return;
+                    throw new UnauthorizedException("token_invalid");
+                }
+
+                Authentication auth = new UsernamePasswordAuthenticationToken(
+                        userDetails, null, userDetails.getAuthorities());
+                SecurityContextHolder.getContext().setAuthentication(auth);
+            }
+
+        } catch (UsernameNotFoundException e) {
+            log.warn("User not found for JWT: {}", e.getMessage());
+            //response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            throw new UnauthorizedException("token_invalid");
+        } catch (Exception e) {
+            log.error("JWT authentication failed: {}", e.getMessage());
+            //response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            throw new UnauthorizedException("token_invalid");
         }
 
-    } catch (UsernameNotFoundException e) {
-        log.warn("User not found for JWT: {}", e.getMessage());
-        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-    } catch (Exception e) {
-        log.error("JWT authentication failed: {}", e.getMessage());
-        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+        filterChain.doFilter(request, response);
     }
-
-    filterChain.doFilter(request, response);
-}
 
     private String getJwtFromRequest(HttpServletRequest request) {
         String bearerToken = request.getHeader("Authorization");

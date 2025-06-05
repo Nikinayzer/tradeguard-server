@@ -10,6 +10,7 @@ public class AuthResponseDTO {
     private boolean twoFactorRequired;
     private UserDTO user;
     private String token;
+    private String expiration;
 
     @Data
     @AllArgsConstructor

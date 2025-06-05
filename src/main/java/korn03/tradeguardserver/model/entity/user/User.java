@@ -11,6 +11,8 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.Collection;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -42,8 +44,14 @@ public class User implements UserDetails {
     @Column(nullable = true)
     private String lastName;
 
-    @Column(nullable = true)
+    @Column(nullable = false)
+    private LocalDate dateOfBirth;
+
+    @Column()
     private String password;
+
+    @Column()
+    private Instant passwordUpdatedAt = Instant.now().truncatedTo(ChronoUnit.MILLIS);
 
     @Column(nullable = false)
     private Boolean isExternal = false;
@@ -56,7 +64,7 @@ public class User implements UserDetails {
 
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "user_roles", joinColumns = @JoinColumn(name = "user_id"))
-    @Enumerated(EnumType.STRING)  // Store enum as String
+    @Enumerated(EnumType.STRING)
     private Set<Role> roles;
 
     @Column(nullable = false)

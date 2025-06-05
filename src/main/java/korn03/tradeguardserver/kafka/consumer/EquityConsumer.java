@@ -20,7 +20,7 @@ public class EquityConsumer {
     @KafkaListener(topics = "${kafka.topic.equity}", groupId = "${spring.kafka.consumer.group-id}",
             containerFactory = "equityListenerFactory")
     public void consumeEquityUpdate(EquityKafkaDTO equity) {
-        log.info("Received equity update for user {} at venue {}", equity.getUserId(), equity.getVenue());
+        log.debug("Received equity update for user {} at venue {}", equity.getUserId(), equity.getVenue());
         equityService.processEquityUpdate(equity);
     }
 }

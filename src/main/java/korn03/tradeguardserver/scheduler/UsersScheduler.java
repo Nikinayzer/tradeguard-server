@@ -6,9 +6,11 @@ import static korn03.tradeguardserver.model.entity.user.connections.ExchangeProv
 import static korn03.tradeguardserver.model.entity.user.connections.ExchangeProvider.BYBIT_LIVE;
 
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import jakarta.annotation.PostConstruct;
@@ -74,13 +76,14 @@ public class UsersScheduler {
     public void initDefaultUser() {
         // Handle regular user
         User existingOrNewUser;
-        
-        if (!userService.userExists(userUsername)) {
+
+        if (!userService.userExistsByUsername(userUsername)) {
             User user = new User();
             user.setUsername(userUsername);
             user.setPassword(userPassword);
             user.setFirstName("Marcel");
-            user.setLastName("Valovy");
+            user.setLastName("Valový");
+            user.setDateOfBirth(LocalDate.parse("2001-01-01")); // Example date, adjust as needed
             user.setEmail("marcel.valovy@vse.cz");
             user.setRegisteredAt(Instant.now());
             existingOrNewUser = userService.createUser(user);
@@ -94,7 +97,7 @@ public class UsersScheduler {
             log.info("############## UPDATING EXISTING USER CONNECTIONS ############");
             log.info("Updating existing user's connections: {} with ID: {}", userUsername, existingOrNewUser.getId());
         }
-        
+
         // Create or update default accounts based on run mode
         createDefaultAccount(existingOrNewUser.getId(), "MVBb-Demo", BYBIT_DEMO);
         createDefaultAccount(existingOrNewUser.getId(), "MVNc-Demo", BINANCE_DEMO);
@@ -104,21 +107,22 @@ public class UsersScheduler {
         log.info("##############################################################");
 
         createDefaultDiscordAccount(existingOrNewUser.getId(), 238283760540450816L, "marcelv3612", "");
-        
+
         // Handle admin user
         User adminUser;
-        if (!userService.userExists(adminUsername)) {
+        if (!userService.userExistsByUsername(adminUsername)) {
             User admin = new User();
             admin.setUsername(adminUsername);
             admin.setPassword(adminPassword);
             admin.setFirstName("Nick");
             admin.setLastName("Korotov");
+            admin.setDateOfBirth(LocalDate.parse("2002-02-21"));
             admin.setEmail("nikinayzer@gmail.com");
             admin.setTwoFactorEnabled(true);
             admin.setRegisteredAt(Instant.now());
             adminUser = userService.createUser(admin);
             userService.addUserRole(adminUser.getId(), Role.ADMIN);
-            
+
             log.info("##############################################################");
             log.info("############### DEFAULT ADMIN BEING CREATED #################");
             log.info("Creating default admin: {} with ID: {}", adminUsername, adminUser.getId());
@@ -133,7 +137,7 @@ public class UsersScheduler {
         log.info("##############################################################");
 
         createDefaultDiscordAccount(adminUser.getId(), 493077349684740097L, "n1ckor", "c711e2e7b4b31f475e0fa51dc5bed1dc");
-        
+
         log.debug("DEFAULT USERS, BYBIT ACCOUNTS, AND DISCORD ACCOUNTS CREATED/UPDATED");
     }
 
@@ -141,51 +145,51 @@ public class UsersScheduler {
      * Creates or updates a default Exchange account for a user if API keys are provided in properties
      */
     private void createDefaultAccount(Long userId, String accountName, ExchangeProvider provider) {
-            try {
-                String readWriteApiKey = switch (provider) {
-                    case BYBIT_LIVE -> defaultReadWriteApiKey;
-                    case BYBIT_DEMO -> defaultDemoReadWriteApiKey;
-                    case BINANCE_LIVE -> defaultNanceReadWriteApiKey;
-                    case BINANCE_DEMO -> defaultNanceDemoApiKey;
-                };
+        try {
+            String readWriteApiKey = switch (provider) {
+                case BYBIT_LIVE -> defaultReadWriteApiKey;
+                case BYBIT_DEMO -> defaultDemoReadWriteApiKey;
+                case BINANCE_LIVE -> defaultNanceReadWriteApiKey;
+                case BINANCE_DEMO -> defaultNanceDemoApiKey;
+            };
 
-                String readWriteApiSecret = switch (provider) {
-                    case BYBIT_LIVE -> defaultReadWriteApiSecret;
-                    case BYBIT_DEMO -> defaultDemoReadWriteApiSecret;
-                    case BINANCE_LIVE -> defaultNanceReadWriteApiSecret;
-                    case BINANCE_DEMO -> defaultNanceDemoApiSecret;
-                };
+            String readWriteApiSecret = switch (provider) {
+                case BYBIT_LIVE -> defaultReadWriteApiSecret;
+                case BYBIT_DEMO -> defaultDemoReadWriteApiSecret;
+                case BINANCE_LIVE -> defaultNanceReadWriteApiSecret;
+                case BINANCE_DEMO -> defaultNanceDemoApiSecret;
+            };
 
-                // Get all existing accounts for this user
-                List<UserExchangeAccount> existingAccounts = accountRepository.findByUserId(userId);
+            // Get all existing accounts for this user
+            List<UserExchangeAccount> existingAccounts = accountRepository.findByUserId(userId);
 
-                boolean accountExists = false;
-                for (UserExchangeAccount existingAccount : existingAccounts) {
-                    if (existingAccount.getAccountName().equals(accountName)) {
-                        existingAccount.setProvider(provider);
-                        existingAccount.setEncryptedReadWriteApiKey(encryptionService.encrypt(readWriteApiKey));
-                        existingAccount.setEncryptedReadWriteApiSecret(encryptionService.encrypt(readWriteApiSecret));
-                        accountRepository.save(existingAccount);
-                        log.info("Updated existing {} account for user ID: {}", provider, userId);
-                        accountExists = true;
-                        break;
-                    }
+            boolean accountExists = false;
+            for (UserExchangeAccount existingAccount : existingAccounts) {
+                if (existingAccount.getAccountName().equals(accountName)) {
+                    existingAccount.setProvider(provider);
+                    existingAccount.setEncryptedReadWriteApiKey(encryptionService.encrypt(readWriteApiKey));
+                    existingAccount.setEncryptedReadWriteApiSecret(encryptionService.encrypt(readWriteApiSecret));
+                    accountRepository.save(existingAccount);
+                    log.info("Updated existing {} account for user ID: {}", provider, userId);
+                    accountExists = true;
+                    break;
                 }
-
-                // If no existing account was found, create a new one
-                if (!accountExists) {
-                    exchangeAccountService.saveExchangeAccount(
-                            userId,
-                            accountName,
-                            provider,
-                            readWriteApiKey,
-                            readWriteApiSecret
-                    );
-                    log.info("Created new {} account for user ID: {}", provider, userId);
-                }
-            } catch (Exception e) {
-                log.error("Failed to create/update {} account for user ID: {}", provider, userId, e);
             }
+
+            // If no existing account was found, create a new one
+            if (!accountExists) {
+                exchangeAccountService.saveExchangeAccount(
+                        userId,
+                        accountName,
+                        provider,
+                        readWriteApiKey,
+                        readWriteApiSecret
+                );
+                log.info("Created new {} account for user ID: {}", provider, userId);
+            }
+        } catch (Exception e) {
+            log.error("Failed to create/update {} account for user ID: {}", provider, userId, e);
+        }
 //        } else {
 //            log.warn("Skipping {} account creation/update - API keys not provided in properties", provider);
 //        }
@@ -200,16 +204,21 @@ public class UsersScheduler {
             boolean accountExists = discordAccountService.getDiscordAccount(userId)
                     .map(account -> account.getDiscordId().equals(discordId))
                     .orElse(false);
-            
+
             if (accountExists) {
                 log.info("Discord account already exists for user ID: {}, Discord ID: {}", userId, discordId);
                 return;
             }
-            
+
             discordAccountService.addDiscordAccount(userId, discordId, discordUsername, discordAvatar);
             log.info("Default Discord account created for user ID: {}, Discord ID: {}", userId, discordId);
         } catch (Exception e) {
             log.error("Failed to create default Discord account for user ID: {}", userId, e);
         }
     }
+
+    @Scheduled(cron = "0 0 3 * * ?") // Runs daily at 3 AM
+    private void cleanUpUnverifiedUsers() {
+    }
 }
+

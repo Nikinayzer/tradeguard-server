@@ -3,6 +3,7 @@ package korn03.tradeguardserver.security.otp;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Value;
@@ -27,10 +28,6 @@ public class OtpCacheBean {
                         return 0;
                     }
                 });
-    }
-
-    public Integer getOtpExpirationMinutes() {
-        return otpExpirationMinutes;
     }
 
 }
