@@ -1,5 +1,6 @@
 package korn03.tradeguardserver.exception;
 
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -73,10 +74,14 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<?> handleGeneric(Exception ex) {
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
-                "error", "Server error",
-                "message", ex.getMessage() //"An unexpected error occurred. Please try again later."
-        ));
+    public ResponseEntity<Map<String, Object>> handleGeneric(HttpServletRequest request, Exception ex) {
+        if ("text/event-stream".equals(request.getHeader("Accept"))) {
+            // Never try to write an error body for SSE streams
+            log.warn("SSE exception skipped: {}", ex.getMessage());
+            return ResponseEntity.noContent().build();
+        }
+        Map<String, Object> error = new HashMap<>();
+        error.put("error", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
     }
 }

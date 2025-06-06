@@ -1,8 +1,7 @@
 package korn03.tradeguardserver.service.news;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import korn03.tradeguardserver.model.entity.NewsMention;
-import korn03.tradeguardserver.model.repository.NewsMentionRepository;
+import korn03.tradeguardserver.service.core.CacheService;
 import lombok.Getter;
 import lombok.Setter;
 import org.slf4j.Logger;
@@ -26,37 +25,17 @@ public class NewsService {
     private static final String API_URL = "https://newsdata.io/api/1/latest";
     private static final int MAX_PAGES = 3;
     private final RestTemplate restTemplate = new RestTemplate();
-    private final NewsCacheService cacheService;
-    private final NewsMentionRepository newsMentionRepository;
+    private final CacheService cacheService;
     @Value("${news.api.newsdata}")
     private String NEWSDATA_API_KEY;
 
-    public NewsService(NewsCacheService cacheService, NewsMentionRepository newsMentionRepository) {
+    public NewsService(CacheService cacheService) {
         this.cacheService = cacheService;
-        this.newsMentionRepository = newsMentionRepository;
-    }
-
-    public List<Article> fetchGeneralCryptoNews() {
-        List<Article> cachedNews = cacheService.getGeneralNews();
-        if (!cachedNews.isEmpty()) {
-            logger.info("Returning cached general news...");
-            return cachedNews;
-        }
-
-        List<Article> articles = fetchNewsFromAPI("crypto", MAX_PAGES);
-        cacheService.cacheNews("news:general", articles);
-        return articles;
     }
 
     public List<Article> fetchCoinSpecificNews(String coin) {
-        List<Article> cachedNews = cacheService.getCoinNews(coin);
-        if (!cachedNews.isEmpty()) {
-            logger.info("Returning cached news for coin: {}", coin);
-            return cachedNews;
-        }
-
         List<Article> articles = fetchNewsFromAPI(coin, MAX_PAGES);
-        cacheService.cacheNews("news:" + coin, articles);
+        //cache service puy
         return articles;
     }
 
@@ -94,9 +73,7 @@ public class NewsService {
 
     private void saveNewsMentions(String coin, int mentionCount) {
         LocalDate today = LocalDate.now();
-        NewsMention newsMention = new NewsMention(coin, today, mentionCount);
 
-        newsMentionRepository.save(newsMention);
         logger.info("Saved {} mentions for {} on {}", mentionCount, coin, today);
     }
 

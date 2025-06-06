@@ -1,5 +1,6 @@
 package korn03.tradeguardserver.security;
 
+import korn03.tradeguardserver.security.filter.InternalFilter;
 import korn03.tradeguardserver.security.filter.JwtAuthFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -23,15 +24,14 @@ public class SecurityConfig {
     private static final List<String> PUBLIC_PATHS = List.of(
             "/actuator/**",
             "/auth/**",
-            "/market",
-            "/market/**",
+//            "/market",
+//            "/market/**",
             "/error",
-            "/jobs/**",
             "/internal/**"
     );
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http, JwtAuthFilter jwtAuthFilter) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http, JwtAuthFilter jwtAuthFilter, InternalFilter internalFilter) throws Exception {
         http
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> {
@@ -40,7 +40,9 @@ public class SecurityConfig {
                                     .anyRequest().authenticated();
                         }
                 )
-                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterAfter(internalFilter, JwtAuthFilter.class);
+
         return http.build();
     }
 

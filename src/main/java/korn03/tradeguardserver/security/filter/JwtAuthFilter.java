@@ -10,6 +10,7 @@ import korn03.tradeguardserver.security.CustomUserDetailsService;
 import korn03.tradeguardserver.security.JwtService;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
+import org.springframework.core.annotation.Order;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -25,7 +26,6 @@ import java.time.Instant;
 import java.util.List;
 
 @Slf4j
-@Component
 public class JwtAuthFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
@@ -43,6 +43,14 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     protected boolean shouldNotFilter(HttpServletRequest request) {
         String path = request.getServletPath();
         return publicPaths.stream().anyMatch(pattern -> pathMatcher.match(pattern, path));
+    }
+    @Override
+    protected boolean shouldNotFilterErrorDispatch() {
+        return false;
+    }
+    @Override
+    protected boolean shouldNotFilterAsyncDispatch() {
+        return false;
     }
 
     @Override

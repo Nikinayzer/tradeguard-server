@@ -31,13 +31,9 @@ public class NewsScheduler {
 
     private void updateNewsData() {
         try {
-            logger.info("Fetching general crypto news...");
-            newsService.fetchGeneralCryptoNews();
-
             logger.info("Fetching specific coin news...");
             newsService.fetchCoinSpecificNews("BTC");
             newsService.fetchCoinSpecificNews("ETH");
-
             logger.info("News fetching and caching completed successfully.");
         } catch (Exception e) {
             logger.error("Error fetching news: {}", e.getMessage(), e);

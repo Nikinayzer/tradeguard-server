@@ -174,23 +174,4 @@ public class JobController {
         Optional<Job> job = jobService.getJobEntityById(id);
         return job.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
     }
-
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<Map<String, String>> handleValidationExceptions(MethodArgumentNotValidException ex) {
-        Map<String, String> errors = new HashMap<>();
-        ex.getBindingResult().getFieldErrors().forEach(error -> errors.put(error.getField(), error.getDefaultMessage()));
-
-        log.error("Validation error in job submission: {}", errors);
-        return ResponseEntity.badRequest().body(errors);
-    }
-
-    @ExceptionHandler(Exception.class)
-    public ResponseEntity<Map<String, String>> handleException(Exception e) {
-        Map<String, String> error = new HashMap<>();
-        error.put("error", e.getMessage());
-        error.put("type", e.getClass().getSimpleName());
-
-        log.error("Error processing job submission", e);
-        return ResponseEntity.badRequest().body(error);
-    }
 }

@@ -64,14 +64,18 @@ public class AuthController {
             User user = userService.getByEmailOrThrow(request.getIdentifier());
             request.setIdentifier(user.getUsername());
         }
-        //todo something better
-        Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(request.getIdentifier(), request.getPassword()));
-        SecurityContextHolder.clearContext();
+        //todo implement short living token/nonce
+        Authentication authentication = authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(
+                        request.getIdentifier(),
+                        request.getPassword()
+                ));
         User user = (User) authentication.getPrincipal();
 
         if (!user.isTwoFactorEnabled() && user.isEmailVerified()) {
             return buildAuthResponse(user, false, pushToken);
         }
+        SecurityContextHolder.clearContext();
         otpService.sendOtp(user.getEmail(), user.getFirstName(), OtpContext.LOGIN);
         return buildAuthResponse(user, true, null);
     }
@@ -84,6 +88,10 @@ public class AuthController {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid OTP");
         }
         User user = userService.verifyUserEmail(request.getEmail());
+        UsernamePasswordAuthenticationToken authToken =
+                new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities());
+        SecurityContextHolder.getContext().setAuthentication(authToken);
+
         return buildAuthResponse(user, false, pushToken);
     }
 

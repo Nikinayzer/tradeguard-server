@@ -10,12 +10,7 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.io.IOException;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -118,7 +113,7 @@ public class SseEmitterService {
                     log.debug("Sending {} event to emitter for user {}", eventType, userId);
                     emitter.send(SseEmitter.event()
                             .name(eventType)
-                            .data(jsonData, MediaType.APPLICATION_JSON));
+                            .data(jsonData, MediaType.TEXT_PLAIN));
                     log.debug("Successfully sent {} event to user {}", eventType, userId);
                 } catch (IOException e) {
                     if (e.getMessage().contains("Connection reset by peer")) {
@@ -155,10 +150,9 @@ public class SseEmitterService {
         int connectionCount = getActiveConnectionsCount();
         log.trace("Sending heartbeats to {} users with {} total connections", userCount, connectionCount);
         
-        Map<String, Object> heartbeatData = Map.of(
-            "timestamp", Instant.now().toString(),
-            "type", "heartbeat"
-        );
+        Map<String, Object> heartbeatData =  new HashMap<>();
+        heartbeatData.put("timestamp", Instant.now().toString());
+        heartbeatData.put("type", "heartbeat");
         
         userEmitters.forEach((userId, emitters) -> {
             sendUpdate(userId, "heartbeat", heartbeatData);
