@@ -24,8 +24,5 @@ public class UserAccountLimitsDTO {
 
     // Continuous Monitoring Limits
     private BigDecimal dailyLossLimit;
-    private Integer maxConsecutiveLosses;
     private BigDecimal maxDailyBalanceChange;
-//    private BigDecimal volatilityLimit;
-//    private BigDecimal liquidityThreshold;
 }

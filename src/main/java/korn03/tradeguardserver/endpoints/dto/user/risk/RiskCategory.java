@@ -6,8 +6,7 @@ import com.fasterxml.jackson.annotation.JsonValue;
 public enum RiskCategory {
     OVERCONFIDENCE("overconfidence"),
     FOMO("fomo"),
-    LOSS_BEHAVIOR("loss_behavior"),
-    SUNK_COST("sunk_cost");
+    LOSS_BEHAVIOR("loss_behavior");
 
     private final String value;
 

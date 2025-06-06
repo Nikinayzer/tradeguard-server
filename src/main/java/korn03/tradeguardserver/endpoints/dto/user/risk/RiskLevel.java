@@ -6,7 +6,7 @@ import lombok.Getter;
 
 @Getter
 public enum RiskLevel {
-    NONE("None"),
+    NONE("none"),
     LOW("low"),
     MEDIUM("medium"),
     HIGH("high"),

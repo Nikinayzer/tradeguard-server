@@ -14,7 +14,6 @@ import java.util.List;
 @NoArgsConstructor
 public class CompositePatternDTO extends BasePatternDTO {
     private Double confidence;
-    
     @JsonProperty("component_patterns")
     private List<String> componentPatterns;
 } 

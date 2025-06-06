@@ -10,7 +10,7 @@ public enum NotificationCategory {
     SYSTEM("system"),
     MARKETING("marketing"),
     USER("user"),
-    TRADE("trade"),
+    JOB("job"),
     MARKET("market"),
     HEALTH("health");
 

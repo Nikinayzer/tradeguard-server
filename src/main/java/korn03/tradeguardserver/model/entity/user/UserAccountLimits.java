@@ -50,16 +50,7 @@ public class UserAccountLimits {
     @Column(name = "daily_loss_limit", nullable = false)
     private BigDecimal dailyLossLimit; // Stops trading if user loses too much
 
-    @Column(name = "max_consecutive_losses", nullable = false)
-    private Integer maxConsecutiveLosses;
-
     @Column(name = "max_daily_balance_change", nullable = false)
     private BigDecimal maxDailyBalanceChange; // Stops trading if balance fluctuates too much
-//
-//    @Column(name = "volatility_limit", nullable = false)
-//    private BigDecimal volatilityLimit; // Prevents trading in extreme market volaility
-//
-//    @Column(name = "liquidity_threshold", nullable = false)
-//    private BigDecimal liquidityThreshold; // Stops trading in low liquidity conditions
 
 }

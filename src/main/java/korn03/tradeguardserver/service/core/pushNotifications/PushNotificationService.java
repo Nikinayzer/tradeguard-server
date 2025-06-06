@@ -28,7 +28,7 @@ public class PushNotificationService {
     private final PushNotificationRepository notificationRepository;
     private final PushTokenService pushTokenService;
 
-    private final String EXPO_PUSH_URL= "https://exp.host/--/api/v2/push/send";
+    private final String EXPO_PUSH_URL = "https://exp.host/--/api/v2/push/send";
 
     @Autowired
     public PushNotificationService(PushNotificationRepository notificationRepository, PushTokenService pushTokenService) {
@@ -46,6 +46,11 @@ public class PushNotificationService {
         if (userTokens.isEmpty()) {
             log.warn("Tried to send push notification {} to user {} with no tokens", title, userId);
             return;
+        }
+        if(category == NotificationCategory.HEALTH){
+            if (!shouldSendRisk(userId)) {
+                return;
+            }
         }
         Map<String, Object> dataContent = dataMap.orElse(new HashMap<>());
 
@@ -94,7 +99,8 @@ public class PushNotificationService {
 
     /**
      * Method to mark a notification as read
-     * @param userId ID of the user
+     *
+     * @param userId         ID of the user
      * @param notificationId ID of the notification to mark as read
      */
     public void markAsReadNotification(Long userId, Long notificationId) {
@@ -107,6 +113,7 @@ public class PushNotificationService {
 
     /**
      * Method to get all notifications for a user
+     *
      * @param userId ID of the user
      * @return List of notifications
      */
@@ -114,19 +121,34 @@ public class PushNotificationService {
         return notificationRepository.findAllByUserIdOrderBySentAtDesc(userId);
     }
 
+    public List<PushNotification> getCategoryNotifications(Long userId, NotificationCategory category) {
+        return notificationRepository.findAllByUserIdAndCategoryOrderBySentAtDesc(userId, category);
+    }
+
     public void sendMaintenanceNotification(String title, String body) {
         List<Long> userIds = pushTokenService.getAllUserIds();
 
         for (Long userId : userIds) {
-            sendPushNotification(
-                    userId,
-                    NotificationCategory.SYSTEM,
-                    NotificationType.INFO,
-                    title,
-                    body
-            );
+            sendPushNotification(userId, NotificationCategory.SYSTEM, NotificationType.INFO, title, body);
         }
 
         log.info("Sent maintenance notification to {} users", userIds.size());
+    }
+
+    //todo refactor to be generic, this is a temporary
+    private boolean shouldSendRisk(Long userId) {
+        List<PushNotification> notifications = getCategoryNotifications(userId, NotificationCategory.HEALTH);
+        if (notifications.isEmpty()) {
+            return true;
+        }
+        PushNotification lastNotification = notifications.getFirst();
+        if (lastNotification.isRead()) {
+            return true;
+        }
+        Instant oneHourAgo = Instant.now().minusSeconds(60 * 60);
+        if (lastNotification.getSentAt().isAfter(oneHourAgo)) {
+            return false;
+        }
+        return true;
     }
 }

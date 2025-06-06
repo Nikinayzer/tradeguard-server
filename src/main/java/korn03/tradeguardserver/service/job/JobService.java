@@ -9,9 +9,12 @@ import korn03.tradeguardserver.mapper.JobMapper;
 import korn03.tradeguardserver.model.entity.job.Job;
 import korn03.tradeguardserver.model.entity.job.JobEvent;
 import korn03.tradeguardserver.model.entity.job.JobStatusType;
+import korn03.tradeguardserver.model.entity.service.notifications.NotificationCategory;
+import korn03.tradeguardserver.model.entity.service.notifications.NotificationType;
 import korn03.tradeguardserver.model.repository.job.JobEventRepository;
 import korn03.tradeguardserver.model.repository.job.JobRepository;
 import korn03.tradeguardserver.service.core.CacheService;
+import korn03.tradeguardserver.service.core.pushNotifications.PushNotificationService;
 import korn03.tradeguardserver.service.sse.SseEmitterService;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -37,6 +40,7 @@ public class JobService {
     private final CacheService cacheService;
 
     private final Logger logger = LoggerFactory.getLogger(JobService.class);
+    private final PushNotificationService pushNotificationService;
 
     /**
      * Handles a real-time job event from Kafka.
@@ -46,10 +50,13 @@ public class JobService {
      * @see JobEventMessage
      */
     public void processJobEvent(JobEventMessage jobEventMessage) {
-        Optional<Job> existingJob = jobRepository.findByJobId(jobEventMessage.getJobId())
-                .or(() -> Optional.ofNullable(
-                        cacheService.getFromCache(String.format(JOB_KEY_PATTERN, jobEventMessage.getJobId()), Job.class)
-                ));
+//        Optional<Job> existingJob = jobRepository.findByJobId(jobEventMessage.getJobId())
+//                .or(() -> Optional.ofNullable(
+//                        cacheService.getFromCache(String.format(JOB_KEY_PATTERN, jobEventMessage.getJobId()), Job.class)
+//                ));
+        Optional<Job> existingJob = Optional.ofNullable(
+                cacheService.getFromCache(String.format(JOB_KEY_PATTERN, jobEventMessage.getJobId()), Job.class)
+        );
 
         if (existingJob.isPresent()) {
             Job job = existingJob.get();
@@ -66,6 +73,7 @@ public class JobService {
 
             UserJobsStateDTO jobsState = getUserJobsState(job.getUserId());
             if (jobsState != null) {
+                sendJobPushNotification(job, jobEventMessage.getJobEventType());
                 sseService.sendUpdate(job.getUserId(), "jobs", jobsState);
             }
         } else {
@@ -99,16 +107,19 @@ public class JobService {
      * @param jobEventMessage The job event message to process
      */
     public void processHistoricalJobEvent(JobEventMessage jobEventMessage) {
-        Optional<Job> existingJob = jobRepository.findByJobId(jobEventMessage.getJobId())
-                .or(() -> Optional.ofNullable(
-                        cacheService.getFromCache(String.format(JOB_KEY_PATTERN, jobEventMessage.getJobId()), Job.class)
-                ));
+//        Optional<Job> existingJob = jobRepository.findByJobId(jobEventMessage.getJobId())
+//                .or(() -> Optional.ofNullable(
+//                        cacheService.getFromCache(String.format(JOB_KEY_PATTERN, jobEventMessage.getJobId()), Job.class)
+//                ));
+        Optional<Job> existingJob = Optional.ofNullable(
+                cacheService.getFromCache(String.format(JOB_KEY_PATTERN, jobEventMessage.getJobId()), Job.class)
+        );
 
         if (existingJob.isPresent()) {
             Job job = existingJob.get();
             jobMapper.updateExistingJob(job, jobEventMessage);
 
-            if (job.getStatus() != JobStatusType.FINISHED && job.getStatus() != JobStatusType.CANCELED && job.getStatus() != JobStatusType.STOPPED) {
+            if (job.getStatus().isActive()) {
                 String jobKey = String.format(JOB_KEY_PATTERN, job.getJobId());
                 cacheService.storeInCache(jobKey, job, JOB_TTL);
             } else {
@@ -189,6 +200,7 @@ public class JobService {
         List<JobStatusType> completedStatuses = List.of(JobStatusType.FINISHED, JobStatusType.CANCELED, JobStatusType.STOPPED);
         return jobRepository.findByUserIdAndStatusIn(userId, completedStatuses);
     }
+
     public List<JobDTO> getCompletedJobsDTOByUserId(Long userId) {
         List<Job> jobs = getCompletedJobsEntitiesByUserId(userId);
         return jobMapper.toDTOList(jobs);
@@ -222,9 +234,63 @@ public class JobService {
         }
         return jobRepository.findById(id);
     }
+
     public List<JobEvent> getJobEvents(Long id) {
         Job job = jobRepository.findById(id).orElseThrow(() -> new NotFoundException("Job not found"));
         return jobEventRepository.findByJobIdOrderByTimestampAsc(job.getJobId());
+    }
+
+    private void sendJobPushNotification(Job job, JobEventType eventType) {
+        String title;
+        String  message;
+        NotificationType notificationType = NotificationType.INFO;
+        switch (eventType) {
+            case JobEventType.StepDone stepDone -> {
+                title = String.format("Job %s update", job.getJobId());
+                message = String.format(
+                        "Job %s has completed step %d of %d",
+                        job.getJobId(),
+                        job.getStepsDone(),
+                        job.getStepsTotal()
+                );
+            }
+            case JobEventType.OrdersPlaced ordersPlaced -> {
+                title = String.format("Job %s orders placed", job.getJobId());
+                String coins = job.getCoins().stream().map(String::toUpperCase).collect(Collectors.joining(", "));
+                message = String.format(
+                        "Job %s has successfully placed %d orders for %s",
+                        job.getJobId(),
+                        ordersPlaced.orders().size(),
+                        coins
+                );
+            }
+            case JobEventType.Finished finished-> {
+                title = String.format("Job %s finished", job.getJobId());
+                message = String.format(
+                        "Job %s has finished successfully",
+                        job.getJobId()
+                );
+            }
+            case JobEventType.ErrorEvent errorEvent -> {
+                title = String.format("Error in Job %s", job.getJobId());
+                message = String.format(
+                        "An error occurred in Job %s: %s",
+                        job.getJobId(),
+                        errorEvent.message()
+                );
+            }
+            default -> {
+                return;
+            }
+        }
+
+        pushNotificationService.sendPushNotification(
+                job.getUserId(),
+                NotificationCategory.JOB,
+                notificationType,
+                title,
+                message
+        );
     }
 
 }

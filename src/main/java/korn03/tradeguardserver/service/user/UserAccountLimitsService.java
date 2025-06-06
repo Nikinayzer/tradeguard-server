@@ -61,10 +61,7 @@ public class UserAccountLimitsService {
                 .tradingCooldown(2) // 2 minutes
                 .maxPortfolioRisk(BigDecimal.valueOf(5.0)) // 5%
                 .dailyLossLimit(BigDecimal.valueOf(5000))
-                .maxConsecutiveLosses(3)
                 .maxDailyBalanceChange(BigDecimal.valueOf(10.0))
-//                .volatilityLimit(BigDecimal.valueOf(10.0))
-//                .liquidityThreshold(BigDecimal.valueOf(1000000))
                 .build();
 
         userAccountLimitsRepository.save(limits);
