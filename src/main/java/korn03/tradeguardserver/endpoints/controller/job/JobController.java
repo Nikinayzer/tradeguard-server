@@ -42,6 +42,10 @@ public class JobController {
             @RequestBody @Valid DcaJobSubmissionDTO request,
             @RequestHeader("X-Platform-Type") String platformType) {
 
+        //todo testing, don't want to spam TR
+//        return CompletableFuture.completedFuture(
+//                ResponseEntity.accepted().body(Map.of("status", "ACCEPTED", "message", "DCA job submission accepted"))
+//        );
         return submitJob(request, platformType, "DCA", jobCommandService::sendCreatedDcaJob);
     }
 

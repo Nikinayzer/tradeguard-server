@@ -36,18 +36,14 @@ public class UserController {
     private final UserService userService;
     private final UserAccountLimitsService userAccountLimitsService;
     private final UserExchangeAccountService userExchangeAccountService;
-    private final UserAccountLimitsMapper userAccountLimitsMapper;
     private final PushTokenService pushTokenService;
-    private final PushNotificationService pushNotificationService;
     private final UserDiscordAccountService userDiscordAccountService;
 
-    public UserController(UserService userService, UserAccountLimitsService userAccountLimitsService, UserExchangeAccountService userExchangeAccountService, UserAccountLimitsMapper userAccountLimitsMapper, PushTokenService pushTokenService, PushNotificationService pushNotificationService, UserDiscordAccountService userDiscordAccountService) {
+    public UserController(UserService userService, UserAccountLimitsService userAccountLimitsService, UserExchangeAccountService userExchangeAccountService, PushTokenService pushTokenService,UserDiscordAccountService userDiscordAccountService) {
         this.userService = userService;
         this.userAccountLimitsService = userAccountLimitsService;
         this.userExchangeAccountService = userExchangeAccountService;
-        this.userAccountLimitsMapper = userAccountLimitsMapper;
         this.pushTokenService = pushTokenService;
-        this.pushNotificationService = pushNotificationService;
         this.userDiscordAccountService = userDiscordAccountService;
     }
 
@@ -190,6 +186,7 @@ public class UserController {
     ) {
         User user = userService.getById(userId);
         UserSecuritySettingsDTO settings = UserSecuritySettingsDTO.builder()
+                .lastPasswordChangeDate(user.getPasswordUpdatedAt().toString())
                 .twoFactorEnabled(user.isTwoFactorEnabled())
                 .build();
         return ResponseEntity.ok(settings);

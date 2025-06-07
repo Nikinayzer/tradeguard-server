@@ -10,5 +10,6 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class UserSecuritySettingsDTO {
+    private String lastPasswordChangeDate;
     private boolean twoFactorEnabled;
 }
