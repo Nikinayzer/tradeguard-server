@@ -42,6 +42,8 @@ public class InternalService {
                         .id(String.valueOf(account.getId()))
                         .name(account.getAccountName())
                         .provider(account.getProvider().name())
+                        .readOnlyApiKey(exchangeAccountService.getDecryptedReadWriteApiKey(account))
+                        .readOnlyApiSecret(exchangeAccountService.getDecryptedReadWriteApiSecret(account))
                         .readWriteApiKey(exchangeAccountService.getDecryptedReadWriteApiKey(account))
                         .readWriteApiSecret(exchangeAccountService.getDecryptedReadWriteApiSecret(account))
                         .build())

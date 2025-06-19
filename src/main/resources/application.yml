@@ -135,15 +135,18 @@ tradeguard:
       username: ${ADMIN_USERNAME:admin}
       password: ${ADMIN_PASSWORD:admin1234}
     bybit:
-      readonly:
-        key: ${BYBIT_READONLY_KEY:}
-        secret: ${BYBIT_READONLY_SECRET:}
-      readwrite:
+      live:
         key: ${BYBIT_READWRITE_KEY:}
         secret: ${BYBIT_READWRITE_SECRET:}
       demo:
         key: ${BYBIT_DEMO_KEY:}
         secret: ${BYBIT_DEMO_SECRET:}
+      testerMady:
+        key: ${BYBIT_TESTER_MADY_KEY:}
+        secret: ${BYBIT_TESTER_MADY_SECRET:}
+      testerMisha:
+        key: ${BYBIT_TESTER_MISHA_KEY:}
+        secret: ${BYBIT_TESTER_MISHA_SECRET:}
     binance:
       readwrite:
         key: ${BINANCE_READWRITE_KEY:}

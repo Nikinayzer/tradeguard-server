@@ -44,14 +44,31 @@ public class UsersScheduler {
     @Value("${tradeguard.default.admin.password}")
     private String adminPassword;
 
-    @Value("${tradeguard.default.bybit.readwrite.key:}")
+    // ADMIN LIVE ?
+    @Value("${tradeguard.default.bybit.live.key:}")
     private String defaultReadWriteApiKey;
-    @Value("${tradeguard.default.bybit.readwrite.secret:}")
+    @Value("${tradeguard.default.bybit.live.secret:}")
     private String defaultReadWriteApiSecret;
+
+    // ADMIN DEMO
     @Value("${tradeguard.default.bybit.demo.key:}")
     private String defaultDemoReadWriteApiKey;
     @Value("${tradeguard.default.bybit.demo.secret:}")
     private String defaultDemoReadWriteApiSecret;
+
+    // MADY TESTING
+    @Value("${tradeguard.default.bybit.testerMady.key:}")
+    private String madyKey;
+    @Value("${tradeguard.default.bybit.testerMady.secret:}")
+    private String madySecret;
+
+    // MISHA TESTING
+    @Value("${tradeguard.default.bybit.testerMisha.key:}")
+    private String mishaKey;
+    @Value("${tradeguard.default.bybit.testerMisha.secret:}")
+    private String mishaSecret;
+
+    // BYBIT TODO ORDER
     @Value("${tradeguard.default.binance.readwrite.key:}")
     private String defaultNanceReadWriteApiKey;
     @Value("${tradeguard.default.binance.readwrite.secret:}")
@@ -76,7 +93,6 @@ public class UsersScheduler {
     public void initDefaultUser() {
         // Handle regular user
         User existingOrNewUser;
-
         if (!userService.userExistsByUsername(userUsername)) {
             User user = new User();
             user.setUsername(userUsername);
@@ -89,20 +105,18 @@ public class UsersScheduler {
             user.setRegisteredAt(Instant.now());
             existingOrNewUser = userService.createUser(user);
 
-            log.info("##############################################################");
             log.info("################# DEFAULT USER BEING CREATED #################");
             log.info("Creating new default user: {} with ID: {}", userUsername, existingOrNewUser.getId());
         } else {
             existingOrNewUser = userService.findByUsername(userUsername).orElseThrow();
-            log.info("##############################################################");
             log.info("############## UPDATING EXISTING USER CONNECTIONS ############");
             log.info("Updating existing user's connections: {} with ID: {}", userUsername, existingOrNewUser.getId());
         }
 
-        createDefaultAccount(existingOrNewUser.getId(), "MVBb-Demo", BYBIT_DEMO);
-        createDefaultAccount(existingOrNewUser.getId(), "MVNc-Demo", BINANCE_DEMO);
-        createDefaultAccount(existingOrNewUser.getId(), "MVBb-Live", BYBIT_LIVE);
-        createDefaultAccount(existingOrNewUser.getId(), "MVNc-Live", BINANCE_LIVE);
+//        createDefaultAccount(existingOrNewUser.getId(), "MVBb-Demo", BYBIT_DEMO);
+//        createDefaultAccount(existingOrNewUser.getId(), "MVNc-Demo", BINANCE_DEMO);
+//        createDefaultAccount(existingOrNewUser.getId(), "MVBb-Live", BYBIT_LIVE);
+//        createDefaultAccount(existingOrNewUser.getId(), "MVNc-Live", BINANCE_LIVE);
 
         log.info("##############################################################");
 
@@ -114,52 +128,46 @@ public class UsersScheduler {
             User admin = new User();
             admin.setUsername(adminUsername);
             admin.setPassword(adminPassword);
-            admin.setFirstName("Nick");
-            admin.setLastName("Korotov");
+            admin.setFirstName("Misha");
+            admin.setLastName("Bubnov");
             admin.setDateOfBirth(LocalDate.parse("2002-02-21"));
-            admin.setEmail("nikinayzer@gmail.com");
+            admin.setEmail("bubnov.mykhailo.cz@gmail.com");
             admin.setEmailVerified(true);
             admin.setTwoFactorEnabled(false);
             admin.setRegisteredAt(Instant.now());
             adminUser = userService.createUser(admin);
             userService.addUserRole(adminUser.getId(), Role.ADMIN);
 
-            log.info("##############################################################");
             log.info("############### DEFAULT ADMIN BEING CREATED #################");
             log.info("Creating default admin: {} with ID: {}", adminUsername, adminUser.getId());
         } else {
             adminUser = userService.findByUsername(adminUsername).orElseThrow();
-            log.info("##############################################################");
             log.info("############ UPDATING EXISTING ADMIN CONNECTIONS ############");
             log.info("Updating connections for admin: {} with ID: {}", adminUsername, adminUser.getId());
         }
-
-        createDefaultAccount(adminUser.getId(), "Admin-Demo-Bybit", BYBIT_DEMO);
-        log.info("##############################################################");
-
+        createDefaultAccount(adminUser.getId(), "Admin-Demo-Bybit", mishaKey, mishaSecret, BYBIT_DEMO);
+        //createDefaultAccount(adminUser.getId(), "Admin-Demo-Bybit", defaultDemoReadWriteApiKey, defaultDemoReadWriteApiSecret, BYBIT_DEMO);
         createDefaultDiscordAccount(adminUser.getId(), 493077349684740097L, "n1ckor", "c711e2e7b4b31f475e0fa51dc5bed1dc");
-
-        log.debug("DEFAULT USERS, BYBIT ACCOUNTS, AND DISCORD ACCOUNTS CREATED/UPDATED");
     }
 
     /**
      * Creates or updates a default Exchange account for a user if API keys are provided in properties
      */
-    private void createDefaultAccount(Long userId, String accountName, ExchangeProvider provider) {
+    private void createDefaultAccount(Long userId, String accountName, String key, String secret, ExchangeProvider provider) {
         try {
-            String readWriteApiKey = switch (provider) {
-                case BYBIT_LIVE -> defaultReadWriteApiKey;
-                case BYBIT_DEMO -> defaultDemoReadWriteApiKey;
-                case BINANCE_LIVE -> defaultNanceReadWriteApiKey;
-                case BINANCE_DEMO -> defaultNanceDemoApiKey;
-            };
-
-            String readWriteApiSecret = switch (provider) {
-                case BYBIT_LIVE -> defaultReadWriteApiSecret;
-                case BYBIT_DEMO -> defaultDemoReadWriteApiSecret;
-                case BINANCE_LIVE -> defaultNanceReadWriteApiSecret;
-                case BINANCE_DEMO -> defaultNanceDemoApiSecret;
-            };
+//            String readWriteApiKey = switch (provider) {
+//                case BYBIT_LIVE -> defaultReadWriteApiKey;
+//                case BYBIT_DEMO -> defaultDemoReadWriteApiKey;
+//                case BINANCE_LIVE -> defaultNanceReadWriteApiKey;
+//                case BINANCE_DEMO -> defaultNanceDemoApiKey;
+//            };
+//
+//            String readWriteApiSecret = switch (provider) {
+//                case BYBIT_LIVE -> defaultReadWriteApiSecret;
+//                case BYBIT_DEMO -> defaultDemoReadWriteApiSecret;
+//                case BINANCE_LIVE -> defaultNanceReadWriteApiSecret;
+//                case BINANCE_DEMO -> defaultNanceDemoApiSecret;
+//            };
 
             // Get all existing accounts for this user
             List<UserExchangeAccount> existingAccounts = accountRepository.findByUserId(userId);
@@ -168,8 +176,8 @@ public class UsersScheduler {
             for (UserExchangeAccount existingAccount : existingAccounts) {
                 if (existingAccount.getAccountName().equals(accountName)) {
                     existingAccount.setProvider(provider);
-                    existingAccount.setEncryptedReadWriteApiKey(encryptionService.encrypt(readWriteApiKey));
-                    existingAccount.setEncryptedReadWriteApiSecret(encryptionService.encrypt(readWriteApiSecret));
+                    existingAccount.setEncryptedReadWriteApiKey(encryptionService.encrypt(key));
+                    existingAccount.setEncryptedReadWriteApiSecret(encryptionService.encrypt(secret));
                     accountRepository.save(existingAccount);
                     log.info("Updated existing {} account for user ID: {}", provider, userId);
                     accountExists = true;
@@ -183,8 +191,8 @@ public class UsersScheduler {
                         userId,
                         accountName,
                         provider,
-                        readWriteApiKey,
-                        readWriteApiSecret
+                        key,
+                        secret
                 );
                 log.info("Created new {} account for user ID: {}", provider, userId);
             }
@@ -214,7 +222,7 @@ public class UsersScheduler {
             discordAccountService.addDiscordAccount(userId, discordId, discordUsername, discordAvatar);
             log.info("Default Discord account created for user ID: {}, Discord ID: {}", userId, discordId);
         } catch (Exception e) {
-            log.error("Failed to create default Discord account for user ID: {}", userId, e);
+            log.error("`Failed to create` default Discord account for user ID: {}", userId, e);
         }
     }
 

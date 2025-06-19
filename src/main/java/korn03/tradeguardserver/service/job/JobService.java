@@ -245,23 +245,18 @@ public class JobService {
         String  message;
         NotificationType notificationType = NotificationType.INFO;
         switch (eventType) {
-            case JobEventType.StepDone stepDone -> {
-                title = String.format("Job %s update", job.getJobId());
-                message = String.format(
-                        "Job %s has completed step %d of %d",
-                        job.getJobId(),
-                        job.getStepsDone(),
-                        job.getStepsTotal()
-                );
-            }
             case JobEventType.OrdersPlaced ordersPlaced -> {
                 title = String.format("Job %s orders placed", job.getJobId());
                 String coins = job.getCoins().stream().map(String::toUpperCase).collect(Collectors.joining(", "));
+                int currentStep =job.getStepsDone();
+                int totalSteps = job.getStepsTotal();
                 message = String.format(
-                        "Job %s has successfully placed %d orders for %s",
+                        "Job %s has successfully placed %d orders for %s as step %d of %d total steps",
                         job.getJobId(),
                         ordersPlaced.orders().size(),
-                        coins
+                        coins,
+                        currentStep,
+                        totalSteps
                 );
             }
             case JobEventType.Finished finished-> {

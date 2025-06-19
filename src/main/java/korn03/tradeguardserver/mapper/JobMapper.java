@@ -24,7 +24,7 @@ public interface JobMapper {
 
     //@Mapping(target = "id", ignore = true)
     @Mapping(target = "jobId", source = "jobId")
-    @Mapping(target = "userId", expression = "java(2L)") // TODO: Accept later
+    @Mapping(target = "userId", expression = "java(jobEventMessage.getJobEventType() instanceof korn03.tradeguardserver.kafka.events.jobUpdates.JobEventType.Created ? ((korn03.tradeguardserver.kafka.events.jobUpdates.JobEventType.Created) jobEventMessage.getJobEventType()).meta().userId() : null)")
     @Mapping(target = "status", source = "jobEventType", qualifiedByName = "mapStatus")
     @Mapping(target = "stepsDone", expression = "java((jobEventMessage.getJobEventType() instanceof korn03.tradeguardserver.kafka.events.jobUpdates.JobEventType.StepDone stepDone) ? stepDone.stepIndex() : 0)")
     @Mapping(target = "strategy", expression = "java(jobEventMessage.getJobEventType() instanceof korn03.tradeguardserver.kafka.events.jobUpdates.JobEventType.Created ? mapStrategy(((korn03.tradeguardserver.kafka.events.jobUpdates.JobEventType.Created) jobEventMessage.getJobEventType()).meta().name()) : null)")

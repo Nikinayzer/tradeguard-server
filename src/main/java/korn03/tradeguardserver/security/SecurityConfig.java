@@ -1,6 +1,5 @@
 package korn03.tradeguardserver.security;
 
-import korn03.tradeguardserver.security.filter.InternalFilter;
 import korn03.tradeguardserver.security.filter.JwtAuthFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -31,7 +30,7 @@ public class SecurityConfig {
     );
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http, JwtAuthFilter jwtAuthFilter, InternalFilter internalFilter) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http, JwtAuthFilter jwtAuthFilter) throws Exception {
         http
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> {
@@ -40,8 +39,8 @@ public class SecurityConfig {
                                     .anyRequest().authenticated();
                         }
                 )
-                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
-                .addFilterAfter(internalFilter, JwtAuthFilter.class);
+                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
+                //.addFilterAfter(internalFilter, JwtAuthFilter.class);
 
         return http.build();
     }
