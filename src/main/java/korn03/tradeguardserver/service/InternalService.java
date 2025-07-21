@@ -28,15 +28,28 @@ public class InternalService {
 
     /**
      * Retrieves user connections (User, Discord, Exchange) based on Discord ID.
+     * !NOTE: DISCORD ID <10000 IS TEMP FIX OF TRADING ENGINE LOGIC (IT REQUIRES VALID DISCORD ID, BUT HERE WE TWEAK WITH USER ID)
      */
     public UserConnectionsDTO getUserConnectionsByDiscordId(Long discordId) {
-        UserDiscordAccount discordAccount = discordAccountService.findByDiscordId(discordId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Discord account not found"));
 
-        User user = userService.getById(discordAccount.getUserId());
+        Long userId;
+        Long discordIdDTO;
+        String discordUsername;
 
+        if (discordId < 10000) { // assuming discord ID cant be less than 10000, it's internal ID from .env which is fed to trading engine
+            userId = discordId;
+            discordIdDTO = userId;
+            discordUsername = userService.getById(userId).getUsername();
+        } else {
+            UserDiscordAccount discordAccount = discordAccountService.findByDiscordId(discordId)
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Discord account not found"));
+            userId = discordAccount.getUserId();
+            discordIdDTO = discordAccount.getDiscordId();
+            discordUsername = discordAccount.getDiscordUsername();
+        }
+
+        User user = userService.getById(userId);
         List<UserExchangeAccount> bybitAccounts = exchangeAccountService.getUserExchangeAccountsEntites(user.getId());
-
         List<UserConnectionsDTO.Exchange> exchangeDTOS = bybitAccounts.stream()
                 .map(account -> UserConnectionsDTO.Exchange.builder()
                         .id(String.valueOf(account.getId()))
@@ -56,8 +69,8 @@ public class InternalService {
                         .username(user.getUsername())
                         .build())
                 .discord(UserConnectionsDTO.Discord.builder()
-                        .discordId(String.valueOf(discordAccount.getDiscordId()))
-                        .username(discordAccount.getDiscordUsername())
+                        .discordId(String.valueOf(discordIdDTO))
+                        .username(discordUsername)
                         .build())
                 .exchangeClients(exchangeDTOS)
                 .build();

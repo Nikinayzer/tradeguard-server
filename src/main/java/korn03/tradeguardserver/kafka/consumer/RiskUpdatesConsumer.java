@@ -13,7 +13,7 @@ import org.springframework.stereotype.Component;
 public class RiskUpdatesConsumer {
     private final RiskService riskService;
 
-    @KafkaListener(topics = "${kafka.topics.risk-updates}", groupId = "${spring.kafka.consumer.group-id}", containerFactory = "riskUpdatesListenerFactory")
+    @KafkaListener(topics = "${kafka.topic.risk-updates}", groupId = "${spring.kafka.consumer.group-id}", containerFactory = "riskUpdatesListenerFactory")
     public void consumeRiskUpdate(RiskReportDTO riskReport) {
         try {
             log.debug("Received risk update for user {}: {}", riskReport.getUserId(), riskReport.getEventType());

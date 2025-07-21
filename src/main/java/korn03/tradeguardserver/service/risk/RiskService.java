@@ -83,6 +83,10 @@ public class RiskService {
         String message;
         NotificationType notificationType = NotificationType.WARNING;
         switch (topRiskLevel) {
+            case RiskLevel.CRITICAL ->{
+                title = String.format("Critical Risk Alert for %s", TopCategory);
+                message = String.format("Critical risk detected for your account! Category: %s, Confidence: %.2f%%", TopCategory, topRiskConfidence * 100);
+            }
             case RiskLevel.HIGH -> {
                 title = String.format("High Risk Alert for %s", TopCategory);
                 message = String.format("High risk detected for your account! Category: %s, Confidence: %.2f%%", TopCategory, topRiskConfidence * 100);
@@ -90,6 +94,9 @@ public class RiskService {
             case RiskLevel.MEDIUM -> {
                 title = String.format("Medium Risk Alert for %s", TopCategory);
                 message = String.format("Medium risk detected for your account! Category: %s, Confidence: %.2f%%", TopCategory, topRiskConfidence * 100);
+            }
+            case RiskLevel.NONE -> {
+                return;
             }
             default -> {
                 title = String.format("Low Risk Alert for %s", TopCategory);
